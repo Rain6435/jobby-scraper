@@ -1,6 +1,6 @@
 # JobScraper
 
-[![Scrape jobs](https://github.com/FaraDuMatin/JobScraper/actions/workflows/scrape.yml/badge.svg)](https://github.com/FaraDuMatin/JobScraper/actions/workflows/scrape.yml)
+[![Scrape jobs](https://github.com/Rain6435/jobby-scraper/actions/workflows/scrape.yml/badge.svg)](https://github.com/Rain6435/jobby-scraper/actions/workflows/scrape.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 A free, serverless job pool generator. It polls company career pages
@@ -83,7 +83,7 @@ company's entire scrape for the run.
 ## Getting started
 
 ```bash
-git clone https://github.com/FaraDuMatin/JobScraper.git
+git clone https://github.com/Rain6435/jobby-scraper.git
 cd JobScraper
 pip install -r requirements.txt
 cp .env.example .env   # optional — see "Environment variables" below
