@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Job Monitor</title>
+  <link rel="icon" href="logo.png" type="image/png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="page">
+    <header class="page-header">
+      <h1>Job Monitor</h1>
+      <div class="header-right">
+        <div class="status success" id="status">Loading…</div>
+        <a class="icon-btn" href="admin/" title="Manage hidden locations" aria-label="Admin">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+        </a>
+      </div>
+    </header>
+
+    <div class="tabs" id="tabs">
+      <button class="tab active" data-tab="all">All</button>
+      <button class="tab" data-tab="new">New</button>
+    </div>
+
+    <div class="chips" id="chips"></div>
+
+    <div class="toolbar">
+      <div class="search-wrap">
+        <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/>
+          <path d="m21 21-4.3-4.3"/>
+        </svg>
+        <input class="input" id="search" type="search" placeholder="Search...">
+      </div>
+      <select class="select" id="company-filter">
+        <option value="">All companies</option>
+      </select>
+      <select class="select" id="date-filter">
+        <option value="">Any time</option>
+        <option value="0">Today</option>
+        <option value="1">Last 2 days</option>
+        <option value="3">Last 4 days</option>
+      </select>
+      <div class="multiselect" id="location-filter">
+        <button class="select multiselect-trigger" id="location-trigger" type="button" aria-haspopup="listbox" aria-expanded="false">
+          <span id="location-label">All locations</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m6 9 6 6 6-6"/>
+          </svg>
+        </button>
+        <div class="multiselect-panel" id="location-panel" hidden></div>
+      </div>
+    </div>
+
+    <div class="card table-card" id="table-card">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Company</th>
+            <th>Location</th>
+            <th>Posted</th>
+          </tr>
+        </thead>
+        <tbody id="job-rows"></tbody>
+      </table>
+    </div>
+
+    <div class="empty-state" id="empty-state" hidden>
+      <h3>No jobs match your filters</h3>
+      <p>Try clearing the search or switching back to the All tab.</p>
+      <button class="btn-primary" id="clear-filters">Clear filters</button>
+    </div>
+
+    <footer class="page-footer">
+      <small>Scraped from company career pages every hour · <span id="job-count"></span></small>
+    </footer>
+  </main>
+
+  <div class="modal-backdrop" id="job-modal-backdrop" hidden>
+    <div class="modal" id="job-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <button class="modal-close" id="modal-close" type="button" aria-label="Close">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 6 6 18M6 6l12 12"/>
+        </svg>
+      </button>
+      <div class="modal-header">
+        <h2 class="modal-title" id="modal-title"></h2>
+        <div class="modal-meta">
+          <span id="modal-company"></span> · <span id="modal-location"></span> · <span id="modal-posted"></span>
+        </div>
+      </div>
+      <div class="modal-body">
+        <section class="modal-section" id="modal-summary-section" hidden>
+          <h3>Role summary</h3>
+          <p id="modal-summary"></p>
+        </section>
+        <section class="modal-section" id="modal-blurb-section" hidden>
+          <h3 id="modal-blurb-heading">About the company</h3>
+          <p id="modal-blurb"></p>
+        </section>
+        <section class="modal-section" id="modal-description-section" hidden>
+          <h3>Full description</h3>
+          <p class="modal-description" id="modal-description"></p>
+        </section>
+        <section class="modal-section" id="modal-similar-section" hidden>
+          <h3>Similar jobs</h3>
+          <ul class="modal-similar-list" id="modal-similar-list"></ul>
+        </section>
+      </div>
+      <div class="modal-footer">
+        <a class="btn-primary" id="modal-external-link" target="_blank" rel="noopener">View full posting ↗</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="store.js"></script>
+  <script src="locations.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+{
+  "total": 3,
+  "jobPostings": [
+    {
+      "title": "Software Engineer Intern",
+      "externalPath": "/job/Montreal/Software-Engineer-Intern_JR-100001",
+      "locationsText": "Montreal, Canada",
+      "postedOn": "Posted 2 Days Ago",
+      "bulletFields": ["JR-100001"]
+    },
+    {
+      "title": "Data Rotation Program",
+      "externalPath": "/job/Remote/Data-Rotation-Program_JR-100002",
+      "locationsText": "Remote",
+      "postedOn": "Posted Today",
+      "bulletFields": ["JR-100002"]
+    },
+    {
+      "title": "Senior Staff Architect",
+      "externalPath": "/job/Toronto/Senior-Staff-Architect_JR-100003",
+      "locationsText": "Toronto, Canada",
+      "postedOn": "Posted 30+ Days Ago",
+      "bulletFields": ["JR-100003"]
+    }
+  ],
+  "facets": []
+}

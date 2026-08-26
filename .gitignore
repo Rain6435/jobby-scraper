@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+.env
+
+# Ollama key rotation state (standalone-run fallback path — see
+# scraper/ollama_keys.py; the normal nested-checkout path writes to
+# ../data/ollama_key_rotation.json instead, outside this repo entirely)
+.ollama_key_rotation.json
+docs/jobs.json

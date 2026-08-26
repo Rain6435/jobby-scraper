@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Job Monitor · Locations</title>
+  <link rel="icon" href="../logo.png" type="image/png">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+  <main class="page">
+    <header class="page-header">
+      <div>
+        <a class="back-link" href="../index.html">← Back to dashboard</a>
+        <h1>Locations</h1>
+      </div>
+      <div class="status success" id="status">Loading…</div>
+    </header>
+
+    <p class="admin-intro">
+      Locations are sorted automatically. <strong>Other countries are hidden for you.</strong>
+      Quebec &amp; Ontario are marked safe. The middle group is yours to review.
+      This only affects what you see on the dashboard — never Discord.
+    </p>
+
+    <div class="toolbar">
+      <div class="search-wrap">
+        <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/>
+          <path d="m21 21-4.3-4.3"/>
+        </svg>
+        <input class="input" id="search" type="search" placeholder="Search locations...">
+      </div>
+    </div>
+
+    <section class="admin-section">
+      <h3 class="bucket-heading good">
+        <span class="legend-dot good"></span>Quebec &amp; Ontario <span class="bucket-count" id="good-count">0</span>
+      </h3>
+      <p class="bucket-note">Always shown — protected so you can't hide these by accident.</p>
+      <div class="admin-grid" id="good-grid"></div>
+    </section>
+
+    <section class="admin-section">
+      <h3 class="bucket-heading unsure">
+        <span class="legend-dot unsure"></span>Unsure — review these <span class="bucket-count" id="unsure-count">0</span>
+      </h3>
+      <p class="bucket-note">Shown by default (other Canadian provinces, building names…). Hide any you don't want.</p>
+      <div class="admin-grid" id="unsure-grid"></div>
+    </section>
+
+    <section class="admin-section">
+      <h3 class="bucket-heading foreign">
+        <span class="legend-dot foreign"></span>Other countries — auto-hidden <span class="bucket-count" id="foreign-count">0</span>
+        <button class="bucket-toggle" id="foreign-toggle" type="button">Show</button>
+      </h3>
+      <p class="bucket-note">Hidden from the dashboard. Expand only if something here is actually in your area — then click “Rescue”.</p>
+      <div class="admin-grid" id="foreign-grid" hidden></div>
+    </section>
+
+    <footer class="page-footer">
+      <small>Changes apply instantly · stored locally in this browser</small>
+    </footer>
+  </main>
+
+  <script src="../store.js"></script>
+  <script src="../locations.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,1156 @@
+{
+  "companies": [
+    {
+      "name": "CAE",
+      "board": "workday",
+      "url": "https://cae.wd3.myworkdayjobs.com/wday/cxs/cae/career/jobs",
+      "careers_base": "https://cae.wd3.myworkdayjobs.com/en-US/career"
+    },
+    {
+      "name": "TD Bank",
+      "board": "workday",
+      "url": "https://td.wd3.myworkdayjobs.com/wday/cxs/td/TD_Bank_Careers/jobs",
+      "careers_base": "https://td.wd3.myworkdayjobs.com/en-US/TD_Bank_Careers"
+    },
+    {
+      "name": "Autodesk",
+      "board": "workday",
+      "url": "https://autodesk.wd1.myworkdayjobs.com/wday/cxs/autodesk/Ext/jobs",
+      "careers_base": "https://autodesk.wd1.myworkdayjobs.com/en-US/Ext"
+    },
+    {
+      "name": "RBC Early Talent",
+      "board": "workday",
+      "url": "https://rbc.wd3.myworkdayjobs.com/wday/cxs/rbc/RBCEARLYTALENT1/jobs",
+      "careers_base": "https://rbc.wd3.myworkdayjobs.com/en-US/RBCEARLYTALENT1"
+    },
+    {
+      "name": "CIBC",
+      "board": "workday",
+      "url": "https://cibc.wd3.myworkdayjobs.com/wday/cxs/cibc/search/jobs",
+      "careers_base": "https://cibc.wd3.myworkdayjobs.com/en-US/search"
+    },
+    {
+      "name": "CIBC Campus",
+      "board": "workday",
+      "url": "https://cibc.wd3.myworkdayjobs.com/wday/cxs/cibc/campus/jobs",
+      "careers_base": "https://cibc.wd3.myworkdayjobs.com/en-US/campus"
+    },
+    {
+      "name": "BMO",
+      "board": "workday",
+      "url": "https://bmo.wd3.myworkdayjobs.com/wday/cxs/bmo/External/jobs",
+      "careers_base": "https://bmo.wd3.myworkdayjobs.com/en-US/External"
+    },
+    {
+      "name": "BMO Campus",
+      "board": "workday",
+      "url": "https://bmo.wd3.myworkdayjobs.com/wday/cxs/bmo/Campus/jobs",
+      "careers_base": "https://bmo.wd3.myworkdayjobs.com/en-US/Campus"
+    },
+    {
+      "name": "BDC",
+      "board": "workday",
+      "url": "https://bdc.wd10.myworkdayjobs.com/wday/cxs/bdc/BDC_Careers/jobs",
+      "careers_base": "https://bdc.wd10.myworkdayjobs.com/en-US/BDC_Careers"
+    },
+    {
+      "name": "McGill University",
+      "board": "workday",
+      "url": "https://mcgill.wd3.myworkdayjobs.com/wday/cxs/mcgill/McGill_Careers/jobs",
+      "careers_base": "https://mcgill.wd3.myworkdayjobs.com/en-US/McGill_Careers"
+    },
+    {
+      "name": "Canadian Tire",
+      "board": "workday",
+      "url": "https://canadiantirecorporation.wd3.myworkdayjobs.com/wday/cxs/canadiantirecorporation/Enterprise_External_Careers_Site/jobs",
+      "careers_base": "https://canadiantirecorporation.wd3.myworkdayjobs.com/en-US/Enterprise_External_Careers_Site"
+    },
+    {
+      "name": "Cineplex",
+      "board": "workday",
+      "url": "https://cineplex.wd3.myworkdayjobs.com/wday/cxs/cineplex/Cineplex/jobs",
+      "careers_base": "https://cineplex.wd3.myworkdayjobs.com/en-US/Cineplex"
+    },
+    {
+      "name": "BDO Canada",
+      "board": "workday",
+      "url": "https://bdo.wd3.myworkdayjobs.com/wday/cxs/bdo/BDO/jobs",
+      "careers_base": "https://bdo.wd3.myworkdayjobs.com/en-US/BDO"
+    },
+    {
+      "name": "TiMi Montreal",
+      "board": "workday",
+      "url": "https://tencent.wd1.myworkdayjobs.com/wday/cxs/tencent/timi_montreal_careers/jobs",
+      "careers_base": "https://tencent.wd1.myworkdayjobs.com/en-US/timi_montreal_careers"
+    },
+    {
+      "name": "Simons",
+      "board": "workday",
+      "url": "https://simons.wd10.myworkdayjobs.com/wday/cxs/simons/Simons_Site/jobs",
+      "careers_base": "https://simons.wd10.myworkdayjobs.com/en-US/Simons_Site"
+    },
+    {
+      "name": "PSP Investments",
+      "board": "workday",
+      "url": "https://investpsp.wd3.myworkdayjobs.com/wday/cxs/investpsp/psp_careers/jobs",
+      "careers_base": "https://investpsp.wd3.myworkdayjobs.com/en-US/psp_careers"
+    },
+    {
+      "name": "Manulife",
+      "board": "workday",
+      "url": "https://manulife.wd3.myworkdayjobs.com/wday/cxs/manulife/MFCJH_Jobs/jobs",
+      "careers_base": "https://manulife.wd3.myworkdayjobs.com/en-US/MFCJH_Jobs"
+    },
+    {
+      "name": "TransPerfect",
+      "board": "workday",
+      "url": "https://transperfect.wd5.myworkdayjobs.com/wday/cxs/transperfect/TransPerfect/jobs",
+      "careers_base": "https://transperfect.wd5.myworkdayjobs.com/en-US/TransPerfect"
+    },
+    {
+      "name": "Autodesk Interns",
+      "board": "workday",
+      "url": "https://autodesk.wd1.myworkdayjobs.com/wday/cxs/autodesk/uni/jobs",
+      "careers_base": "https://autodesk.wd1.myworkdayjobs.com/en-US/uni"
+    },
+    {
+      "name": "PTC",
+      "board": "workday",
+      "url": "https://ptc.wd1.myworkdayjobs.com/wday/cxs/ptc/PTC/jobs",
+      "careers_base": "https://ptc.wd1.myworkdayjobs.com/en-US/PTC"
+    },
+    {
+      "name": "Cadence",
+      "board": "workday",
+      "url": "https://cadence.wd1.myworkdayjobs.com/wday/cxs/cadence/External_Careers/jobs",
+      "careers_base": "https://cadence.wd1.myworkdayjobs.com/en-US/External_Careers"
+    },
+    {
+      "name": "Zebra Technologies",
+      "board": "workday",
+      "url": "https://zebra.wd501.myworkdayjobs.com/wday/cxs/zebra/Zebra_careers/jobs",
+      "careers_base": "https://zebra.wd501.myworkdayjobs.com/en-US/Zebra_careers"
+    },
+    {
+      "name": "Moneris",
+      "board": "workday",
+      "url": "https://moneris.wd3.myworkdayjobs.com/wday/cxs/moneris/Moneris/jobs",
+      "careers_base": "https://moneris.wd3.myworkdayjobs.com/en-US/Moneris"
+    },
+    {
+      "name": "Workday",
+      "board": "workday",
+      "url": "https://workday.wd5.myworkdayjobs.com/wday/cxs/workday/Workday/jobs",
+      "careers_base": "https://workday.wd5.myworkdayjobs.com/en-US/Workday"
+    },
+    {
+      "name": "Vanguard",
+      "board": "workday",
+      "url": "https://vanguard.wd5.myworkdayjobs.com/wday/cxs/vanguard/vanguard_external/jobs",
+      "careers_base": "https://vanguard.wd5.myworkdayjobs.com/en-US/vanguard_external"
+    },
+    {
+      "name": "Ciena",
+      "board": "workday",
+      "url": "https://ciena.wd5.myworkdayjobs.com/wday/cxs/ciena/Careers/jobs",
+      "careers_base": "https://ciena.wd5.myworkdayjobs.com/en-US/Careers"
+    },
+    {
+      "name": "Thales",
+      "board": "workday",
+      "url": "https://thales.wd3.myworkdayjobs.com/wday/cxs/thales/Careers/jobs",
+      "careers_base": "https://thales.wd3.myworkdayjobs.com/en-US/Careers"
+    },
+    {
+      "name": "Sun Life",
+      "board": "workday",
+      "url": "https://sunlife.wd3.myworkdayjobs.com/wday/cxs/sunlife/Experienced-Jobs/jobs",
+      "careers_base": "https://sunlife.wd3.myworkdayjobs.com/en-US/Experienced-Jobs"
+    },
+    {
+      "name": "Cogeco",
+      "board": "workday",
+      "url": "https://cogeco.wd3.myworkdayjobs.com/wday/cxs/cogeco/Cogeco_Careers/jobs",
+      "careers_base": "https://cogeco.wd3.myworkdayjobs.com/en-US/Cogeco_Careers"
+    },
+    {
+      "name": "Motorola Solutions",
+      "board": "workday",
+      "url": "https://motorolasolutions.wd5.myworkdayjobs.com/wday/cxs/motorolasolutions/Careers/jobs",
+      "careers_base": "https://motorolasolutions.wd5.myworkdayjobs.com/en-US/Careers"
+    },
+    {
+      "name": "Octasic",
+      "board": "rippling",
+      "board_id": "octasic-inc"
+    },
+    {
+      "name": "Dialogue",
+      "board": "rippling",
+      "board_id": "dialogue-en"
+    },
+    {
+      "name": "GoBolt",
+      "board": "rippling",
+      "board_id": "gobolt"
+    },
+    {
+      "name": "Nesto",
+      "board": "rippling",
+      "board_id": "nesto"
+    },
+    {
+      "name": "Rentsync",
+      "board": "rippling",
+      "board_id": "rentsync_careers"
+    },
+    {
+      "name": "Everflow",
+      "board": "rippling",
+      "board_id": "everflow"
+    },
+    {
+      "name": "Analyticsmart",
+      "board": "rippling",
+      "board_id": "analyticsmart"
+    },
+    {
+      "name": "Ampliwork",
+      "board": "rippling",
+      "board_id": "ampliwork-inc"
+    },
+    {
+      "name": "Behavox",
+      "board": "greenhouse",
+      "token": "behavox"
+    },
+    {
+      "name": "CapIntel",
+      "board": "greenhouse",
+      "token": "capintel"
+    },
+    {
+      "name": "Speechify",
+      "board": "greenhouse",
+      "token": "speechify"
+    },
+    {
+      "name": "MaintainX",
+      "board": "ashby",
+      "slug": "maintainx"
+    },
+    {
+      "name": "Coveo",
+      "board": "greenhouse",
+      "token": "coveoen"
+    },
+    {
+      "name": "Practice Better",
+      "board": "greenhouse",
+      "token": "practicebetter"
+    },
+    {
+      "name": "Carta",
+      "board": "greenhouse",
+      "token": "carta"
+    },
+    {
+      "name": "DoorDash Canada",
+      "board": "greenhouse",
+      "token": "doordashcanada"
+    },
+    {
+      "name": "mthree",
+      "board": "greenhouse",
+      "token": "mthreerecruitingportal"
+    },
+    {
+      "name": "Spire",
+      "board": "greenhouse",
+      "token": "spire"
+    },
+    {
+      "name": "GitLab",
+      "board": "greenhouse",
+      "token": "gitlab"
+    },
+    {
+      "name": "Remote",
+      "board": "greenhouse",
+      "token": "remotecom"
+    },
+    {
+      "name": "Faire",
+      "board": "greenhouse",
+      "token": "faire"
+    },
+    {
+      "name": "Dialpad",
+      "board": "greenhouse",
+      "token": "dialpad"
+    },
+    {
+      "name": "Hootsuite",
+      "board": "greenhouse",
+      "token": "hootsuite"
+    },
+    {
+      "name": "Thinkific",
+      "board": "greenhouse",
+      "token": "thinkific"
+    },
+    {
+      "name": "Knak",
+      "board": "greenhouse",
+      "token": "knak"
+    },
+    {
+      "name": "Fellow",
+      "board": "greenhouse",
+      "token": "fellow"
+    },
+    {
+      "name": "Tulip",
+      "board": "greenhouse",
+      "token": "tulip"
+    },
+    {
+      "name": "Euna Solutions",
+      "board": "bamboohr",
+      "company": "euna"
+    },
+    {
+      "name": "RTX",
+      "board": "workday",
+      "url": "https://globalhr.wd5.myworkdayjobs.com/wday/cxs/globalhr/REC_RTX_Ext_Gateway/jobs",
+      "careers_base": "https://globalhr.wd5.myworkdayjobs.com/en-US/REC_RTX_Ext_Gateway"
+    },
+    {
+      "name": "Airbus",
+      "board": "workday",
+      "url": "https://ag.wd3.myworkdayjobs.com/wday/cxs/ag/Airbus/jobs",
+      "careers_base": "https://ag.wd3.myworkdayjobs.com/en-US/Airbus"
+    },
+    {
+      "name": "Boeing",
+      "board": "workday",
+      "url": "https://boeing.wd1.myworkdayjobs.com/wday/cxs/boeing/EXTERNAL_CAREERS/jobs",
+      "careers_base": "https://boeing.wd1.myworkdayjobs.com/en-US/EXTERNAL_CAREERS"
+    },
+    {
+      "name": "NAV CANADA",
+      "board": "workday",
+      "url": "https://navcanada.wd10.myworkdayjobs.com/wday/cxs/navcanada/NAV_Careers/jobs",
+      "careers_base": "https://navcanada.wd10.myworkdayjobs.com/en-US/NAV_Careers"
+    },
+    {
+      "name": "SLC Management",
+      "board": "workday",
+      "url": "https://sunlife.wd3.myworkdayjobs.com/wday/cxs/sunlife/SLCManagement/jobs",
+      "careers_base": "https://sunlife.wd3.myworkdayjobs.com/en-US/SLCManagement"
+    },
+    {
+      "name": "Amgen",
+      "board": "workday",
+      "url": "https://amgen.wd1.myworkdayjobs.com/wday/cxs/amgen/Careers/jobs",
+      "careers_base": "https://amgen.wd1.myworkdayjobs.com/en-US/Careers"
+    },
+    {
+      "name": "Analog Devices",
+      "board": "workday",
+      "url": "https://analogdevices.wd1.myworkdayjobs.com/wday/cxs/analogdevices/External/jobs",
+      "careers_base": "https://analogdevices.wd1.myworkdayjobs.com/en-US/External"
+    },
+    {
+      "name": "AstraZeneca",
+      "board": "workday",
+      "url": "https://astrazeneca.wd3.myworkdayjobs.com/wday/cxs/astrazeneca/Alexion/jobs",
+      "careers_base": "https://astrazeneca.wd3.myworkdayjobs.com/en-US/Alexion"
+    },
+    {
+      "name": "Aviva",
+      "board": "workday",
+      "url": "https://aviva.wd1.myworkdayjobs.com/wday/cxs/aviva/External/jobs",
+      "careers_base": "https://aviva.wd1.myworkdayjobs.com/en-US/External"
+    },
+    {
+      "name": "Canaccord Genuity",
+      "board": "workday",
+      "url": "https://cgf.wd10.myworkdayjobs.com/wday/cxs/cgf/CG/jobs",
+      "careers_base": "https://cgf.wd10.myworkdayjobs.com/en-US/CG"
+    },
+    {
+      "name": "Clio",
+      "board": "workday",
+      "url": "https://clio.wd3.myworkdayjobs.com/wday/cxs/clio/ClioCareerSite/jobs",
+      "careers_base": "https://clio.wd3.myworkdayjobs.com/en-US/ClioCareerSite"
+    },
+    {
+      "name": "CPP Investments",
+      "board": "workday",
+      "url": "https://cppib.wd10.myworkdayjobs.com/wday/cxs/cppib/cppinvestments/jobs",
+      "careers_base": "https://cppib.wd10.myworkdayjobs.com/en-US/cppinvestments"
+    },
+    {
+      "name": "Desjardins",
+      "board": "workday",
+      "url": "https://desjardins.wd10.myworkdayjobs.com/wday/cxs/desjardins/Desjardinscachee/jobs",
+      "careers_base": "https://desjardins.wd10.myworkdayjobs.com/en-US/Desjardinscachee"
+    },
+    {
+      "name": "Teledyne FLIR",
+      "board": "workday",
+      "url": "https://flir.wd1.myworkdayjobs.com/wday/cxs/flir/flirconfidential/jobs",
+      "careers_base": "https://flir.wd1.myworkdayjobs.com/en-US/flirconfidential"
+    },
+    {
+      "name": "General Motors Canada",
+      "board": "workday",
+      "url": "https://generalmotors.wd5.myworkdayjobs.com/wday/cxs/generalmotors/Careers_GM/jobs",
+      "careers_base": "https://generalmotors.wd5.myworkdayjobs.com/en-US/Careers_GM"
+    },
+    {
+      "name": "RTX GlobalHR Other Postings",
+      "board": "workday",
+      "url": "https://globalhr.wd5.myworkdayjobs.com/wday/cxs/globalhr/Private_Posting_No_TMP/jobs",
+      "careers_base": "https://globalhr.wd5.myworkdayjobs.com/en-US/Private_Posting_No_TMP"
+    },
+    {
+      "name": "Holman Enterprises",
+      "board": "workday",
+      "url": "https://holmanautogroup.wd1.myworkdayjobs.com/wday/cxs/holmanautogroup/HolmanEnterprisesCareers/jobs",
+      "careers_base": "https://holmanautogroup.wd1.myworkdayjobs.com/en-US/HolmanEnterprisesCareers"
+    },
+    {
+      "name": "Home Depot Canada",
+      "board": "workday",
+      "url": "https://homedepot.wd5.myworkdayjobs.com/wday/cxs/homedepot/CareerDepotCanada/jobs",
+      "careers_base": "https://homedepot.wd5.myworkdayjobs.com/en-US/CareerDepotCanada"
+    },
+    {
+      "name": "Interac",
+      "board": "workday",
+      "url": "https://interac.wd3.myworkdayjobs.com/wday/cxs/interac/Interac/jobs",
+      "careers_base": "https://interac.wd3.myworkdayjobs.com/en-US/Interac"
+    },
+    {
+      "name": "Ledcor",
+      "board": "workday",
+      "url": "https://ledcor.wd3.myworkdayjobs.com/wday/cxs/ledcor/Ledcor_External/jobs",
+      "careers_base": "https://ledcor.wd3.myworkdayjobs.com/en-US/Ledcor_External"
+    },
+    {
+      "name": "MLSE",
+      "board": "workday",
+      "url": "https://mlse.wd3.myworkdayjobs.com/wday/cxs/mlse/MLSE/jobs",
+      "careers_base": "https://mlse.wd3.myworkdayjobs.com/en-US/MLSE"
+    },
+    {
+      "name": "Oak Valley Health",
+      "board": "workday",
+      "url": "https://oakvalleyhealth.wd10.myworkdayjobs.com/wday/cxs/oakvalleyhealth/OakValleyHealth/jobs",
+      "careers_base": "https://oakvalleyhealth.wd10.myworkdayjobs.com/en-US/OakValleyHealth"
+    },
+    {
+      "name": "OMERS",
+      "board": "workday",
+      "url": "https://omers.wd3.myworkdayjobs.com/wday/cxs/omers/OMERS_External/jobs",
+      "careers_base": "https://omers.wd3.myworkdayjobs.com/en-US/OMERS_External"
+    },
+    {
+      "name": "Parsons",
+      "board": "workday",
+      "url": "https://parsons.wd5.myworkdayjobs.com/wday/cxs/parsons/Search/jobs",
+      "careers_base": "https://parsons.wd5.myworkdayjobs.com/en-US/Search"
+    },
+    {
+      "name": "Revvity",
+      "board": "workday",
+      "url": "https://revvity.wd103.myworkdayjobs.com/wday/cxs/revvity/External/jobs",
+      "careers_base": "https://revvity.wd103.myworkdayjobs.com/en-US/External"
+    },
+    {
+      "name": "Roche",
+      "board": "workday",
+      "url": "https://roche.wd3.myworkdayjobs.com/wday/cxs/roche/roche-ext/jobs",
+      "careers_base": "https://roche.wd3.myworkdayjobs.com/en-US/roche-ext"
+    },
+    {
+      "name": "Rockwell Automation Early Careers",
+      "board": "workday",
+      "url": "https://rockwellautomation.wd1.myworkdayjobs.com/wday/cxs/rockwellautomation/External-Rockwell-Automation-Early-Careers/jobs",
+      "careers_base": "https://rockwellautomation.wd1.myworkdayjobs.com/en-US/External-Rockwell-Automation-Early-Careers"
+    },
+    {
+      "name": "State Street",
+      "board": "workday",
+      "url": "https://statestreet.wd1.myworkdayjobs.com/wday/cxs/statestreet/Global/jobs",
+      "careers_base": "https://statestreet.wd1.myworkdayjobs.com/en-US/Global"
+    },
+    {
+      "name": "TMX Group",
+      "board": "workday",
+      "url": "https://tmx.wd3.myworkdayjobs.com/wday/cxs/tmx/TMX_Careers/jobs",
+      "careers_base": "https://tmx.wd3.myworkdayjobs.com/en-US/TMX_Careers"
+    },
+    {
+      "name": "Wintrust",
+      "board": "workday",
+      "url": "https://wintrust.wd1.myworkdayjobs.com/wday/cxs/wintrust/CASearch/jobs",
+      "careers_base": "https://wintrust.wd1.myworkdayjobs.com/en-US/CASearch"
+    },
+    {
+      "name": "Ravenwake Games",
+      "board": "greenhouse",
+      "token": "ravenwakegames"
+    },
+    {
+      "name": "Orennia",
+      "board": "greenhouse",
+      "token": "orennia"
+    },
+    {
+      "name": "Kensington Tours",
+      "board": "greenhouse",
+      "token": "kensingtontours"
+    },
+    {
+      "name": "Later",
+      "board": "greenhouse",
+      "token": "later"
+    },
+    {
+      "name": "Arcadion",
+      "board": "bamboohr",
+      "company": "arcadion"
+    },
+    {
+      "name": "Effortless Admin",
+      "board": "bamboohr",
+      "company": "effortlessadmin"
+    },
+    {
+      "name": "Forsite Consultants",
+      "board": "bamboohr",
+      "company": "forsite"
+    },
+    {
+      "name": "Accurate Network Services",
+      "board": "bamboohr",
+      "company": "accuratenetworks"
+    },
+    {
+      "name": "Association for New Canadians",
+      "board": "bamboohr",
+      "company": "associationfornewcanadians"
+    },
+    {
+      "name": "Baker Tilly KDN",
+      "board": "bamboohr",
+      "company": "bakertillykdn"
+    },
+    {
+      "name": "Canada's Children's Hospital Foundations",
+      "board": "bamboohr",
+      "company": "cchf"
+    },
+    {
+      "name": "Co-operative Housing Federation BC",
+      "board": "bamboohr",
+      "company": "chfbc"
+    },
+    {
+      "name": "Cinesite Vancouver",
+      "board": "bamboohr",
+      "company": "cinesitevancouver"
+    },
+    {
+      "name": "Elite Travel Management",
+      "board": "bamboohr",
+      "company": "elitetm"
+    },
+    {
+      "name": "Gauer Olsen CPA",
+      "board": "bamboohr",
+      "company": "gocpa"
+    },
+    {
+      "name": "Integrated ProAction",
+      "board": "bamboohr",
+      "company": "integratedproaction"
+    },
+    {
+      "name": "ISSofBC Job Shares",
+      "board": "bamboohr",
+      "company": "newtrack"
+    },
+    {
+      "name": "OpenRoad Auto Group",
+      "board": "bamboohr",
+      "company": "orag"
+    },
+    {
+      "name": "Part Time CFO",
+      "board": "bamboohr",
+      "company": "parttimecfo"
+    },
+    {
+      "name": "Picton Mahoney Asset Management",
+      "board": "bamboohr",
+      "company": "pictonmahoney"
+    },
+    {
+      "name": "Pier 4",
+      "board": "bamboohr",
+      "company": "pier4ltd"
+    },
+    {
+      "name": "Smardt",
+      "board": "bamboohr",
+      "company": "smardt"
+    },
+    {
+      "name": "Stern Cohen",
+      "board": "bamboohr",
+      "company": "sterncohen"
+    },
+    {
+      "name": "The Universal Group",
+      "board": "bamboohr",
+      "company": "theuniversalgroup"
+    },
+    {
+      "name": "True North Mortgage",
+      "board": "bamboohr",
+      "company": "truenorthmortgage"
+    },
+    {
+      "name": "Western Community College",
+      "board": "bamboohr",
+      "company": "wcc"
+    },
+    {
+      "name": "360insights",
+      "board": "rippling",
+      "board_id": "360insights"
+    },
+    {
+      "name": "FluidAI Medical",
+      "board": "rippling",
+      "board_id": "fluidai-medical-careers"
+    },
+    {
+      "name": "Foundant Technologies",
+      "board": "rippling",
+      "board_id": "foundant-careers"
+    },
+    {
+      "name": "Nesto Cloud",
+      "board": "rippling",
+      "board_id": "nestocloud"
+    },
+    {
+      "name": "Nesto Group",
+      "board": "rippling",
+      "board_id": "nestogroup"
+    },
+    {
+      "name": "Fix Network",
+      "board": "rippling",
+      "board_id": "fixnetwork"
+    },
+    {
+      "name": "RBC (Global)",
+      "board": "workday",
+      "url": "https://rbc.wd3.myworkdayjobs.com/wday/cxs/rbc/RBCGLOBAL1/jobs",
+      "careers_base": "https://rbc.wd3.myworkdayjobs.com/en-US/RBCGLOBAL1"
+    },
+    {
+      "name": "Rockwell Automation",
+      "board": "workday",
+      "url": "https://rockwellautomation.wd1.myworkdayjobs.com/wday/cxs/rockwellautomation/External_Rockwell_Automation/jobs",
+      "careers_base": "https://rockwellautomation.wd1.myworkdayjobs.com/en-US/External_Rockwell_Automation"
+    },
+    {
+      "name": "MLSE Opportunities",
+      "board": "workday",
+      "url": "https://mlse.wd3.myworkdayjobs.com/wday/cxs/mlse/MLSE_Opportunities/jobs",
+      "careers_base": "https://mlse.wd3.myworkdayjobs.com/en-US/MLSE_Opportunities"
+    },
+    {
+      "name": "Georgian",
+      "board": "ashby",
+      "slug": "georgian"
+    },
+    {
+      "name": "Loopio",
+      "board": "ashby",
+      "slug": "loopio"
+    },
+    {
+      "name": "Tempo",
+      "board": "ashby",
+      "slug": "tempo-io"
+    },
+    {
+      "name": "Viggle",
+      "board": "ashby",
+      "slug": "viggle"
+    },
+    {
+      "name": "Foundation Health",
+      "board": "breezy",
+      "company": "foundationhealth"
+    },
+    {
+      "name": "Gastronomous Technologies",
+      "board": "breezy",
+      "company": "gastronomous-technologies-inc"
+    },
+    {
+      "name": "Q-Block Computing",
+      "board": "breezy",
+      "company": "q-block-computing"
+    },
+    {
+      "name": "Vosyn",
+      "board": "breezy",
+      "company": "vosyn"
+    },
+    {
+      "name": "Palantir",
+      "board": "lever",
+      "company": "palantir"
+    },
+    {
+      "name": "SmartRecruiters",
+      "board": "smartrecruiters",
+      "company": "SmartRecruiters"
+    },
+    {
+      "name": "Sendcloud",
+      "board": "greenhouse",
+      "token": "sendcloudnew"
+    },
+    {
+      "name": "ottonova",
+      "board": "personio",
+      "company": "ottonova"
+    },
+    {
+      "name": "US Federal Government",
+      "board": "usajobs"
+    },
+    {
+      "name": "Climatebase",
+      "board": "climatebase",
+      "keywords": ["environmental analyst", "environmental scientist", "environmental engineer", "sustainability", "climate"]
+    },
+    {
+      "name": "CMA Jobs in Heritage",
+      "board": "cma_heritage"
+    },
+    {
+      "name": "IDC Career Centre",
+      "board": "idc_career_centre"
+    },
+    {
+      "name": "CIP National Planning Job Board",
+      "board": "cip_planning"
+    },
+    {
+      "name": "CBC/Radio-Canada",
+      "board": "workday",
+      "url": "https://cbcrc.wd3.myworkdayjobs.com/wday/cxs/cbcrc/CBC_Radio-Canada_Jobs/jobs",
+      "careers_base": "https://cbcrc.wd3.myworkdayjobs.com/en-US/CBC_Radio-Canada_Jobs"
+    },
+    {
+      "name": "AYANA Hospitality",
+      "board": "workable",
+      "company": "ayana"
+    },
+    {
+      "name": "San Antonio Behavioral Healthcare Hospital",
+      "board": "workable",
+      "company": "sanantoniobehavioral"
+    },
+    {
+      "name": "Terabase Energy",
+      "board": "workable",
+      "company": "terabase-energy"
+    },
+    {
+      "name": "The Normal Brand",
+      "board": "workable",
+      "company": "the-normal-brand"
+    },
+    {
+      "name": "Nordic Knots",
+      "board": "teamtailor",
+      "company": "nordicknotsab"
+    },
+    {
+      "name": "DFDS",
+      "board": "teamtailor",
+      "company": "dfds"
+    },
+    {
+      "name": "Cleanworld",
+      "board": "teamtailor",
+      "company": "cleanworld"
+    },
+    {
+      "name": "USG North America",
+      "board": "teamtailor",
+      "company": "usgnorthamerica"
+    },
+    {
+      "name": "Avarda Group (TF Bank)",
+      "board": "teamtailor",
+      "company": "tfbank"
+    },
+    {
+      "name": "Acadia Pharmaceuticals",
+      "board": "greenhouse",
+      "token": "acadiapharmaceuticals"
+    },
+    {
+      "name": "Shields Health Solutions",
+      "board": "greenhouse",
+      "token": "shieldshealthsolutions"
+    },
+    {
+      "name": "IVX Health",
+      "board": "greenhouse",
+      "token": "ivxhealth"
+    },
+    {
+      "name": "Michels Corporation",
+      "board": "greenhouse",
+      "token": "michelscorporation"
+    },
+    {
+      "name": "Charles River Associates",
+      "board": "greenhouse",
+      "token": "charlesriverassociates"
+    },
+    {
+      "name": "Breeze Airways",
+      "board": "greenhouse",
+      "token": "breezeairways"
+    },
+    {
+      "name": "Rapid Micro Biosystems",
+      "board": "lever",
+      "company": "rapidmicrobio"
+    },
+    {
+      "name": "Colibri Group",
+      "board": "lever",
+      "company": "colibrigroup"
+    },
+    {
+      "name": "The Athletic",
+      "board": "lever",
+      "company": "theathletic"
+    },
+    {
+      "name": "Tides Network",
+      "board": "ashby",
+      "slug": "tides"
+    },
+    {
+      "name": "Rula",
+      "board": "ashby",
+      "slug": "rula"
+    },
+    {
+      "name": "Method Financial",
+      "board": "ashby",
+      "slug": "method"
+    },
+    {
+      "name": "Hopper",
+      "board": "ashby",
+      "slug": "hopper"
+    },
+    {
+      "name": "Choice Hotels",
+      "board": "workday",
+      "url": "https://choicehotels.wd5.myworkdayjobs.com/wday/cxs/choicehotels/HotelExternal/jobs",
+      "careers_base": "https://choicehotels.wd5.myworkdayjobs.com/en-US/HotelExternal"
+    },
+    {
+      "name": "Four Seasons",
+      "board": "workday",
+      "url": "https://fourseasons.wd3.myworkdayjobs.com/wday/cxs/fourseasons/search/jobs",
+      "careers_base": "https://fourseasons.wd3.myworkdayjobs.com/en-US/search"
+    },
+    {
+      "name": "Fast Retailing (UNIQLO US)",
+      "board": "workday",
+      "url": "https://fastretailing.wd3.myworkdayjobs.com/wday/cxs/fastretailing/retail_us_Uniqlo/jobs",
+      "careers_base": "https://fastretailing.wd3.myworkdayjobs.com/en-US/retail_us_Uniqlo"
+    },
+    {
+      "name": "U.S. Bank",
+      "board": "workday",
+      "url": "https://usbank.wd1.myworkdayjobs.com/wday/cxs/usbank/US_Bank_Careers/jobs",
+      "careers_base": "https://usbank.wd1.myworkdayjobs.com/en-US/US_Bank_Careers"
+    },
+    {
+      "name": "The Standard",
+      "board": "workday",
+      "url": "https://standard.wd1.myworkdayjobs.com/wday/cxs/standard/Search/jobs",
+      "careers_base": "https://standard.wd1.myworkdayjobs.com/en-US/Search"
+    },
+    {
+      "name": "AtkinsRéalis",
+      "board": "workday",
+      "url": "https://slihrms.wd3.myworkdayjobs.com/wday/cxs/slihrms/Careers/jobs",
+      "careers_base": "https://slihrms.wd3.myworkdayjobs.com/en-US/Careers"
+    },
+    {
+      "name": "AECOM",
+      "board": "smartrecruiters",
+      "company": "AECOM2"
+    },
+    {
+      "name": "University of Waterloo",
+      "board": "workday",
+      "url": "https://uwaterloo.wd3.myworkdayjobs.com/wday/cxs/uwaterloo/uw_careers/jobs",
+      "careers_base": "https://uwaterloo.wd3.myworkdayjobs.com/en-US/uw_careers"
+    }
+  ],
+  "criteria": {
+    "keywords": [
+      "rotation",
+      "intern",
+      "junior",
+      "new grad",
+      "entry level",
+      "entry-level",
+      "co-op",
+      "coop",
+      "summer student",
+      "associate",
+      "apprentice",
+      "developer",
+      "programmer",
+      "software engineer",
+      "software developer",
+      "data scientist",
+      "data analyst",
+      "data engineer",
+      "database analyst",
+      "machine learning",
+      "ml engineer",
+      "ai engineer",
+      "artificial intelligence",
+      "full stack",
+      "fullstack",
+      "front-end",
+      "frontend",
+      "back-end",
+      "backend",
+      "web developer",
+      "mobile developer",
+      "application developer",
+      "qa engineer",
+      "qa analyst",
+      "quality assurance",
+      "test engineer",
+      "automation engineer",
+      "sdet",
+      "devops",
+      "site reliability",
+      "sre",
+      "platform engineer",
+      "cloud engineer",
+      "systems engineer",
+      "infrastructure engineer",
+      "network engineer",
+      "network analyst",
+      "security engineer",
+      "security analyst",
+      "cybersecurity",
+      "cyber security",
+      "information security",
+      "soc analyst",
+      "business analyst",
+      "systems analyst",
+      "technical analyst",
+      "product analyst",
+      "support engineer",
+      "technical support",
+      "help desk",
+      "desktop support",
+      "it technician",
+      "it support",
+      "database administrator",
+      "solutions engineer",
+      "integration engineer",
+      "computer science",
+      "computer engineering",
+      "software engineering",
+      "graduate program",
+      "graduate scheme",
+      "leadership program",
+      "stagiaire",
+      "stage",
+      "étudiant",
+      "étudiante",
+      "diplômé",
+      "diplômée",
+      "débutant",
+      "débutante",
+      "junior",
+      "alternance",
+      "alternant",
+      "alternante",
+      "associé",
+      "associée",
+      "développeur",
+      "développeuse",
+      "programmeur",
+      "programmeuse",
+      "génie logiciel",
+      "ingénieur logiciel",
+      "ingénieure logiciel",
+      "développement logiciel",
+      "génie informatique",
+      "analyste de données",
+      "scientifique de données",
+      "science des données",
+      "analyste d'affaires",
+      "analyste système",
+      "analyste de systèmes",
+      "ingénieur réseau",
+      "sécurité informatique",
+      "soutien informatique",
+      "apprentissage automatique",
+      "intelligence artificielle",
+      "IT",
+      "information technology",
+      "informatique",
+      "technologies de l'information",
+      "financial analyst",
+      "finance analyst",
+      "accountant",
+      "accounting",
+      "audit associate",
+      "auditor",
+      "treasury analyst",
+      "banking analyst",
+      "credit analyst",
+      "risk analyst",
+      "investment analyst",
+      "actuarial",
+      "actuary",
+      "bookkeeper",
+      "payroll",
+      "analyste financier",
+      "analyste financière",
+      "comptable",
+      "comptabilité",
+      "vérificateur",
+      "vérificatrice",
+      "analyste de crédit",
+      "analyste des risques",
+      "actuariat",
+      "actuaire",
+      "business development",
+      "operations analyst",
+      "operations coordinator",
+      "marketing coordinator",
+      "marketing analyst",
+      "marketing associate",
+      "sales associate",
+      "sales representative",
+      "sales development",
+      "account executive",
+      "account manager",
+      "supply chain",
+      "logistics",
+      "project coordinator",
+      "program coordinator",
+      "customer success",
+      "développement des affaires",
+      "analyste des opérations",
+      "coordonnateur marketing",
+      "coordonnatrice marketing",
+      "représentant des ventes",
+      "représentante des ventes",
+      "chargé de compte",
+      "chargée de compte",
+      "chaîne d'approvisionnement",
+      "coordonnateur de projet",
+      "coordonnatrice de projet",
+      "success client",
+      "human resources",
+      "hr coordinator",
+      "hr generalist",
+      "hr assistant",
+      "talent acquisition",
+      "recruiter",
+      "recruiting coordinator",
+      "people operations",
+      "ressources humaines",
+      "coordonnateur ressources humaines",
+      "coordonnatrice ressources humaines",
+      "recruteur",
+      "recruteuse",
+      "acquisition de talent",
+      "mechanical engineer",
+      "electrical engineer",
+      "civil engineer",
+      "aerospace engineer",
+      "industrial engineer",
+      "manufacturing engineer",
+      "process engineer",
+      "structural engineer",
+      "chemical engineer",
+      "materials engineer",
+      "quality engineer",
+      "design engineer",
+      "engineer in training",
+      "ingénieur mécanique",
+      "ingénieure mécanique",
+      "ingénieur électrique",
+      "ingénieure électrique",
+      "ingénieur civil",
+      "ingénieure civile",
+      "ingénieur aérospatial",
+      "ingénieure aérospatiale",
+      "ingénieur industriel",
+      "ingénieure industrielle",
+      "ingénieur de fabrication",
+      "ingénieur qualité",
+      "ingénieure qualité",
+      "ingénieur en formation",
+      "ingénieure en formation"
+    ],
+    "blacklist_keywords": [
+      "senior",
+      "sr.",
+      "staff",
+      "principal",
+      "lead",
+      "manager",
+      "director",
+      "vp",
+      "head of",
+      "chief",
+      "architect",
+      "sénior",
+      "directeur",
+      "directrice",
+      "gestionnaire",
+      "chef",
+      "responsable",
+      "expérimenté",
+      "expérimentée"
+    ]
+  }
+}
