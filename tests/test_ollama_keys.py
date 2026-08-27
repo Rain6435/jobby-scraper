@@ -134,9 +134,32 @@ def test_state_stores_key_id_not_raw_key(monkeypatch: pytest.MonkeyPatch, tmp_pa
     assert list(data.keys()) == [ollama_keys._key_id(secret)]
 
 
-def test_default_state_path_uses_parent_data_dir_when_nested() -> None:
-    # This repo IS nested inside job_pipeline/ in this environment, so the
-    # real default should resolve to ../data/ollama_key_rotation.json.
+def test_default_state_path_uses_parent_data_dir_when_nested(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    # Nested inside a parent pipeline checkout (../data/ exists) — real
+    # local dev and the production deploy both look like this. Only true
+    # incidentally on a given machine, so simulated here rather than relied
+    # on as ambient state (this repo isn't nested when CI checks it out
+    # standalone).
+    fake_root = tmp_path / "job_pipeline" / "jobby-scraper"
+    fake_root.mkdir(parents=True)
+    (tmp_path / "job_pipeline" / "data").mkdir()
+    monkeypatch.setattr(ollama_keys, "ROOT", fake_root)
+
     path = ollama_keys._default_state_path()
     assert path.name == "ollama_key_rotation.json"
     assert path.parent.name == "data"
+
+
+def test_default_state_path_uses_local_fallback_when_standalone(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    # No ../data/ (e.g. a standalone checkout, or CI) — local fallback file
+    # in the repo root instead.
+    fake_root = tmp_path / "jobby-scraper"
+    fake_root.mkdir()
+    monkeypatch.setattr(ollama_keys, "ROOT", fake_root)
+
+    path = ollama_keys._default_state_path()
+    assert path == fake_root / ".ollama_key_rotation.json"
