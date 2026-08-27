@@ -345,8 +345,8 @@ def get_or_create_locations(conn: Connection, names: set[str]) -> dict[str, int]
 def write_jobs(database_url: str, jobs: list[Job], new_ids: set[str]) -> bool:
     """Replace every table's contents with the full current snapshot.
 
-    Mirrors save_snapshot()'s full-replace semantics (not an incremental
-    upsert) so the tables never accumulate jobs no longer in the pool.
+    Full-replace semantics (not an incremental upsert) so the tables never
+    accumulate jobs no longer in the pool.
 
     Returns True on success, False on failure — the caller (scraper/main.py's
     run()) must check this and fail the run's exit code accordingly. This
