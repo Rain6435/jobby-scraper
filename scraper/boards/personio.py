@@ -18,10 +18,9 @@ no-external-dependency approach to HTML parsing).
 
 from __future__ import annotations
 
-from typing import cast
-
 import logging
 import xml.etree.ElementTree as ET
+from typing import cast
 
 from scraper.boards.base import BaseScraper, make_session
 from scraper.boards.greenhouse import posted_days_from_iso, relative_day_text

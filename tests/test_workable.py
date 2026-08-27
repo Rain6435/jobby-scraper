@@ -1,17 +1,20 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import responses
 
 from scraper.boards.workable import WorkableScraper, posted_days_from_date_str
-
 from scraper.config_types import WorkableConfig
 
-COMPANY: WorkableConfig = {"name": "Hugging Face", "board": "workable", "company": "huggingface"}
+COMPANY: WorkableConfig = {
+    "name": "Hugging Face",
+    "board": "workable",
+    "company": "huggingface",
+}
 API = "https://apply.workable.com/api/v1/widget/accounts/huggingface"
 
 
 def test_posted_days_from_date_str() -> None:
-    three_ago = (datetime.now(timezone.utc) - timedelta(days=3)).strftime("%Y-%m-%d")
+    three_ago = (datetime.now(UTC) - timedelta(days=3)).strftime("%Y-%m-%d")
     assert posted_days_from_date_str(three_ago) == 3
     assert posted_days_from_date_str(None) is None
     assert posted_days_from_date_str("") is None
@@ -20,24 +23,31 @@ def test_posted_days_from_date_str() -> None:
 
 @responses.activate
 def test_maps_jobs_with_dates_and_locations() -> None:
-    published = (datetime.now(timezone.utc) - timedelta(days=2)).strftime("%Y-%m-%d")
-    responses.get(API, json={
-        "name": "Hugging Face",
-        "description": "AI company",
-        "jobs": [
-            {
-                "title": "  Senior Software Engineer  ",
-                "shortcode": "F4C096B22E",
-                "url": "https://apply.workable.com/j/F4C096B22E",
-                "published_on": published,
-                "description": "<p>Build <b>great</b> models.</p>",
-                "locations": [
-                    {"city": "Paris", "region": "Île-de-France", "country": "France"},
-                    {"city": "Remote", "region": "", "country": ""},
-                ],
-            },
-        ],
-    })
+    published = (datetime.now(UTC) - timedelta(days=2)).strftime("%Y-%m-%d")
+    responses.get(
+        API,
+        json={
+            "name": "Hugging Face",
+            "description": "AI company",
+            "jobs": [
+                {
+                    "title": "  Senior Software Engineer  ",
+                    "shortcode": "F4C096B22E",
+                    "url": "https://apply.workable.com/j/F4C096B22E",
+                    "published_on": published,
+                    "description": "<p>Build <b>great</b> models.</p>",
+                    "locations": [
+                        {
+                            "city": "Paris",
+                            "region": "Île-de-France",
+                            "country": "France",
+                        },
+                        {"city": "Remote", "region": "", "country": ""},
+                    ],
+                },
+            ],
+        },
+    )
 
     jobs = WorkableScraper(COMPANY).fetch_jobs()
 
@@ -60,18 +70,21 @@ def test_maps_jobs_with_dates_and_locations() -> None:
 
 @responses.activate
 def test_falls_back_to_top_level_location_fields() -> None:
-    responses.get(API, json={
-        "jobs": [
-            {
-                "title": "Dev",
-                "shortcode": "x1",
-                "url": "u",
-                "city": "Berlin",
-                "state": "",
-                "country": "Germany",
-            },
-        ],
-    })
+    responses.get(
+        API,
+        json={
+            "jobs": [
+                {
+                    "title": "Dev",
+                    "shortcode": "x1",
+                    "url": "u",
+                    "city": "Berlin",
+                    "state": "",
+                    "country": "Germany",
+                },
+            ],
+        },
+    )
 
     jobs = WorkableScraper(COMPANY).fetch_jobs()
 
@@ -83,11 +96,14 @@ def test_falls_back_to_top_level_location_fields() -> None:
 
 @responses.activate
 def test_no_locations_at_all() -> None:
-    responses.get(API, json={
-        "jobs": [
-            {"title": "Dev", "shortcode": "x2", "url": "u"},
-        ],
-    })
+    responses.get(
+        API,
+        json={
+            "jobs": [
+                {"title": "Dev", "shortcode": "x2", "url": "u"},
+            ],
+        },
+    )
 
     jobs = WorkableScraper(COMPANY).fetch_jobs()
 

@@ -20,7 +20,8 @@ def test_parse_keys_empty_string() -> None:
 
 def test_is_hourly_limit_error_matches_marker() -> None:
     assert ollama_keys.is_hourly_limit_error(
-        429, "you've reached your hourly usage limit, please wait or upgrade to continue"
+        429,
+        "you've reached your hourly usage limit, please wait or upgrade to continue",
     )
 
 
@@ -63,20 +64,26 @@ def test_is_concurrency_error_false_for_hourly_limit() -> None:
     assert not ollama_keys.is_concurrency_error(429, "you've reached your hourly usage limit")
 
 
-def test_usable_keys_all_usable_when_no_state(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_usable_keys_all_usable_when_no_state(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     monkeypatch.setenv("OLLAMA_KEY_ROTATION_STATE_FILE", str(tmp_path / "state.json"))
     keys = ["k1", "k2", "k3"]
     assert ollama_keys.usable_keys(keys) == keys
 
 
-def test_mark_exhausted_removes_key_from_usable(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_mark_exhausted_removes_key_from_usable(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     monkeypatch.setenv("OLLAMA_KEY_ROTATION_STATE_FILE", str(tmp_path / "state.json"))
     keys = ["k1", "k2", "k3"]
     ollama_keys.mark_exhausted("k2")
     assert ollama_keys.usable_keys(keys) == ["k1", "k3"]
 
 
-def test_mark_exhausted_persists_across_calls(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_mark_exhausted_persists_across_calls(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     state_file = tmp_path / "state.json"
     monkeypatch.setenv("OLLAMA_KEY_ROTATION_STATE_FILE", str(state_file))
     ollama_keys.mark_exhausted("k1")
@@ -85,7 +92,9 @@ def test_mark_exhausted_persists_across_calls(monkeypatch: pytest.MonkeyPatch, t
     assert ollama_keys.usable_keys(["k1", "k2"]) == ["k2"]
 
 
-def test_exhausted_key_becomes_usable_again_after_cooldown(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_exhausted_key_becomes_usable_again_after_cooldown(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     monkeypatch.setenv("OLLAMA_KEY_ROTATION_STATE_FILE", str(tmp_path / "state.json"))
     now = 1_000_000.0
     ollama_keys.mark_exhausted("k1", now=now)
@@ -96,14 +105,18 @@ def test_exhausted_key_becomes_usable_again_after_cooldown(monkeypatch: pytest.M
     assert ollama_keys.usable_keys(["k1", "k2"], now=after) == ["k1", "k2"]
 
 
-def test_all_keys_exhausted_returns_empty_list(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_all_keys_exhausted_returns_empty_list(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     monkeypatch.setenv("OLLAMA_KEY_ROTATION_STATE_FILE", str(tmp_path / "state.json"))
     ollama_keys.mark_exhausted("k1")
     ollama_keys.mark_exhausted("k2")
     assert ollama_keys.usable_keys(["k1", "k2"]) == []
 
 
-def test_corrupt_state_file_treated_as_empty(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_corrupt_state_file_treated_as_empty(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     state_file = tmp_path / "state.json"
     state_file.write_text("not valid json{{{", encoding="utf-8")
     monkeypatch.setenv("OLLAMA_KEY_ROTATION_STATE_FILE", str(state_file))

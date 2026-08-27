@@ -115,9 +115,7 @@ def is_hourly_limit_error(status_code: int, body_text: str) -> bool:
     rotation."""
     text = (body_text or "").lower()
     return status_code == 429 and (
-        HOURLY_LIMIT_MARKER in text
-        or SESSION_LIMIT_MARKER in text
-        or WEEKLY_LIMIT_MARKER in text
+        HOURLY_LIMIT_MARKER in text or SESSION_LIMIT_MARKER in text or WEEKLY_LIMIT_MARKER in text
     )
 
 
@@ -143,5 +141,6 @@ def mark_exhausted(key: str, now: float | None = None) -> None:
     _save_state(state)
     log.warning(
         "Ollama key %s hit its hourly limit — cooling down for %.0fh",
-        _key_id(key), EXHAUSTION_COOLDOWN_SECONDS / 3600,
+        _key_id(key),
+        EXHAUSTION_COOLDOWN_SECONDS / 3600,
     )

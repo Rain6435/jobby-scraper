@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch: {}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run tests
+        run: python -m pytest -q
+
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: pyright --strict
+        run: python -m pyright
+
+      - name: No Any, no suppression comments
+        run: |
+          if grep -rn '\bAny\b' scraper tests; then
+            echo "::error::Found 'Any' — this repo is strict-typed with zero Any allowed (see CLAUDE.md)"
+            exit 1
+          fi
+          if grep -rn 'type: ignore\|pyright: ignore' scraper tests; then
+            echo "::error::Found a type-check suppression comment — fix the real type instead"
+            exit 1
+          fi
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: ruff format --check
+        run: python -m ruff format --check .
+
+      - name: ruff check
+        run: python -m ruff check .

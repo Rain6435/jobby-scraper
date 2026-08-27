@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Unpack, cast
 
 import responses
@@ -7,7 +7,9 @@ from scraper.boards.climatebase import API, ClimatebaseHit, ClimatebaseScraper
 from scraper.config_types import ClimatebaseConfig
 
 COMPANY: ClimatebaseConfig = {
-    "name": "Climatebase", "board": "climatebase", "keywords": ["environmental analyst"],
+    "name": "Climatebase",
+    "board": "climatebase",
+    "keywords": ["environmental analyst"],
 }
 
 
@@ -19,7 +21,7 @@ def _hit(job_id: str = "12345", **overrides: Unpack[ClimatebaseHit]) -> Climateb
         "locations": ["Toronto, ON, CA", "Ottawa, ON, CA"],
         "countries": ["Canada"],
         "how_to_apply": "https://jobs.example.com/12345",
-        "activation_date": (datetime.now(timezone.utc) - timedelta(days=3)).strftime(
+        "activation_date": (datetime.now(UTC) - timedelta(days=3)).strftime(
             "%Y-%m-%dT%H:%M:%S.000Z"
         ),
         "description": "<p>Monitor <b>environmental</b> compliance.</p>",
@@ -64,7 +66,8 @@ def test_falls_back_to_board_name_when_employer_missing() -> None:
 @responses.activate
 def test_dedupes_jobs_matched_by_more_than_one_keyword() -> None:
     company: ClimatebaseConfig = {
-        "name": "Climatebase", "board": "climatebase",
+        "name": "Climatebase",
+        "board": "climatebase",
         "keywords": ["environmental analyst", "sustainability"],
     }
     responses.post(API, json=_page([_hit()]))
@@ -79,7 +82,9 @@ def test_dedupes_jobs_matched_by_more_than_one_keyword() -> None:
 @responses.activate
 def test_paginates_until_last_page() -> None:
     company: ClimatebaseConfig = {
-        "name": "Climatebase", "board": "climatebase", "keywords": ["environmental"],
+        "name": "Climatebase",
+        "board": "climatebase",
+        "keywords": ["environmental"],
     }
     responses.post(API, json=_page([_hit("1"), _hit("2")], page=0, nb_pages=2))
     responses.post(API, json=_page([_hit("3")], page=1, nb_pages=2))
@@ -99,5 +104,6 @@ def test_defaults_to_empty_query_when_no_keywords_configured() -> None:
 
     assert len(jobs) == 1
     import json as json_module
+
     sent = json_module.loads(cast(bytes, responses.calls[0].request.body))
     assert sent["query"] == ""

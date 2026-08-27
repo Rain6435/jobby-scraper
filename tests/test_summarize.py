@@ -1,5 +1,5 @@
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -42,7 +42,9 @@ def _text_response(text: str) -> MagicMock:
     return resp
 
 
-def test_summarize_role_no_provider_returns_empty(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_summarize_role_no_provider_returns_empty(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     _clear_env(monkeypatch)
     with patch("anthropic.Anthropic") as mock_anthropic:
         result = summarize_role("Engineer", "Acme", "Do engineering things.")
@@ -50,7 +52,9 @@ def test_summarize_role_no_provider_returns_empty(monkeypatch: pytest.MonkeyPatc
         mock_anthropic.assert_not_called()
 
 
-def test_summarize_role_success_with_auth_token(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_summarize_role_success_with_auth_token(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     _clear_env(monkeypatch)
     monkeypatch.setenv("ANTHROPIC_AUTH_TOKEN", "test-token")
     with patch("anthropic.Anthropic") as mock_anthropic:
@@ -64,7 +68,9 @@ def test_summarize_role_success_with_auth_token(monkeypatch: pytest.MonkeyPatch)
         mock_anthropic.assert_called_once_with(auth_token="test-token")
 
 
-def test_get_client_prefers_api_key_over_auth_token(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_get_client_prefers_api_key_over_auth_token(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     _clear_env(monkeypatch)
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
     monkeypatch.setenv("ANTHROPIC_AUTH_TOKEN", "test-token")
@@ -78,7 +84,9 @@ def test_get_client_prefers_api_key_over_auth_token(monkeypatch: pytest.MonkeyPa
         mock_anthropic.assert_called_once_with(api_key="sk-test")
 
 
-def test_summarize_role_empty_description_returns_empty(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_summarize_role_empty_description_returns_empty(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     _clear_env(monkeypatch)
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
     with patch("anthropic.Anthropic") as mock_anthropic:
@@ -101,7 +109,9 @@ def test_summarize_role_success(monkeypatch: pytest.MonkeyPatch) -> None:
         mock_client.messages.create.assert_called_once()
 
 
-def test_summarize_company_no_provider_returns_empty(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_summarize_company_no_provider_returns_empty(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     _clear_env(monkeypatch)
     with patch("anthropic.Anthropic") as mock_anthropic:
         result = summarize_company("Acme")
@@ -138,13 +148,18 @@ def test_client_is_cached_across_calls(monkeypatch: pytest.MonkeyPatch) -> None:
 
 # --- Ollama fallback ---
 
-def test_falls_back_to_ollama_when_no_anthropic_credentials(monkeypatch: pytest.MonkeyPatch) -> None:
+
+def test_falls_back_to_ollama_when_no_anthropic_credentials(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     _clear_env(monkeypatch)
     monkeypatch.setenv("OLLAMA_API_KEY", "ollama-test-key")
     with responses.RequestsMock() as rsps:
         rsps.add(
-            responses.POST, OLLAMA_URL,
-            json={"message": {"content": "Builds APIs via Ollama."}}, status=200,
+            responses.POST,
+            OLLAMA_URL,
+            json={"message": {"content": "Builds APIs via Ollama."}},
+            status=200,
         )
         result = summarize_role("Engineer", "Acme", "Do engineering things.")
 
@@ -153,7 +168,9 @@ def test_falls_back_to_ollama_when_no_anthropic_credentials(monkeypatch: pytest.
         assert rsps.calls[0].request.headers["Authorization"] == "Bearer ollama-test-key"
 
 
-def test_falls_back_to_ollama_when_anthropic_call_fails(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_falls_back_to_ollama_when_anthropic_call_fails(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     _clear_env(monkeypatch)
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
     monkeypatch.setenv("OLLAMA_API_KEY", "ollama-test-key")
@@ -164,8 +181,10 @@ def test_falls_back_to_ollama_when_anthropic_call_fails(monkeypatch: pytest.Monk
 
         with responses.RequestsMock() as rsps:
             rsps.add(
-                responses.POST, OLLAMA_URL,
-                json={"message": {"content": "Builds APIs via Ollama."}}, status=200,
+                responses.POST,
+                OLLAMA_URL,
+                json={"message": {"content": "Builds APIs via Ollama."}},
+                status=200,
             )
             result = summarize_role("Engineer", "Acme", "Do engineering things.")
 
@@ -189,18 +208,24 @@ def test_anthropic_success_never_calls_ollama(monkeypatch: pytest.MonkeyPatch) -
             assert len(rsps.calls) == 0
 
 
-def test_ollama_retries_once_on_429_then_succeeds(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_ollama_retries_once_on_429_then_succeeds(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     _clear_env(monkeypatch)
     monkeypatch.setenv("OLLAMA_API_KEY", "ollama-test-key")
     with responses.RequestsMock() as rsps:
         rsps.add(
-            responses.POST, OLLAMA_URL,
-            json={"error": "too many concurrent requests"}, status=429,
+            responses.POST,
+            OLLAMA_URL,
+            json={"error": "too many concurrent requests"},
+            status=429,
             headers={"Retry-After": "0"},
         )
         rsps.add(
-            responses.POST, OLLAMA_URL,
-            json={"message": {"content": "Builds APIs."}}, status=200,
+            responses.POST,
+            OLLAMA_URL,
+            json={"message": {"content": "Builds APIs."}},
+            status=200,
         )
         result = summarize_role("Engineer", "Acme", "Do engineering things.")
 
@@ -218,7 +243,9 @@ def test_ollama_api_error_returns_empty(monkeypatch: pytest.MonkeyPatch) -> None
         assert result == ""
 
 
-def test_ollama_no_key_returns_empty_without_request(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_ollama_no_key_returns_empty_without_request(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     _clear_env(monkeypatch)
     with responses.RequestsMock() as rsps:
         result = summarize_role("Engineer", "Acme", "Do engineering things.")
@@ -227,13 +254,17 @@ def test_ollama_no_key_returns_empty_without_request(monkeypatch: pytest.MonkeyP
         assert len(rsps.calls) == 0
 
 
-def test_summarize_company_falls_back_to_ollama(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_summarize_company_falls_back_to_ollama(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     _clear_env(monkeypatch)
     monkeypatch.setenv("OLLAMA_API_KEY", "ollama-test-key")
     with responses.RequestsMock() as rsps:
         rsps.add(
-            responses.POST, OLLAMA_URL,
-            json={"message": {"content": "Makes widgets."}}, status=200,
+            responses.POST,
+            OLLAMA_URL,
+            json={"message": {"content": "Makes widgets."}},
+            status=200,
         )
         result = summarize_company("Acme")
 
@@ -242,7 +273,10 @@ def test_summarize_company_falls_back_to_ollama(monkeypatch: pytest.MonkeyPatch)
 
 # --- LLM_PROVIDER pinning ---
 
-def test_llm_provider_anthropic_never_calls_ollama_on_failure(monkeypatch: pytest.MonkeyPatch) -> None:
+
+def test_llm_provider_anthropic_never_calls_ollama_on_failure(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     _clear_env(monkeypatch)
     monkeypatch.setenv("LLM_PROVIDER", "anthropic")
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
@@ -259,7 +293,9 @@ def test_llm_provider_anthropic_never_calls_ollama_on_failure(monkeypatch: pytes
             assert len(rsps.calls) == 0
 
 
-def test_llm_provider_ollama_never_calls_anthropic(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_llm_provider_ollama_never_calls_anthropic(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     _clear_env(monkeypatch)
     monkeypatch.setenv("LLM_PROVIDER", "ollama")
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
@@ -267,8 +303,10 @@ def test_llm_provider_ollama_never_calls_anthropic(monkeypatch: pytest.MonkeyPat
     with patch("anthropic.Anthropic") as mock_anthropic:
         with responses.RequestsMock() as rsps:
             rsps.add(
-                responses.POST, OLLAMA_URL,
-                json={"message": {"content": "Builds APIs via Ollama."}}, status=200,
+                responses.POST,
+                OLLAMA_URL,
+                json={"message": {"content": "Builds APIs via Ollama."}},
+                status=200,
             )
             result = summarize_role("Engineer", "Acme", "Do engineering things.")
 
@@ -276,7 +314,9 @@ def test_llm_provider_ollama_never_calls_anthropic(monkeypatch: pytest.MonkeyPat
             mock_anthropic.assert_not_called()
 
 
-def test_llm_provider_ollama_returns_empty_without_key_even_with_anthropic_configured(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_llm_provider_ollama_returns_empty_without_key_even_with_anthropic_configured(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     _clear_env(monkeypatch)
     monkeypatch.setenv("LLM_PROVIDER", "ollama")
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
@@ -289,7 +329,9 @@ def test_llm_provider_ollama_returns_empty_without_key_even_with_anthropic_confi
             mock_anthropic.assert_not_called()
 
 
-def test_llm_provider_unrecognized_value_falls_back_to_auto(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_llm_provider_unrecognized_value_falls_back_to_auto(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     _clear_env(monkeypatch)
     monkeypatch.setenv("LLM_PROVIDER", "bogus")
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
@@ -309,8 +351,10 @@ def test_llm_provider_auto_is_same_as_unset(monkeypatch: pytest.MonkeyPatch) -> 
     monkeypatch.setenv("OLLAMA_API_KEY", "ollama-test-key")
     with responses.RequestsMock() as rsps:
         rsps.add(
-            responses.POST, OLLAMA_URL,
-            json={"message": {"content": "Builds APIs via Ollama."}}, status=200,
+            responses.POST,
+            OLLAMA_URL,
+            json={"message": {"content": "Builds APIs via Ollama."}},
+            status=200,
         )
         result = summarize_role("Engineer", "Acme", "Do engineering things.")
 
@@ -319,7 +363,9 @@ def test_llm_provider_auto_is_same_as_unset(monkeypatch: pytest.MonkeyPatch) -> 
 
 # --- Ollama key rotation ---
 
-HOURLY_LIMIT_BODY = {"error": "you've reached your hourly usage limit, please wait or upgrade to continue"}
+HOURLY_LIMIT_BODY = {
+    "error": "you've reached your hourly usage limit, please wait or upgrade to continue"
+}
 
 
 def test_rotates_to_next_key_on_hourly_limit(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -328,8 +374,10 @@ def test_rotates_to_next_key_on_hourly_limit(monkeypatch: pytest.MonkeyPatch) ->
     with responses.RequestsMock() as rsps:
         rsps.add(responses.POST, OLLAMA_URL, json=HOURLY_LIMIT_BODY, status=429)
         rsps.add(
-            responses.POST, OLLAMA_URL,
-            json={"message": {"content": "Builds APIs."}}, status=200,
+            responses.POST,
+            OLLAMA_URL,
+            json={"message": {"content": "Builds APIs."}},
+            status=200,
         )
         result = summarize_role("Engineer", "Acme", "Do engineering things.")
 
@@ -355,8 +403,10 @@ def test_rotation_does_not_wait_between_keys(monkeypatch: pytest.MonkeyPatch) ->
     with responses.RequestsMock() as rsps:
         rsps.add(responses.POST, OLLAMA_URL, json=HOURLY_LIMIT_BODY, status=429)
         rsps.add(
-            responses.POST, OLLAMA_URL,
-            json={"message": {"content": "Builds APIs."}}, status=200,
+            responses.POST,
+            OLLAMA_URL,
+            json={"message": {"content": "Builds APIs."}},
+            status=200,
         )
         summarize_role("Engineer", "Acme", "Do engineering things.")
 
@@ -375,7 +425,9 @@ def test_all_keys_exhausted_returns_empty(monkeypatch: pytest.MonkeyPatch) -> No
         assert len(rsps.calls) == 2
 
 
-def test_already_exhausted_key_skipped_without_a_request(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_already_exhausted_key_skipped_without_a_request(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     from scraper import ollama_keys
 
     _clear_env(monkeypatch)
@@ -384,8 +436,10 @@ def test_already_exhausted_key_skipped_without_a_request(monkeypatch: pytest.Mon
 
     with responses.RequestsMock() as rsps:
         rsps.add(
-            responses.POST, OLLAMA_URL,
-            json={"message": {"content": "Builds APIs."}}, status=200,
+            responses.POST,
+            OLLAMA_URL,
+            json={"message": {"content": "Builds APIs."}},
+            status=200,
         )
         result = summarize_role("Engineer", "Acme", "Do engineering things.")
 
@@ -394,7 +448,9 @@ def test_already_exhausted_key_skipped_without_a_request(monkeypatch: pytest.Mon
         assert rsps.calls[0].request.headers["Authorization"] == "Bearer key-two"
 
 
-def test_no_request_at_all_when_every_key_already_exhausted(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_no_request_at_all_when_every_key_already_exhausted(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     from scraper import ollama_keys
 
     _clear_env(monkeypatch)
@@ -409,7 +465,9 @@ def test_no_request_at_all_when_every_key_already_exhausted(monkeypatch: pytest.
         assert len(rsps.calls) == 0
 
 
-def test_single_key_hourly_limit_behaves_like_before(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_single_key_hourly_limit_behaves_like_before(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """No comma in OLLAMA_API_KEY — one key, exhausts, nothing left to
     rotate to, same observable result as the pre-rotation single-key path."""
     _clear_env(monkeypatch)

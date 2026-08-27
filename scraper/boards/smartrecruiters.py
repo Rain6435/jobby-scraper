@@ -14,7 +14,7 @@ Config: {"board": "smartrecruiters", "company": "<identifier>"}.
 from __future__ import annotations
 
 import logging
-from typing import cast, NotRequired, TypedDict
+from typing import NotRequired, TypedDict, cast
 
 import requests
 
@@ -80,14 +80,17 @@ class SmartRecruitersScraper(BaseScraper):
         offset = 0
         for _page in range(MAX_PAGES):
             log.debug("%s: fetching offset=%d", self.name, offset)
-            resp = session.get(
-                url, params={"limit": PAGE_LIMIT, "offset": offset}, timeout=TIMEOUT
-            )
+            resp = session.get(url, params={"limit": PAGE_LIMIT, "offset": offset}, timeout=TIMEOUT)
             resp.raise_for_status()
             data: SmartRecruitersListResponse = resp.json()
             postings = data.get("content", [])
             total_found = data.get("totalFound", len(postings))
-            log.debug("%s: %d postings on this page (totalFound=%d)", self.name, len(postings), total_found)
+            log.debug(
+                "%s: %d postings on this page (totalFound=%d)",
+                self.name,
+                len(postings),
+                total_found,
+            )
 
             for p in postings:
                 loc = p.get("location") or {}
@@ -126,7 +129,8 @@ class SmartRecruitersScraper(BaseScraper):
     def _fetch_detail(session: requests.Session, company: str, posting_id: str) -> tuple[str, str]:
         try:
             resp = session.get(
-                DETAIL_URL.format(company=company, posting_id=posting_id), timeout=TIMEOUT
+                DETAIL_URL.format(company=company, posting_id=posting_id),
+                timeout=TIMEOUT,
             )
             resp.raise_for_status()
             detail: SmartRecruitersDetailResponse = resp.json()

@@ -35,7 +35,7 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import cast, NotRequired, TypedDict
+from typing import NotRequired, TypedDict, cast
 
 import requests
 
@@ -145,7 +145,8 @@ class WorkdayScraper(BaseScraper):
                     # failed" warning) on a posting with nothing to show.
                     log.debug(
                         "%s: skipping posting with no title (bulletFields=%s)",
-                        self.name, posting.get("bulletFields"),
+                        self.name,
+                        posting.get("bulletFields"),
                     )
                     continue
 
@@ -164,7 +165,9 @@ class WorkdayScraper(BaseScraper):
                     locations, description = cached.locations, cached.description
                 else:
                     locations, description = self._fetch_detail(
-                        session, detail_base, external_path,
+                        session,
+                        detail_base,
+                        external_path,
                         posting.get("locationsText", "").strip(),
                     )
                 jobs.append(
@@ -188,8 +191,11 @@ class WorkdayScraper(BaseScraper):
         return jobs
 
     def _fetch_detail(
-        self, session: requests.Session, detail_base: str,
-        external_path: str, locations_text: str,
+        self,
+        session: requests.Session,
+        detail_base: str,
+        external_path: str,
+        locations_text: str,
     ) -> tuple[list[str], str]:
         """Fetch the job detail endpoint for every posting (not just
         multi-location ones) to resolve 'N Locations' placeholders and get the

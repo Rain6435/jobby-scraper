@@ -1,10 +1,12 @@
 import responses
 
 from scraper.boards.cip_planning import FEED_URL, CipPlanningScraper
-
 from scraper.config_types import CipPlanningConfig
 
-COMPANY: CipPlanningConfig = {"name": "CIP National Planning Job Board", "board": "cip_planning"}
+COMPANY: CipPlanningConfig = {
+    "name": "CIP National Planning Job Board",
+    "board": "cip_planning",
+}
 
 _FEED_XML = """<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"
 	xmlns:content="http://purl.org/rss/1.0/modules/content/"

@@ -85,18 +85,18 @@ class UsajobsScraper(BaseScraper):
         api_key = os.environ.get("USAJOBS_API_KEY")
         user_agent = os.environ.get("USAJOBS_USER_AGENT")
         if not api_key or not user_agent:
-            log.warning(
-                "%s: USAJOBS_API_KEY/USAJOBS_USER_AGENT not set — skipping", self.name
-            )
+            log.warning("%s: USAJOBS_API_KEY/USAJOBS_USER_AGENT not set — skipping", self.name)
             return []
 
         session = make_session()
-        session.headers.update({
-            "Host": "data.usajobs.gov",
-            "User-Agent": user_agent,
-            "Authorization-Key": api_key,
-            "Accept": "application/json",
-        })
+        session.headers.update(
+            {
+                "Host": "data.usajobs.gov",
+                "User-Agent": user_agent,
+                "Authorization-Key": api_key,
+                "Accept": "application/json",
+            }
+        )
 
         jobs: list[Job] = []
         for page in range(1, MAX_PAGES + 1):
@@ -122,7 +122,9 @@ class UsajobsScraper(BaseScraper):
         descriptor = item.get("MatchedObjectDescriptor", {})
         locations = self._locations(descriptor)
         posted_days = posted_days_from_iso(descriptor.get("PublicationStartDate", ""))
-        company = descriptor.get("OrganizationName") or descriptor.get("DepartmentName") or self.name
+        company = (
+            descriptor.get("OrganizationName") or descriptor.get("DepartmentName") or self.name
+        )
         return Job(
             id=f"{self.slug}:{item.get('MatchedObjectId', '')}",
             company=company,

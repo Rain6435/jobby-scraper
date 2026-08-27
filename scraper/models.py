@@ -25,13 +25,13 @@ class JobDict(TypedDict):
 
 @dataclass
 class Job:
-    id: str          # "{company_slug}:{stable_external_id}" — used as the diff key
+    id: str  # "{company_slug}:{stable_external_id}" — used as the diff key
     company: str
     title: str
-    location: str    # primary location (first one)
-    url: str         # direct link to the posting
-    posted_on: str   # raw text from the board, e.g. "Posted 3 Days Ago"
-    source: str      # board name, e.g. "workday"
+    location: str  # primary location (first one)
+    url: str  # direct link to the posting
+    posted_on: str  # raw text from the board, e.g. "Posted 3 Days Ago"
+    source: str  # board name, e.g. "workday"
     first_seen: str = ""  # ISO timestamp, set when first added to the snapshot
     locations: list[str] = field(default_factory=lambda: [])  # all locations, expanded
     posted_days: int | None = None  # days since posting, parsed from posted_on
@@ -41,9 +41,9 @@ class Job:
     # only from a live scrape, so recomputing it for a carried-over job
     # yields None and silently erases a date that was already correct.
     posted_date: str | None = None
-    description: str = ""      # plain-text posting body, HTML stripped, truncated
-    role_summary: str = ""     # 1-2 sentence AI summary of this specific posting
-    company_blurb: str = ""    # short AI blurb about the company, from config.json
+    description: str = ""  # plain-text posting body, HTML stripped, truncated
+    role_summary: str = ""  # 1-2 sentence AI summary of this specific posting
+    company_blurb: str = ""  # short AI blurb about the company, from config.json
 
     def to_dict(self) -> JobDict:
         return JobDict(
@@ -64,7 +64,7 @@ class Job:
         )
 
     @classmethod
-    def from_dict(cls, data: JobDict) -> "Job":
+    def from_dict(cls, data: JobDict) -> Job:
         return cls(
             id=data["id"],
             company=data["company"],

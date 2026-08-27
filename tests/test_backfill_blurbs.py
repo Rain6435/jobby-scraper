@@ -17,11 +17,17 @@ def write_config(path: Path, companies: list[_CompanyStub]) -> None:
     path.write_text(json.dumps({"companies": companies}), encoding="utf-8")
 
 
-def test_writes_blurbs_for_companies_missing_one(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_writes_blurbs_for_companies_missing_one(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     config_path = tmp_path / "config.json"
-    write_config(config_path, [
-        {"name": "Acme"}, {"name": "Beta", "blurb": "Already has one."},
-    ])
+    write_config(
+        config_path,
+        [
+            {"name": "Acme"},
+            {"name": "Beta", "blurb": "Already has one."},
+        ],
+    )
     monkeypatch.setattr(backfill_module, "CONFIG_PATH", config_path)
 
     with patch.object(backfill_module, "summarize_company", return_value="Makes widgets."):
@@ -33,7 +39,9 @@ def test_writes_blurbs_for_companies_missing_one(tmp_path: Path, monkeypatch: py
     assert blurbs == {"Acme": "Makes widgets.", "Beta": "Already has one."}
 
 
-def test_skips_companies_with_existing_blurb_unless_forced(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_skips_companies_with_existing_blurb_unless_forced(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     config_path = tmp_path / "config.json"
     write_config(config_path, [{"name": "Beta", "blurb": "Old blurb."}])
     monkeypatch.setattr(backfill_module, "CONFIG_PATH", config_path)
@@ -63,7 +71,9 @@ def test_dry_run_writes_nothing(tmp_path: Path, monkeypatch: pytest.MonkeyPatch)
     assert "blurb" not in data["companies"][0]
 
 
-def test_failed_summarizer_call_leaves_company_without_blurb(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_failed_summarizer_call_leaves_company_without_blurb(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     config_path = tmp_path / "config.json"
     write_config(config_path, [{"name": "Acme"}, {"name": "Beta"}])
     monkeypatch.setattr(backfill_module, "CONFIG_PATH", config_path)

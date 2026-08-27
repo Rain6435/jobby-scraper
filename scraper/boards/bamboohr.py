@@ -13,7 +13,7 @@ Each result has id, jobOpeningName, location{city,state}. Config:
 from __future__ import annotations
 
 import logging
-from typing import cast, NotRequired, TypedDict
+from typing import NotRequired, TypedDict, cast
 
 import requests
 
@@ -76,14 +76,13 @@ class BambooHRScraper(BaseScraper):
         jobs: list[Job] = []
         for r in results:
             loc = r.get("location") or {}
-            where = ", ".join(
-                part for part in (loc.get("city"), loc.get("state")) if part
-            )
+            where = ", ".join(part for part in (loc.get("city"), loc.get("state")) if part)
             locations = [where] if where else []
             job_id = f"{self.slug}:{r['id']}"
             cached = self._cached_detail(job_id)
             description = (
-                cached.description if cached is not None
+                cached.description
+                if cached is not None
                 else self._fetch_description(session, subdomain, r["id"])
             )
             jobs.append(
@@ -94,8 +93,8 @@ class BambooHRScraper(BaseScraper):
                     location=where,
                     locations=locations,
                     url=JOB_URL.format(company=subdomain, id=r["id"]),
-                    posted_on="",        # date only in detail — skipped
-                    posted_days=None,    # age tracked via first_seen
+                    posted_on="",  # date only in detail — skipped
+                    posted_days=None,  # age tracked via first_seen
                     source=self.source,
                     description=description,
                 )
@@ -106,9 +105,7 @@ class BambooHRScraper(BaseScraper):
     @staticmethod
     def _fetch_description(session: requests.Session, subdomain: str, job_id: str) -> str:
         try:
-            resp = session.get(
-                DETAIL_URL.format(company=subdomain, id=job_id), timeout=TIMEOUT
-            )
+            resp = session.get(DETAIL_URL.format(company=subdomain, id=job_id), timeout=TIMEOUT)
             resp.raise_for_status()
             detail: BambooHrDetailResponse = resp.json()
             opening = detail.get("result", {}).get("jobOpening", {})

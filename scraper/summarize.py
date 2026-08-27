@@ -62,6 +62,7 @@ OLLAMA_TIMEOUT = 60
 # to the next key instead (see ollama_keys.is_hourly_limit_error below).
 OLLAMA_MAX_RETRIES = 1
 
+
 class OllamaMessage(TypedDict):
     role: str
     content: str
@@ -71,7 +72,9 @@ class OllamaChatResponse(TypedDict):
     message: NotRequired[OllamaMessage]
 
 
-_anthropic_client: anthropic.Anthropic | Literal[False] | None = None  # lazily constructed; False if unavailable/unset
+_anthropic_client: anthropic.Anthropic | Literal[False] | None = (
+    None  # lazily constructed; False if unavailable/unset
+)
 
 
 def _get_anthropic_client() -> anthropic.Anthropic | None:
@@ -147,7 +150,8 @@ def _call_ollama(prompt: str, label: str) -> str:
     if not usable:
         log.warning(
             "%s: all %d OLLAMA_API_KEY entries are exhausted (hourly limit)",
-            label, len(keys),
+            label,
+            len(keys),
         )
         return ""
 
@@ -156,7 +160,9 @@ def _call_ollama(prompt: str, label: str) -> str:
         log.debug("Requesting %s via Ollama (model=%s)", label, OLLAMA_MODEL)
         for attempt in range(OLLAMA_MAX_RETRIES + 1):
             try:
-                resp = requests.post(endpoint, json=payload, headers=headers, timeout=OLLAMA_TIMEOUT)
+                resp = requests.post(
+                    endpoint, json=payload, headers=headers, timeout=OLLAMA_TIMEOUT
+                )
                 if resp.status_code == 429 and ollama_keys.is_hourly_limit_error(
                     resp.status_code, resp.text
                 ):
@@ -188,8 +194,11 @@ def _forced_provider() -> str | None:
     if not value or value == "auto":
         return None
     if value not in PROVIDERS:
-        log.warning("Ignoring unrecognized LLM_PROVIDER=%r (expected one of %s or unset)",
-                    value, ", ".join(PROVIDERS))
+        log.warning(
+            "Ignoring unrecognized LLM_PROVIDER=%r (expected one of %s or unset)",
+            value,
+            ", ".join(PROVIDERS),
+        )
         return None
     return value
 

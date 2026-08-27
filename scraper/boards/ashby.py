@@ -11,7 +11,7 @@ Each job has id, title, location, secondaryLocations[].location, publishedAt
 from __future__ import annotations
 
 import logging
-from typing import cast, NotRequired, TypedDict
+from typing import NotRequired, TypedDict, cast
 
 from scraper.boards.base import BaseScraper, make_session
 from scraper.boards.greenhouse import posted_days_from_iso, relative_day_text
@@ -55,7 +55,9 @@ class AshbyScraper(BaseScraper):
 
         log.debug("%s: fetching job list", self.name)
         resp = session.get(
-            API.format(slug=slug), params={"includeCompensation": "true"}, timeout=TIMEOUT
+            API.format(slug=slug),
+            params={"includeCompensation": "true"},
+            timeout=TIMEOUT,
         )
         resp.raise_for_status()
         body: AshbyJobBoardResponse = resp.json()

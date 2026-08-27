@@ -6,3 +6,5 @@ sqlalchemy>=2.0
 # dev
 pytest>=8.0
 responses>=0.25
+pyright>=1.1.400
+ruff>=0.16

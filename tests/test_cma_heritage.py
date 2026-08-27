@@ -1,7 +1,6 @@
 import responses
 
 from scraper.boards.cma_heritage import LIST_URL, CmaHeritageScraper
-
 from scraper.config_types import CmaHeritageConfig
 
 COMPANY: CmaHeritageConfig = {"name": "CMA Jobs in Heritage", "board": "cma_heritage"}

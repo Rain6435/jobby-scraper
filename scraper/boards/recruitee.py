@@ -12,8 +12,8 @@ structured locations[] array (each with city/state/country). Config:
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
-from typing import cast, NotRequired, TypedDict
+from datetime import UTC, datetime
+from typing import NotRequired, TypedDict, cast
 
 from scraper.boards.base import BaseScraper, make_session
 from scraper.boards.greenhouse import relative_day_text
@@ -54,10 +54,10 @@ def posted_days_from_recruitee_ts(ts: str) -> int | None:
     if not ts:
         return None
     try:
-        dt = datetime.strptime(ts, "%Y-%m-%d %H:%M:%S %Z").replace(tzinfo=timezone.utc)
+        dt = datetime.strptime(ts, "%Y-%m-%d %H:%M:%S %Z").replace(tzinfo=UTC)
     except ValueError:
         return None
-    delta = datetime.now(timezone.utc) - dt
+    delta = datetime.now(UTC) - dt
     return max(delta.days, 0)
 
 

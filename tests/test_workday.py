@@ -38,8 +38,11 @@ class WorkdayJobPostingsRequest(TypedDict):
 
 
 def posting(
-    title: str = "Job", path: str = "/job/X/Job-1", loc: str = "Montreal",
-    posted: str = "Posted Today", rid: str = "JR-1",
+    title: str = "Job",
+    path: str = "/job/X/Job-1",
+    loc: str = "Montreal",
+    posted: str = "Posted Today",
+    rid: str = "JR-1",
 ) -> WorkdayJobPosting:
     return {
         "title": title,
@@ -54,7 +57,8 @@ def mock_any_detail(json_body: WorkdayJobDetailResponse | None = None) -> None:
     """Mock every detail-endpoint GET this test's scraper might issue (now
     unconditional for every posting, not just multi-location ones)."""
     responses.add(
-        responses.GET, DETAIL_RE,
+        responses.GET,
+        DETAIL_RE,
         json=json_body or {"jobPostingInfo": {}},
     )
 
@@ -77,7 +81,9 @@ def test_parses_postings_with_no_age_filtering() -> None:
     # Fixture has 3 postings, including one "Posted 30+ Days Ago" — all survive,
     # no age-based cutoff.
     assert [j.title for j in jobs] == [
-        "Software Engineer Intern", "Data Rotation Program", "Senior Staff Architect",
+        "Software Engineer Intern",
+        "Data Rotation Program",
+        "Senior Staff Architect",
     ]
     job = jobs[0]
     assert job.id == "cae:JR-100001"
@@ -99,8 +105,11 @@ def test_paginates_until_total() -> None:
         return {
             "total": total,
             "jobPostings": [
-                posting(title=f"Job {offset + i}", path=f"/job/X/Job-{offset + i}",
-                        rid=f"JR-{offset + i}")
+                posting(
+                    title=f"Job {offset + i}",
+                    path=f"/job/X/Job-{offset + i}",
+                    rid=f"JR-{offset + i}",
+                )
                 for i in range(count)
             ],
         }
@@ -129,11 +138,13 @@ def test_expands_multi_location_postings_via_detail_endpoint() -> None:
     responses.post(COMPANY["url"], json={"total": 1, "jobPostings": [multi]})
     responses.get(
         f"{DETAIL_BASE}/job/X/Multi",
-        json={"jobPostingInfo": {
-            "location": "Montreal, Canada",
-            "additionalLocations": ["Toronto, Canada", "Remote"],
-            "jobDescription": "<p>Multi-location role.</p>",
-        }},
+        json={
+            "jobPostingInfo": {
+                "location": "Montreal, Canada",
+                "additionalLocations": ["Toronto, Canada", "Remote"],
+                "jobDescription": "<p>Multi-location role.</p>",
+            }
+        },
     )
 
     jobs = WorkdayScraper(COMPANY).fetch_jobs()
@@ -195,10 +206,15 @@ def test_skips_detail_fetch_for_job_already_in_previous_snapshot() -> None:
 
     previous = {
         "cae:S-1": Job(
-            id="cae:S-1", company="CAE", title="Single (old title)",
-            location="Montreal, Canada", locations=["Montreal, Canada"],
-            url="https://example.com/old", posted_on="Posted 3 Days Ago",
-            source="workday", description="Cached description from last run.",
+            id="cae:S-1",
+            company="CAE",
+            title="Single (old title)",
+            location="Montreal, Canada",
+            locations=["Montreal, Canada"],
+            url="https://example.com/old",
+            posted_on="Posted 3 Days Ago",
+            source="workday",
+            description="Cached description from last run.",
         )
     }
 
@@ -218,10 +234,17 @@ def test_fetches_detail_for_job_not_in_previous_snapshot() -> None:
     responses.post(COMPANY["url"], json={"total": 1, "jobPostings": [single]})
     mock_any_detail({"jobPostingInfo": {"jobDescription": "<p>Freshly fetched.</p>"}})
 
-    previous = {"cae:OTHER-JOB": Job(
-        id="cae:OTHER-JOB", company="CAE", title="Unrelated", location="",
-        url="https://example.com", posted_on="", source="workday",
-    )}
+    previous = {
+        "cae:OTHER-JOB": Job(
+            id="cae:OTHER-JOB",
+            company="CAE",
+            title="Unrelated",
+            location="",
+            url="https://example.com",
+            posted_on="",
+            source="workday",
+        )
+    }
 
     jobs = WorkdayScraper(COMPANY, previous=previous).fetch_jobs()
 

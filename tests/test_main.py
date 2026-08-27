@@ -31,20 +31,30 @@ jobs_by_company_state: dict[str, list[Job]] = {}
 
 
 def job(
-    company: str, jid: str, title: str = "Senior Staff Manager Intern",
+    company: str,
+    jid: str,
+    title: str = "Senior Staff Manager Intern",
     posted_days: int | None = None,
 ) -> Job:
     """Deliberately blacklist-shaped title — must survive since filtering is gone."""
     return Job(
-        id=jid, company=company, title=title, location="Paris, France",
-        locations=["Paris, France"], url="https://example.com",
-        posted_on="Posted Today", source="stub", posted_days=posted_days,
+        id=jid,
+        company=company,
+        title=title,
+        location="Paris, France",
+        locations=["Paris, France"],
+        url="https://example.com",
+        posted_on="Posted Today",
+        source="stub",
+        posted_days=posted_days,
     )
 
 
 def setup_run(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
-    companies: list[CompanyConfig], jobs_by_company: dict[str, list[Job]],
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    companies: list[CompanyConfig],
+    jobs_by_company: dict[str, list[Job]],
 ) -> str:
     global jobs_by_company_state
     jobs_by_company_state = jobs_by_company
@@ -76,9 +86,12 @@ def db_first_seen_and_posted_date(db_url: str, job_id: str) -> tuple[str | None,
         return row.first_seen, row.posted_date
 
 
-def test_full_run_stores_every_job_unfiltered(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_full_run_stores_every_job_unfiltered(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     db_url = setup_run(
-        tmp_path, monkeypatch,
+        tmp_path,
+        monkeypatch,
         companies=[{"name": "Acme", "board": "stub"}],
         jobs_by_company={"Acme": [job("Acme", "acme:1")]},
     )
@@ -91,9 +104,12 @@ def test_full_run_stores_every_job_unfiltered(tmp_path: Path, monkeypatch: pytes
     assert db_job_ids(db_url) == {"acme:1"}
 
 
-def test_full_run_without_database_or_limit_errors(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_full_run_without_database_or_limit_errors(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     setup_run(
-        tmp_path, monkeypatch,
+        tmp_path,
+        monkeypatch,
         companies=[{"name": "Acme", "board": "stub"}],
         jobs_by_company={"Acme": [job("Acme", "acme:1")]},
     )
@@ -108,14 +124,20 @@ def test_full_run_without_database_or_limit_errors(tmp_path: Path, monkeypatch: 
     mock_summarize.assert_not_called()
 
 
-def test_company_scoped_run_merges_into_existing_snapshot(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_company_scoped_run_merges_into_existing_snapshot(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     db_url = setup_run(
-        tmp_path, monkeypatch,
+        tmp_path,
+        monkeypatch,
         companies=[
             {"name": "Acme", "board": "stub"},
             {"name": "Beta", "board": "stub"},
         ],
-        jobs_by_company={"Acme": [job("Acme", "acme:1")], "Beta": [job("Beta", "beta:1")]},
+        jobs_by_company={
+            "Acme": [job("Acme", "acme:1")],
+            "Beta": [job("Beta", "beta:1")],
+        },
     )
 
     with patch.object(main_module, "summarize_role", return_value=""):
@@ -132,9 +154,12 @@ def test_company_scoped_run_merges_into_existing_snapshot(tmp_path: Path, monkey
     assert db_job_ids(db_url) == {"beta:1", "acme:2"}
 
 
-def test_company_scoped_run_requires_database(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_company_scoped_run_requires_database(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     setup_run(
-        tmp_path, monkeypatch,
+        tmp_path,
+        monkeypatch,
         companies=[{"name": "Acme", "board": "stub"}],
         jobs_by_company={"Acme": [job("Acme", "acme:1")]},
     )
@@ -145,9 +170,12 @@ def test_company_scoped_run_requires_database(tmp_path: Path, monkeypatch: pytes
     assert result == 1
 
 
-def test_company_scoped_run_with_limit_does_not_require_database(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_company_scoped_run_with_limit_does_not_require_database(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     setup_run(
-        tmp_path, monkeypatch,
+        tmp_path,
+        monkeypatch,
         companies=[{"name": "Acme", "board": "stub"}],
         jobs_by_company={"Acme": [job("Acme", "acme:1")]},
     )
@@ -161,7 +189,8 @@ def test_company_scoped_run_with_limit_does_not_require_database(tmp_path: Path,
 
 def test_unknown_company_name_errors(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     db_url = setup_run(
-        tmp_path, monkeypatch,
+        tmp_path,
+        monkeypatch,
         companies=[{"name": "Acme", "board": "stub"}],
         jobs_by_company={"Acme": []},
     )
@@ -169,9 +198,12 @@ def test_unknown_company_name_errors(tmp_path: Path, monkeypatch: pytest.MonkeyP
     assert main_module.run(company="Nonexistent", database=db_url) == 1
 
 
-def test_database_flag_mirrors_snapshot_into_sql_db(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_database_flag_mirrors_snapshot_into_sql_db(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     db_url = setup_run(
-        tmp_path, monkeypatch,
+        tmp_path,
+        monkeypatch,
         companies=[{"name": "Acme", "board": "stub"}],
         jobs_by_company={"Acme": [job("Acme", "acme:1")]},
     )
@@ -183,9 +215,12 @@ def test_database_flag_mirrors_snapshot_into_sql_db(tmp_path: Path, monkeypatch:
     assert db_job_ids(db_url) == {"acme:1"}
 
 
-def test_database_write_skipped_when_limit_set(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_database_write_skipped_when_limit_set(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     db_url = setup_run(
-        tmp_path, monkeypatch,
+        tmp_path,
+        monkeypatch,
         companies=[{"name": "Acme", "board": "stub"}],
         jobs_by_company={"Acme": [job("Acme", "acme:1")]},
     )
@@ -205,7 +240,8 @@ def test_write_failure_fails_the_run(tmp_path: Path, monkeypatch: pytest.MonkeyP
     and proceed against unchanged data. run() must propagate a real failure
     into a non-zero exit code."""
     db_url = setup_run(
-        tmp_path, monkeypatch,
+        tmp_path,
+        monkeypatch,
         companies=[{"name": "Acme", "board": "stub"}],
         jobs_by_company={"Acme": [job("Acme", "acme:1")]},
     )
@@ -231,7 +267,8 @@ def test_interrupted_run_saves_completed_companies_and_keeps_others_unchanged(
     even reached this run.
     """
     db_url = setup_run(
-        tmp_path, monkeypatch,
+        tmp_path,
+        monkeypatch,
         companies=[
             {"name": "Acme", "board": "stub"},
             {"name": "Beta", "board": "stub"},
@@ -271,14 +308,20 @@ def test_interrupted_run_saves_completed_companies_and_keeps_others_unchanged(
     mock_summarize.assert_not_called()  # skipped entirely once interrupted
 
 
-def test_concurrency_flag_is_accepted_and_threaded_through(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_concurrency_flag_is_accepted_and_threaded_through(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     db_url = setup_run(
-        tmp_path, monkeypatch,
+        tmp_path,
+        monkeypatch,
         companies=[
             {"name": "Acme", "board": "stub"},
             {"name": "Beta", "board": "stub"},
         ],
-        jobs_by_company={"Acme": [job("Acme", "acme:1")], "Beta": [job("Beta", "beta:1")]},
+        jobs_by_company={
+            "Acme": [job("Acme", "acme:1")],
+            "Beta": [job("Beta", "beta:1")],
+        },
     )
 
     with patch.object(main_module, "summarize_role", return_value=""):
@@ -288,9 +331,12 @@ def test_concurrency_flag_is_accepted_and_threaded_through(tmp_path: Path, monke
     assert db_job_ids(db_url) == {"acme:1", "beta:1"}
 
 
-def test_concurrency_flag_defaults_when_omitted(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_concurrency_flag_defaults_when_omitted(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     db_url = setup_run(
-        tmp_path, monkeypatch,
+        tmp_path,
+        monkeypatch,
         companies=[{"name": "Acme", "board": "stub"}],
         jobs_by_company={"Acme": [job("Acme", "acme:1")]},
     )
@@ -302,9 +348,12 @@ def test_concurrency_flag_defaults_when_omitted(tmp_path: Path, monkeypatch: pyt
     assert db_job_ids(db_url) == {"acme:1"}
 
 
-def test_llm_provider_flag_sets_env_for_summarize(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_llm_provider_flag_sets_env_for_summarize(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     db_url = setup_run(
-        tmp_path, monkeypatch,
+        tmp_path,
+        monkeypatch,
         companies=[{"name": "Acme", "board": "stub"}],
         jobs_by_company={"Acme": [job("Acme", "acme:1")]},
     )
@@ -318,9 +367,12 @@ def test_llm_provider_flag_sets_env_for_summarize(tmp_path: Path, monkeypatch: p
     mock_summarize.assert_called_once()
 
 
-def test_llm_provider_omitted_leaves_env_untouched(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_llm_provider_omitted_leaves_env_untouched(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     db_url = setup_run(
-        tmp_path, monkeypatch,
+        tmp_path,
+        monkeypatch,
         companies=[{"name": "Acme", "board": "stub"}],
         jobs_by_company={"Acme": [job("Acme", "acme:1")]},
     )
@@ -333,7 +385,9 @@ def test_llm_provider_omitted_leaves_env_untouched(tmp_path: Path, monkeypatch: 
     assert "LLM_PROVIDER" not in os.environ
 
 
-def test_role_summary_carried_over_for_already_known_job(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_role_summary_carried_over_for_already_known_job(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """Every board scraper builds a fresh Job() each run (role_summary=""
     by dataclass default), and the summarize step only runs for genuinely
     new jobs — without carrying the previous run's role_summary forward for
@@ -341,12 +395,15 @@ def test_role_summary_carried_over_for_already_known_job(tmp_path: Path, monkeyp
     with "" on every subsequent run, even though summarize_role is
     correctly never re-called for them."""
     db_url = setup_run(
-        tmp_path, monkeypatch,
+        tmp_path,
+        monkeypatch,
         companies=[{"name": "Acme", "board": "stub"}],
         jobs_by_company={"Acme": [job("Acme", "acme:1")]},
     )
 
-    with patch.object(main_module, "summarize_role", return_value="Builds great things.") as mock_summarize:
+    with patch.object(
+        main_module, "summarize_role", return_value="Builds great things."
+    ) as mock_summarize:
         assert main_module.run(database=db_url) == 0
 
     assert db_role_summary(db_url, "acme:1") == "Builds great things."
@@ -367,7 +424,8 @@ def test_role_summary_carried_over_for_already_known_job(tmp_path: Path, monkeyp
 
 
 def test_new_job_gets_first_seen_stamped_and_posted_date_derived(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Every board scraper builds a fresh Job() each run (first_seen="" by
     dataclass default). Without main.py stamping first_seen for genuinely
@@ -376,7 +434,8 @@ def test_new_job_gets_first_seen_stamped_and_posted_date_derived(
     first_seen/posted_date round-trip unchanged via load_previous(), the
     job would stay dateless forever, not just on this first run."""
     db_url = setup_run(
-        tmp_path, monkeypatch,
+        tmp_path,
+        monkeypatch,
         companies=[{"name": "Acme", "board": "stub"}],
         jobs_by_company={"Acme": [job("Acme", "acme:1", posted_days=3)]},
     )
@@ -390,10 +449,12 @@ def test_new_job_gets_first_seen_stamped_and_posted_date_derived(
 
 
 def test_first_seen_survives_unchanged_across_runs(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     db_url = setup_run(
-        tmp_path, monkeypatch,
+        tmp_path,
+        monkeypatch,
         companies=[{"name": "Acme", "board": "stub"}],
         jobs_by_company={"Acme": [job("Acme", "acme:1", posted_days=3)]},
     )

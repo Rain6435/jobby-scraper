@@ -13,7 +13,7 @@ elements, identical `<content:encoded>` HTML body, identical `p=<id>`
 from __future__ import annotations
 
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
 from html import unescape
 
@@ -32,7 +32,7 @@ _CONTENT_RE = re.compile(r"<content:encoded>(.*?)</content:encoded>", re.DOTALL)
 _GUID_ID_RE = re.compile(r"p=(\d+)")
 
 
-def _text(pattern: "re.Pattern[str]", item: str) -> str:
+def _text(pattern: re.Pattern[str], item: str) -> str:
     match = pattern.search(item)
     if not match:
         return ""
@@ -49,12 +49,14 @@ def _posted_days_from_rfc2822(pub_date: str) -> int | None:
     except (TypeError, ValueError):
         return None
     if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=timezone.utc)
-    delta = datetime.now(timezone.utc) - dt
+        dt = dt.replace(tzinfo=UTC)
+    delta = datetime.now(UTC) - dt
     return max(delta.days, 0)
 
 
-def parse_wp_job_manager_feed(feed_xml: str, source: str, slug: str, default_company: str) -> list[Job]:
+def parse_wp_job_manager_feed(
+    feed_xml: str, source: str, slug: str, default_company: str
+) -> list[Job]:
     """Parse a WP Job Manager `job_feed` RSS response into normalized Jobs.
 
     default_company is used when an item has no `<job_listing:company>`

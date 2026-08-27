@@ -145,9 +145,7 @@ def get_engine(database_url: str) -> Engine:
     # "database is locked" here used to be swallowed silently by
     # write_jobs()'s broad except — raising the timeout makes that failure
     # mode far less likely to begin with, on top of no longer hiding it.
-    connect_args = (
-        {"timeout": 60} if make_url(database_url).get_backend_name() == "sqlite" else {}
-    )
+    connect_args = {"timeout": 60} if make_url(database_url).get_backend_name() == "sqlite" else {}
     engine = create_engine(database_url, connect_args=connect_args)
     metadata.create_all(engine)
     return engine
@@ -181,12 +179,8 @@ def load_previous(database_url: str) -> dict[str, Job]:
     try:
         engine = get_engine(database_url)
         with engine.connect() as conn:
-            companies_by_id = {
-                row.id: row for row in conn.execute(select(companies_table))
-            }
-            sources_by_id = {
-                row.id: row for row in conn.execute(select(sources_table))
-            }
+            companies_by_id = {row.id: row for row in conn.execute(select(companies_table))}
+            sources_by_id = {row.id: row for row in conn.execute(select(sources_table))}
             locations_by_id = {row.id: row.name for row in conn.execute(select(locations_table))}
             locations_by_job: dict[str, list[str]] = {}
             for row in conn.execute(
@@ -219,7 +213,10 @@ def load_previous(database_url: str) -> dict[str, Job]:
                 )
         return previous
     except Exception:
-        log.exception("Failed to load previous state from %s — treating as first run", _redacted(database_url))
+        log.exception(
+            "Failed to load previous state from %s — treating as first run",
+            _redacted(database_url),
+        )
         return {}
 
 
@@ -268,7 +265,9 @@ def _get_or_create_ids(conn: Connection, table: Table, names: set[str]) -> dict[
         conn.execute(table.insert(), [{"name": name} for name in missing])
         existing.update(
             (row.name, row.id)
-            for row in conn.execute(select(table.c.name, table.c.id).where(table.c.name.in_(missing)))
+            for row in conn.execute(
+                select(table.c.name, table.c.id).where(table.c.name.in_(missing))
+            )
         )
     return existing
 
@@ -395,7 +394,9 @@ def write_jobs(database_url: str, jobs: list[Job], new_ids: set[str]) -> bool:
                         .where(companies_table.c.id == company_ids[name])
                         .values(blurb=blurb)
                     )
-            source_ids = _get_or_create_ids(conn, sources_table, {job.source for job in unique_jobs})
+            source_ids = _get_or_create_ids(
+                conn, sources_table, {job.source for job in unique_jobs}
+            )
 
             if unique_jobs:
                 conn.execute(

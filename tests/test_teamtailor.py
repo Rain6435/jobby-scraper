@@ -1,17 +1,20 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import responses
 
 from scraper.boards.teamtailor import TeamtailorScraper, posted_days_from_iso
-
 from scraper.config_types import TeamtailorConfig
 
-COMPANY: TeamtailorConfig = {"name": "Sessions", "board": "teamtailor", "company": "sessions"}
+COMPANY: TeamtailorConfig = {
+    "name": "Sessions",
+    "board": "teamtailor",
+    "company": "sessions",
+}
 API = "https://sessions.teamtailor.com/jobs.json"
 
 
 def test_posted_days_from_iso() -> None:
-    three_ago = (datetime.now(timezone.utc) - timedelta(days=3)).isoformat()
+    three_ago = (datetime.now(UTC) - timedelta(days=3)).isoformat()
     assert posted_days_from_iso(three_ago) == 3
     assert posted_days_from_iso(None) is None
     assert posted_days_from_iso("") is None
@@ -20,32 +23,40 @@ def test_posted_days_from_iso() -> None:
 
 @responses.activate
 def test_maps_jobs_with_dates_and_locations() -> None:
-    published = (datetime.now(timezone.utc) - timedelta(days=2)).isoformat()
-    responses.get(API, json={
-        "version": "https://jsonfeed.org/version/1.1",
-        "title": "Sessions",
-        "items": [
-            {
-                "id": "3ce2c88b-cbc6-4ae9-8ecb-000466c69037",
-                "title": "  Group Financial Controller  ",
-                "url": "https://sessions.teamtailor.com/jobs/8124573",
-                "date_published": published,
-                "content_html": "<p>Lead <b>finance</b>.</p>",
-                "_jobposting": {
-                    "jobLocation": [
-                        {
-                            "address": {
-                                "addressLocality": "Stockholm",
-                                "addressRegion": "Stockholm County",
-                                "addressCountry": "SE",
-                            }
-                        },
-                        {"address": {"addressLocality": "London", "addressCountry": "UK"}},
-                    ]
+    published = (datetime.now(UTC) - timedelta(days=2)).isoformat()
+    responses.get(
+        API,
+        json={
+            "version": "https://jsonfeed.org/version/1.1",
+            "title": "Sessions",
+            "items": [
+                {
+                    "id": "3ce2c88b-cbc6-4ae9-8ecb-000466c69037",
+                    "title": "  Group Financial Controller  ",
+                    "url": "https://sessions.teamtailor.com/jobs/8124573",
+                    "date_published": published,
+                    "content_html": "<p>Lead <b>finance</b>.</p>",
+                    "_jobposting": {
+                        "jobLocation": [
+                            {
+                                "address": {
+                                    "addressLocality": "Stockholm",
+                                    "addressRegion": "Stockholm County",
+                                    "addressCountry": "SE",
+                                }
+                            },
+                            {
+                                "address": {
+                                    "addressLocality": "London",
+                                    "addressCountry": "UK",
+                                }
+                            },
+                        ]
+                    },
                 },
-            },
-        ],
-    })
+            ],
+        },
+    )
 
     jobs = TeamtailorScraper(COMPANY).fetch_jobs()
 
@@ -64,11 +75,14 @@ def test_maps_jobs_with_dates_and_locations() -> None:
 
 @responses.activate
 def test_missing_jobposting_falls_back_gracefully() -> None:
-    responses.get(API, json={
-        "items": [
-            {"id": "x1", "title": "Dev", "url": "u"},
-        ],
-    })
+    responses.get(
+        API,
+        json={
+            "items": [
+                {"id": "x1", "title": "Dev", "url": "u"},
+            ],
+        },
+    )
 
     jobs = TeamtailorScraper(COMPANY).fetch_jobs()
 
@@ -81,16 +95,19 @@ def test_missing_jobposting_falls_back_gracefully() -> None:
 
 @responses.activate
 def test_malformed_job_location_entries_skipped() -> None:
-    responses.get(API, json={
-        "items": [
-            {
-                "id": "x2",
-                "title": "Dev",
-                "url": "u",
-                "_jobposting": {"jobLocation": [{"address": {}}, None]},
-            },
-        ],
-    })
+    responses.get(
+        API,
+        json={
+            "items": [
+                {
+                    "id": "x2",
+                    "title": "Dev",
+                    "url": "u",
+                    "_jobposting": {"jobLocation": [{"address": {}}, None]},
+                },
+            ],
+        },
+    )
 
     jobs = TeamtailorScraper(COMPANY).fetch_jobs()
 

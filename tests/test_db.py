@@ -16,21 +16,34 @@ from scraper.models import Job
 
 
 def job(
-    jid: str, title: str = "T", company: str = "X", locations: list[str] | None = None,
+    jid: str,
+    title: str = "T",
+    company: str = "X",
+    locations: list[str] | None = None,
     posted_days: int | None = 0,
-    first_seen: str = "2026-07-28T06:16:49+00:00", source: str = "workday",
+    first_seen: str = "2026-07-28T06:16:49+00:00",
+    source: str = "workday",
     company_blurb: str = "",
 ) -> Job:
     return Job(
-        id=jid, company=company, title=title, location="Montreal",
-        locations=locations or ["Montreal"], url="https://example.com",
-        posted_on="Posted Today", posted_days=posted_days, first_seen=first_seen,
-        source=source, company_blurb=company_blurb,
+        id=jid,
+        company=company,
+        title=title,
+        location="Montreal",
+        locations=locations or ["Montreal"],
+        url="https://example.com",
+        posted_on="Posted Today",
+        posted_days=posted_days,
+        first_seen=first_seen,
+        source=source,
+        company_blurb=company_blurb,
     )
 
 
 def _company_id(conn: Connection, name: str) -> int:
-    return conn.execute(select(companies_table.c.id).where(companies_table.c.name == name)).scalar_one()
+    return conn.execute(
+        select(companies_table.c.id).where(companies_table.c.name == name)
+    ).scalar_one()
 
 
 def _source_id(conn: Connection, name: str) -> int:
@@ -62,7 +75,9 @@ def test_write_jobs_creates_tables_and_rows(tmp_path: Path) -> None:
     assert not hasattr(jobs_table.c, "locations")
 
 
-def test_write_jobs_populates_companies_and_sources_without_duplicates(tmp_path: Path) -> None:
+def test_write_jobs_populates_companies_and_sources_without_duplicates(
+    tmp_path: Path,
+) -> None:
     url = f"sqlite:///{tmp_path / 'jobs.db'}"
     jobs = [
         job("acme:1", company="Acme", source="workday"),
@@ -89,12 +104,16 @@ def test_write_jobs_stores_company_blurb_on_companies_table(tmp_path: Path) -> N
 
     engine = create_engine(url)
     with engine.connect() as conn:
-        blurb = conn.execute(select(companies_table.c.blurb).where(companies_table.c.name == "Acme")).scalar_one()
+        blurb = conn.execute(
+            select(companies_table.c.blurb).where(companies_table.c.name == "Acme")
+        ).scalar_one()
 
     assert blurb == "Makes anvils."
 
 
-def test_write_jobs_expands_locations_into_child_table_preserving_order(tmp_path: Path) -> None:
+def test_write_jobs_expands_locations_into_child_table_preserving_order(
+    tmp_path: Path,
+) -> None:
     url = f"sqlite:///{tmp_path / 'jobs.db'}"
     jobs = [job("x:1", locations=["Montreal", "Toronto", "Remote"])]
 
@@ -110,7 +129,9 @@ def test_write_jobs_expands_locations_into_child_table_preserving_order(tmp_path
         ).all()
 
     assert [(r.name, r.ordinal) for r in rows] == [
-        ("Montreal", 0), ("Toronto", 1), ("Remote", 2),
+        ("Montreal", 0),
+        ("Toronto", 1),
+        ("Remote", 2),
     ]
 
 
@@ -130,7 +151,9 @@ def test_write_jobs_dedupes_repeated_location_names(tmp_path: Path) -> None:
     assert sorted(names) == ["Montreal", "Remote", "Toronto"]
 
 
-def test_write_jobs_computes_posted_date_from_first_seen_minus_posted_days(tmp_path: Path) -> None:
+def test_write_jobs_computes_posted_date_from_first_seen_minus_posted_days(
+    tmp_path: Path,
+) -> None:
     url = f"sqlite:///{tmp_path / 'jobs.db'}"
     j = job("x:1", posted_days=3, first_seen="2026-07-28T06:16:49+00:00")
 
@@ -213,7 +236,11 @@ def test_write_jobs_preserves_posted_date_across_a_round_trip(tmp_path: Path) ->
     stripped the date off most of the pool.
     """
     url = f"sqlite:///{tmp_path / 'jobs.db'}"
-    write_jobs(url, [job("x:1", posted_days=3, first_seen="2026-07-28T06:16:49+00:00")], new_ids=set())
+    write_jobs(
+        url,
+        [job("x:1", posted_days=3, first_seen="2026-07-28T06:16:49+00:00")],
+        new_ids=set(),
+    )
 
     carried = list(load_previous(url).values())
     assert carried[0].posted_days is None  # the round-trip really does drop it

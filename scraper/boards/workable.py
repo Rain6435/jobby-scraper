@@ -14,8 +14,8 @@ locations[] is empty. Config: {"board": "workable", "company": "<slug>"}.
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
-from typing import cast, NotRequired, TypedDict
+from datetime import UTC, datetime
+from typing import NotRequired, TypedDict, cast
 
 from scraper.boards.base import BaseScraper, make_session
 from scraper.boards.greenhouse import relative_day_text
@@ -56,10 +56,10 @@ def posted_days_from_date_str(date_str: str | None) -> int | None:
     if not date_str:
         return None
     try:
-        dt = datetime.strptime(date_str, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+        dt = datetime.strptime(date_str, "%Y-%m-%d").replace(tzinfo=UTC)
     except ValueError:
         return None
-    delta = datetime.now(timezone.utc) - dt
+    delta = datetime.now(UTC) - dt
     return max(delta.days, 0)
 
 
@@ -73,9 +73,7 @@ class WorkableScraper(BaseScraper):
         session.headers.update({"User-Agent": "Mozilla/5.0", "Accept": "application/json"})
 
         log.debug("%s: fetching job list", self.name)
-        resp = session.get(
-            API.format(slug=slug), params={"details": "true"}, timeout=TIMEOUT
-        )
+        resp = session.get(API.format(slug=slug), params={"details": "true"}, timeout=TIMEOUT)
         resp.raise_for_status()
         body: WorkableAccountResponse = resp.json()
         postings = body.get("jobs", [])

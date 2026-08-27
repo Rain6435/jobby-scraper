@@ -1,9 +1,8 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import responses
 
 from scraper.boards.ashby import AshbyScraper
-
 from scraper.config_types import AshbyConfig
 
 COMPANY: AshbyConfig = {"name": "Loopio", "board": "ashby", "slug": "loopio"}
@@ -12,19 +11,24 @@ API = "https://api.ashbyhq.com/posting-api/job-board/loopio"
 
 @responses.activate
 def test_maps_jobs_with_dates_and_secondary_locations() -> None:
-    published = (datetime.now(timezone.utc) - timedelta(days=2)).isoformat()
-    responses.get(API, json={"jobs": [
-        {
-            "id": "31680a79-b812-493b-951f-951212770167",
-            "title": "  Software Engineer  ",
-            "location": "Toronto, ON Hub",
-            "secondaryLocations": [{"location": "Remote Canada"}],
-            "jobUrl": "https://jobs.ashbyhq.com/loopio/31680a79",
-            "publishedAt": published,
-            "descriptionPlain": "  Build great software.  ",
-            "descriptionHtml": "<p>Build <b>great</b> software.</p>",
+    published = (datetime.now(UTC) - timedelta(days=2)).isoformat()
+    responses.get(
+        API,
+        json={
+            "jobs": [
+                {
+                    "id": "31680a79-b812-493b-951f-951212770167",
+                    "title": "  Software Engineer  ",
+                    "location": "Toronto, ON Hub",
+                    "secondaryLocations": [{"location": "Remote Canada"}],
+                    "jobUrl": "https://jobs.ashbyhq.com/loopio/31680a79",
+                    "publishedAt": published,
+                    "descriptionPlain": "  Build great software.  ",
+                    "descriptionHtml": "<p>Build <b>great</b> software.</p>",
+                },
+            ]
         },
-    ]})
+    )
 
     jobs = AshbyScraper(COMPANY).fetch_jobs()
 
@@ -43,10 +47,21 @@ def test_maps_jobs_with_dates_and_secondary_locations() -> None:
 
 @responses.activate
 def test_falls_back_to_stripped_html_without_plain_description() -> None:
-    responses.get(API, json={"jobs": [
-        {"id": "x2", "title": "Dev", "location": "Remote", "jobUrl": "u",
-         "publishedAt": "", "descriptionHtml": "<p>HTML only</p>"},
-    ]})
+    responses.get(
+        API,
+        json={
+            "jobs": [
+                {
+                    "id": "x2",
+                    "title": "Dev",
+                    "location": "Remote",
+                    "jobUrl": "u",
+                    "publishedAt": "",
+                    "descriptionHtml": "<p>HTML only</p>",
+                },
+            ]
+        },
+    )
 
     jobs = AshbyScraper(COMPANY).fetch_jobs()
 
@@ -55,10 +70,20 @@ def test_falls_back_to_stripped_html_without_plain_description() -> None:
 
 @responses.activate
 def test_falls_back_when_no_secondary_locations_or_date() -> None:
-    responses.get(API, json={"jobs": [
-        {"id": "x1", "title": "Dev", "location": "Remote",
-         "jobUrl": "u", "publishedAt": ""},
-    ]})
+    responses.get(
+        API,
+        json={
+            "jobs": [
+                {
+                    "id": "x1",
+                    "title": "Dev",
+                    "location": "Remote",
+                    "jobUrl": "u",
+                    "publishedAt": "",
+                },
+            ]
+        },
+    )
 
     jobs = AshbyScraper(COMPANY).fetch_jobs()
 
@@ -73,15 +98,20 @@ def test_does_not_truncate_long_plain_description() -> None:
     """descriptionPlain used to be sliced at [:1500] here, independently of
     html_to_text's cap — so removing that cap alone left Ashby truncated."""
     body = "Build great software. " * 500
-    responses.get(API, json={"jobs": [
-        {
-            "id": "abc",
-            "title": "Engineer",
-            "location": "Remote",
-            "jobUrl": "https://jobs.ashbyhq.com/loopio/abc",
-            "descriptionPlain": body,
+    responses.get(
+        API,
+        json={
+            "jobs": [
+                {
+                    "id": "abc",
+                    "title": "Engineer",
+                    "location": "Remote",
+                    "jobUrl": "https://jobs.ashbyhq.com/loopio/abc",
+                    "descriptionPlain": body,
+                },
+            ]
         },
-    ]})
+    )
 
     jobs = AshbyScraper(COMPANY).fetch_jobs()
 

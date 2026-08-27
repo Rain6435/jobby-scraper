@@ -1,10 +1,12 @@
 import responses
 
 from scraper.boards.idc_career_centre import FEED_URL, IdcCareerCentreScraper
-
 from scraper.config_types import IdcCareerCentreConfig
 
-COMPANY: IdcCareerCentreConfig = {"name": "IDC Career Centre", "board": "idc_career_centre"}
+COMPANY: IdcCareerCentreConfig = {
+    "name": "IDC Career Centre",
+    "board": "idc_career_centre",
+}
 
 _FEED_XML = """<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"
 	xmlns:content="http://purl.org/rss/1.0/modules/content/"
@@ -65,9 +67,7 @@ def test_decodes_html_entity_in_title() -> None:
 
 @responses.activate
 def test_falls_back_to_board_name_when_company_missing() -> None:
-    xml = _FEED_XML.replace(
-        "<job_listing:company><![CDATA[Division9]]></job_listing:company>", ""
-    )
+    xml = _FEED_XML.replace("<job_listing:company><![CDATA[Division9]]></job_listing:company>", "")
     responses.get(FEED_URL, body=xml)
 
     jobs = IdcCareerCentreScraper(COMPANY).fetch_jobs()

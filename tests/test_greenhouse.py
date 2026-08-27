@@ -1,9 +1,8 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import responses
 
 from scraper.boards.greenhouse import GreenhouseScraper, posted_days_from_iso
-
 from scraper.config_types import GreenhouseConfig
 
 COMPANY: GreenhouseConfig = {"name": "Asana", "board": "greenhouse", "token": "asana"}
@@ -11,7 +10,7 @@ API = "https://boards-api.greenhouse.io/v1/boards/asana/jobs"
 
 
 def test_posted_days_from_iso() -> None:
-    three_ago = (datetime.now(timezone.utc) - timedelta(days=3, hours=2)).isoformat()
+    three_ago = (datetime.now(UTC) - timedelta(days=3, hours=2)).isoformat()
     assert posted_days_from_iso(three_ago) == 3
     assert posted_days_from_iso("") is None
     assert posted_days_from_iso("not-a-date") is None
@@ -19,18 +18,23 @@ def test_posted_days_from_iso() -> None:
 
 @responses.activate
 def test_maps_jobs_with_dates_and_offices() -> None:
-    published = (datetime.now(timezone.utc) - timedelta(days=2)).isoformat()
-    responses.get(API, json={"jobs": [
-        {
-            "id": 7740145,
-            "title": "  AI Engineer  ",
-            "location": {"name": "Toronto"},
-            "offices": [{"name": "Toronto", "location": "Toronto, Canada"}],
-            "absolute_url": "https://www.asana.com/jobs/apply/7740145",
-            "first_published": published,
-            "content": "<p>Build cool stuff.</p>",
+    published = (datetime.now(UTC) - timedelta(days=2)).isoformat()
+    responses.get(
+        API,
+        json={
+            "jobs": [
+                {
+                    "id": 7740145,
+                    "title": "  AI Engineer  ",
+                    "location": {"name": "Toronto"},
+                    "offices": [{"name": "Toronto", "location": "Toronto, Canada"}],
+                    "absolute_url": "https://www.asana.com/jobs/apply/7740145",
+                    "first_published": published,
+                    "content": "<p>Build cool stuff.</p>",
+                },
+            ]
         },
-    ]})
+    )
 
     jobs = GreenhouseScraper(COMPANY).fetch_jobs()
 
@@ -38,7 +42,7 @@ def test_maps_jobs_with_dates_and_offices() -> None:
     job = jobs[0]
     assert job.id == "asana:7740145"
     assert job.title == "AI Engineer"
-    assert job.locations == ["Toronto, Canada"]   # offices.location preferred
+    assert job.locations == ["Toronto, Canada"]  # offices.location preferred
     assert job.location == "Toronto, Canada"
     assert job.url == "https://www.asana.com/jobs/apply/7740145"
     assert job.posted_days == 2
@@ -52,10 +56,20 @@ def test_maps_jobs_with_dates_and_offices() -> None:
 
 @responses.activate
 def test_falls_back_to_location_name_without_offices() -> None:
-    responses.get(API, json={"jobs": [
-        {"id": 1, "title": "Dev", "location": {"name": "Warsaw"},
-         "absolute_url": "u", "first_published": ""},
-    ]})
+    responses.get(
+        API,
+        json={
+            "jobs": [
+                {
+                    "id": 1,
+                    "title": "Dev",
+                    "location": {"name": "Warsaw"},
+                    "absolute_url": "u",
+                    "first_published": "",
+                },
+            ]
+        },
+    )
 
     jobs = GreenhouseScraper(COMPANY).fetch_jobs()
 

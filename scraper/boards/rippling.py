@@ -15,7 +15,7 @@ Each list item has id (uuid), name, url, locations[].name. Config:
 from __future__ import annotations
 
 import logging
-from typing import cast, NotRequired, TypedDict
+from typing import NotRequired, TypedDict, cast
 
 import requests
 
@@ -75,9 +75,7 @@ class RipplingScraper(BaseScraper):
         page = 0
         while page < MAX_PAGES:
             log.debug("%s: fetching page=%d", self.name, page)
-            resp = session.get(
-                url, params={"page": page, "pageSize": PAGE_SIZE}, timeout=TIMEOUT
-            )
+            resp = session.get(url, params={"page": page, "pageSize": PAGE_SIZE}, timeout=TIMEOUT)
             resp.raise_for_status()
             data: RipplingJobsResponse = resp.json()
             log.debug("%s: totalPages=%d reported", self.name, data.get("totalPages", 1))
@@ -90,7 +88,8 @@ class RipplingScraper(BaseScraper):
                 job_id = f"{self.slug}:{item['id']}"
                 cached = self._cached_detail(job_id)
                 description = (
-                    cached.description if cached is not None
+                    cached.description
+                    if cached is not None
                     else self._fetch_description(session, board_id, item["id"])
                 )
                 jobs.append(
@@ -101,8 +100,8 @@ class RipplingScraper(BaseScraper):
                         location=locations[0] if locations else "",
                         locations=locations,
                         url=item.get("url", ""),
-                        posted_on="",        # date only in detail — skipped
-                        posted_days=None,    # age tracked via first_seen
+                        posted_on="",  # date only in detail — skipped
+                        posted_days=None,  # age tracked via first_seen
                         source=self.source,
                         description=description,
                     )
@@ -117,9 +116,7 @@ class RipplingScraper(BaseScraper):
     @staticmethod
     def _fetch_description(session: requests.Session, board_id: str, job_id: str) -> str:
         try:
-            resp = session.get(
-                DETAIL_URL.format(board_id=board_id, job_id=job_id), timeout=TIMEOUT
-            )
+            resp = session.get(DETAIL_URL.format(board_id=board_id, job_id=job_id), timeout=TIMEOUT)
             resp.raise_for_status()
             detail: RipplingJobDetailResponse = resp.json()
             description = detail.get("description", "")

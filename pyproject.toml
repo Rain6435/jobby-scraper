@@ -1,0 +1,13 @@
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["exploration", "Job_Scraper.md"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
+ignore = [
+    "E501",  # line length is a formatter concern, not a lint failure
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["scraper"]

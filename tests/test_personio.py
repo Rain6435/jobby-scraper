@@ -1,12 +1,15 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import responses
 
 from scraper.boards.personio import PersonioScraper
-
 from scraper.config_types import PersonioConfig
 
-COMPANY: PersonioConfig = {"name": "Ottonova", "board": "personio", "company": "ottonova"}
+COMPANY: PersonioConfig = {
+    "name": "Ottonova",
+    "board": "personio",
+    "company": "ottonova",
+}
 API = "https://ottonova.jobs.personio.de/xml"
 
 
@@ -20,7 +23,7 @@ def xml_body(*positions: str) -> bytes:
 
 @responses.activate
 def test_maps_jobs_with_dates_and_additional_offices() -> None:
-    created = (datetime.now(timezone.utc) - timedelta(days=2)).isoformat()
+    created = (datetime.now(UTC) - timedelta(days=2)).isoformat()
     body = xml_body(f"""
         <position>
             <id>2656243</id>

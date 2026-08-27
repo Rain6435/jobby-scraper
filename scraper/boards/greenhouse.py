@@ -12,8 +12,8 @@ first_published (ISO+tz), content (HTML, only with content=true). Config:
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
-from typing import cast, NotRequired, TypedDict
+from datetime import UTC, datetime
+from typing import NotRequired, TypedDict, cast
 
 from scraper.boards.base import BaseScraper, make_session
 from scraper.config_types import GreenhouseConfig
@@ -58,8 +58,8 @@ def posted_days_from_iso(iso: str) -> int | None:
     except ValueError:
         return None
     if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=timezone.utc)
-    delta = datetime.now(timezone.utc) - dt
+        dt = dt.replace(tzinfo=UTC)
+    delta = datetime.now(UTC) - dt
     return max(delta.days, 0)
 
 
@@ -83,9 +83,7 @@ class GreenhouseScraper(BaseScraper):
         session.headers.update({"User-Agent": "Mozilla/5.0", "Accept": "application/json"})
 
         log.debug("%s: fetching job list", self.name)
-        resp = session.get(
-            API.format(token=token), params={"content": "true"}, timeout=TIMEOUT
-        )
+        resp = session.get(API.format(token=token), params={"content": "true"}, timeout=TIMEOUT)
         resp.raise_for_status()
         body: GreenhouseJobsResponse = resp.json()
         postings = body.get("jobs", [])

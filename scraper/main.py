@@ -50,7 +50,7 @@ import os
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -217,7 +217,8 @@ def run(
             log.warning(
                 "Interrupted — %d/%d companies had already finished scraping; "
                 "saving their results instead of discarding the run",
-                len(results), len(companies),
+                len(results),
+                len(companies),
             )
             for f in futures:
                 f.cancel()
@@ -227,7 +228,9 @@ def run(
     current: list[Job] = [job for r in results if r is not None for job in r]
     log.info(
         "Scraped %d jobs across %d companies (%d scrape failures)",
-        len(current), len(results), failures,
+        len(current),
+        len(results),
+        failures,
     )
 
     # No age filtering — every currently-listed posting is stored, every
@@ -236,7 +239,12 @@ def run(
     # day count: --database is a full-replace write of exactly
     # `full_current` below.
     if limit is not None:
-        log.info("--limit %d applied: capping %d jobs down to %d", limit, len(current), min(limit, len(current)))
+        log.info(
+            "--limit %d applied: capping %d jobs down to %d",
+            limit,
+            len(current),
+            min(limit, len(current)),
+        )
         current = current[:limit]
 
     if not current and failures:
@@ -264,7 +272,7 @@ def run(
     # posted_date from a board's posted_days, so an unstamped new job is
     # written with posted_date=NULL and — since load_previous() round-trips
     # both fields unchanged — never self-heals on a later run either.
-    now = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    now = datetime.now(UTC).isoformat(timespec="seconds")
     for job in current:
         if job.id in previous:
             job.first_seen = previous[job.id].first_seen
@@ -308,7 +316,12 @@ def run(
             job.role_summary = summarize_role(job.title, job.company, job.description)
             if job.role_summary:
                 summarized += 1
-                log.info("Role summary for %s @ %s: %s", job.title, job.company, job.role_summary)
+                log.info(
+                    "Role summary for %s @ %s: %s",
+                    job.title,
+                    job.company,
+                    job.role_summary,
+                )
         if new_jobs:
             log.info("AI role summaries: %d of %d succeeded", summarized, len(new_jobs))
 
@@ -337,7 +350,9 @@ def run(
             "Run interrupted after %.1fs — saved %d/%d companies scraped before "
             "Ctrl-C, remaining companies carried forward unchanged from the "
             "previous snapshot",
-            time.monotonic() - run_started, len(completed_names), len(companies),
+            time.monotonic() - run_started,
+            len(completed_names),
+            len(companies),
         )
         # 130 = 128+SIGINT, the conventional shell exit code for
         # Ctrl-C — distinguishes "interrupted, partial save" from both a
@@ -419,15 +434,17 @@ def main() -> None:
         "Anthropic first, fall back to Ollama if it's unconfigured or fails.",
     )
     args = parser.parse_args()
-    sys.exit(run(
-        company=args.company,
-        limit=args.limit,
-        verbose=args.verbose,
-        database=args.database,
-        concurrency=args.concurrency,
-        no_detail_cache=args.no_detail_cache,
-        llm_provider=args.llm_provider,
-    ))
+    sys.exit(
+        run(
+            company=args.company,
+            limit=args.limit,
+            verbose=args.verbose,
+            database=args.database,
+            concurrency=args.concurrency,
+            no_detail_cache=args.no_detail_cache,
+            llm_provider=args.llm_provider,
+        )
+    )
 
 
 if __name__ == "__main__":

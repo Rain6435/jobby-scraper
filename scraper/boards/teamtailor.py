@@ -12,8 +12,8 @@ Config: {"board": "teamtailor", "company": "<slug>"}.
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
-from typing import cast, NotRequired, TypedDict
+from datetime import UTC, datetime
+from typing import NotRequired, TypedDict, cast
 
 from scraper.boards.base import BaseScraper, make_session
 from scraper.boards.greenhouse import relative_day_text
@@ -63,8 +63,8 @@ def posted_days_from_iso(iso: str | None) -> int | None:
     except ValueError:
         return None
     if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=timezone.utc)
-    delta = datetime.now(timezone.utc) - dt
+        dt = dt.replace(tzinfo=UTC)
+    delta = datetime.now(UTC) - dt
     return max(delta.days, 0)
 
 

@@ -7,8 +7,13 @@ from scraper.storage import diff, load_snapshot, save_snapshot
 
 def job(jid: str, title: str = "T") -> Job:
     return Job(
-        id=jid, company="X", title=title, location="Montreal",
-        url="https://example.com", posted_on="Posted Today", source="workday",
+        id=jid,
+        company="X",
+        title=title,
+        location="Montreal",
+        url="https://example.com",
+        posted_on="Posted Today",
+        source="workday",
     )
 
 

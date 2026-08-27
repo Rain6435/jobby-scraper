@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import NotRequired, TypedDict
 
@@ -35,7 +35,12 @@ def load_snapshot(path: Path) -> dict[str, Job]:
     try:
         data: SnapshotFile = json.loads(path.read_text(encoding="utf-8-sig"))
         jobs = {j["id"]: Job.from_dict(j) for j in data.get("jobs", [])}
-        log.debug("Loaded snapshot %s: %d jobs, updated_at=%s", path, len(jobs), data.get("updated_at"))
+        log.debug(
+            "Loaded snapshot %s: %d jobs, updated_at=%s",
+            path,
+            len(jobs),
+            data.get("updated_at"),
+        )
         return jobs
     except (json.JSONDecodeError, UnicodeDecodeError, KeyError, TypeError):
         log.warning("Snapshot %s is corrupt — treating as first run", path)
@@ -45,7 +50,12 @@ def load_snapshot(path: Path) -> dict[str, Job]:
 def diff(previous: dict[str, Job], current: list[Job]) -> list[Job]:
     """Jobs present now but absent from the previous snapshot."""
     new_jobs = [job for job in current if job.id not in previous]
-    log.debug("Diff: %d current, %d previous, %d new", len(current), len(previous), len(new_jobs))
+    log.debug(
+        "Diff: %d current, %d previous, %d new",
+        len(current),
+        len(previous),
+        len(new_jobs),
+    )
     return new_jobs
 
 
@@ -55,7 +65,7 @@ def save_snapshot(path: Path, jobs: list[Job], new_ids: set[str]) -> None:
     Preserves first_seen from prior runs (caller sets it on Job); new jobs are
     stamped with the current time.
     """
-    now = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    now = datetime.now(UTC).isoformat(timespec="seconds")
     serialized: list[SnapshotJobDict] = []
     for job in jobs:
         if not job.first_seen:
@@ -65,7 +75,5 @@ def save_snapshot(path: Path, jobs: list[Job], new_ids: set[str]) -> None:
 
     payload = {"updated_at": now, "jobs": serialized}
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
-    )
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     log.debug("Wrote %s: %d jobs (%d flagged is_new)", path, len(serialized), len(new_ids))

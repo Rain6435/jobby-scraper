@@ -49,8 +49,15 @@ MAX_PAGES = 5  # safety cap per keyword, ~500 jobs
 TIMEOUT = 30
 
 ATTRIBUTES = [
-    "id", "title", "locations", "countries", "how_to_apply",
-    "name_of_employer", "description", "activation_date", "sectors",
+    "id",
+    "title",
+    "locations",
+    "countries",
+    "how_to_apply",
+    "name_of_employer",
+    "description",
+    "activation_date",
+    "sectors",
 ]
 
 log = logging.getLogger("scraper.climatebase")
@@ -79,28 +86,38 @@ class ClimatebaseScraper(BaseScraper):
         cfg: ClimatebaseConfig = cast(ClimatebaseConfig, self.company)
         keywords: list[str] = cfg.get("keywords") or [""]
         session = make_session()
-        session.headers.update({
-            "x-algolia-application-id": APP_ID,
-            "x-algolia-api-key": API_KEY,
-            "content-type": "application/x-www-form-urlencoded",
-        })
+        session.headers.update(
+            {
+                "x-algolia-application-id": APP_ID,
+                "x-algolia-api-key": API_KEY,
+                "content-type": "application/x-www-form-urlencoded",
+            }
+        )
 
         by_id: dict[str, Job] = {}
         for keyword in keywords:
             for page in range(MAX_PAGES):
                 log.debug("%s: keyword=%r page=%d", self.name, keyword, page)
-                body = json.dumps({
-                    "query": keyword,
-                    "page": page,
-                    "hitsPerPage": HITS_PER_PAGE,
-                    "facetFilters": ["active:true", "countries:Canada"],
-                    "attributesToRetrieve": ATTRIBUTES,
-                })
+                body = json.dumps(
+                    {
+                        "query": keyword,
+                        "page": page,
+                        "hitsPerPage": HITS_PER_PAGE,
+                        "facetFilters": ["active:true", "countries:Canada"],
+                        "attributesToRetrieve": ATTRIBUTES,
+                    }
+                )
                 resp = session.post(API, data=body, timeout=TIMEOUT)
                 resp.raise_for_status()
                 data: ClimatebaseSearchResponse = resp.json()
                 hits = data.get("hits", [])
-                log.debug("%s: keyword=%r page=%d returned %d hits", self.name, keyword, page, len(hits))
+                log.debug(
+                    "%s: keyword=%r page=%d returned %d hits",
+                    self.name,
+                    keyword,
+                    page,
+                    len(hits),
+                )
                 for hit in hits:
                     job = self._to_job(hit)
                     by_id[job.id] = job
@@ -108,7 +125,12 @@ class ClimatebaseScraper(BaseScraper):
                     break
 
         jobs = list(by_id.values())
-        log.debug("%s: fetched %d unique jobs across %d keyword(s)", self.name, len(jobs), len(keywords))
+        log.debug(
+            "%s: fetched %d unique jobs across %d keyword(s)",
+            self.name,
+            len(jobs),
+            len(keywords),
+        )
         return jobs
 
     def _to_job(self, hit: ClimatebaseHit) -> Job:

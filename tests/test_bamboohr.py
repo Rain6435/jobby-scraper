@@ -14,16 +14,22 @@ def detail_url(job_id: str) -> str:
 
 @responses.activate
 def test_maps_list_rows_with_constructed_url_and_no_date() -> None:
-    responses.get(LIST_URL, json={"result": [
-        {
-            "id": "562",
-            "jobOpeningName": "Software Developer",
-            "location": {"city": "Oakville", "state": "Ontario"},
+    responses.get(
+        LIST_URL,
+        json={
+            "result": [
+                {
+                    "id": "562",
+                    "jobOpeningName": "Software Developer",
+                    "location": {"city": "Oakville", "state": "Ontario"},
+                },
+            ]
         },
-    ]})
-    responses.get(detail_url("562"), json={
-        "result": {"jobOpening": {"description": "<p>Build features.</p>"}}
-    })
+    )
+    responses.get(
+        detail_url("562"),
+        json={"result": {"jobOpening": {"description": "<p>Build features.</p>"}}},
+    )
 
     jobs = BambooHRScraper(COMPANY).fetch_jobs()
 
@@ -33,7 +39,9 @@ def test_maps_list_rows_with_constructed_url_and_no_date() -> None:
     assert job.title == "Software Developer"
     assert job.location == "Oakville, Ontario"
     assert job.locations == ["Oakville, Ontario"]
-    assert job.url == "https://euna.bamboohr.com/careers/562"   # built, no detail call needed for URL
+    assert (
+        job.url == "https://euna.bamboohr.com/careers/562"
+    )  # built, no detail call needed for URL
     assert job.posted_days is None
     assert job.posted_on == ""
     assert job.source == "bamboohr"
@@ -42,9 +50,18 @@ def test_maps_list_rows_with_constructed_url_and_no_date() -> None:
 
 @responses.activate
 def test_handles_missing_location_parts() -> None:
-    responses.get(LIST_URL, json={"result": [
-        {"id": "9", "jobOpeningName": "Remote Role", "location": {"city": "Toronto"}},
-    ]})
+    responses.get(
+        LIST_URL,
+        json={
+            "result": [
+                {
+                    "id": "9",
+                    "jobOpeningName": "Remote Role",
+                    "location": {"city": "Toronto"},
+                },
+            ]
+        },
+    )
     responses.get(detail_url("9"), json={"result": {"jobOpening": {}}})
 
     jobs = BambooHRScraper(COMPANY).fetch_jobs()
@@ -56,9 +73,14 @@ def test_handles_missing_location_parts() -> None:
 
 @responses.activate
 def test_description_empty_on_detail_failure() -> None:
-    responses.get(LIST_URL, json={"result": [
-        {"id": "9", "jobOpeningName": "Remote Role", "location": {}},
-    ]})
+    responses.get(
+        LIST_URL,
+        json={
+            "result": [
+                {"id": "9", "jobOpeningName": "Remote Role", "location": {}},
+            ]
+        },
+    )
     responses.get(detail_url("9"), status=500)
 
     jobs = BambooHRScraper(COMPANY).fetch_jobs()
@@ -69,16 +91,32 @@ def test_description_empty_on_detail_failure() -> None:
 
 @responses.activate
 def test_skips_detail_fetch_for_job_already_in_previous_snapshot() -> None:
-    responses.get(LIST_URL, json={"result": [
-        {"id": "562", "jobOpeningName": "Software Developer", "location": {"city": "Oakville"}},
-    ]})
+    responses.get(
+        LIST_URL,
+        json={
+            "result": [
+                {
+                    "id": "562",
+                    "jobOpeningName": "Software Developer",
+                    "location": {"city": "Oakville"},
+                },
+            ]
+        },
+    )
     # No detail-endpoint mock registered — a call here would fail the test.
 
-    previous = {"euna:562": Job(
-        id="euna:562", company="Euna", title="Old title", location="",
-        url="u", posted_on="", source="bamboohr",
-        description="Cached description.",
-    )}
+    previous = {
+        "euna:562": Job(
+            id="euna:562",
+            company="Euna",
+            title="Old title",
+            location="",
+            url="u",
+            posted_on="",
+            source="bamboohr",
+            description="Cached description.",
+        )
+    }
 
     jobs = BambooHRScraper(COMPANY, previous=previous).fetch_jobs()
 
@@ -88,12 +126,22 @@ def test_skips_detail_fetch_for_job_already_in_previous_snapshot() -> None:
 
 @responses.activate
 def test_fetches_detail_for_job_not_in_previous_snapshot() -> None:
-    responses.get(LIST_URL, json={"result": [
-        {"id": "562", "jobOpeningName": "Software Developer", "location": {"city": "Oakville"}},
-    ]})
-    responses.get(detail_url("562"), json={
-        "result": {"jobOpening": {"description": "<p>Freshly fetched.</p>"}}
-    })
+    responses.get(
+        LIST_URL,
+        json={
+            "result": [
+                {
+                    "id": "562",
+                    "jobOpeningName": "Software Developer",
+                    "location": {"city": "Oakville"},
+                },
+            ]
+        },
+    )
+    responses.get(
+        detail_url("562"),
+        json={"result": {"jobOpening": {"description": "<p>Freshly fetched.</p>"}}},
+    )
 
     jobs = BambooHRScraper(COMPANY, previous={}).fetch_jobs()
 

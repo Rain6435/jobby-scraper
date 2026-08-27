@@ -12,8 +12,8 @@ Response is a bare JSON array (no envelope key). Each posting has id, text
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
-from typing import cast, NotRequired, TypedDict
+from datetime import UTC, datetime
+from typing import NotRequired, TypedDict, cast
 
 from scraper.boards.base import BaseScraper, make_session
 from scraper.boards.greenhouse import relative_day_text
@@ -47,10 +47,10 @@ def posted_days_from_epoch_ms(ms: int | None) -> int | None:
     if not ms:
         return None
     try:
-        dt = datetime.fromtimestamp(ms / 1000, tz=timezone.utc)
+        dt = datetime.fromtimestamp(ms / 1000, tz=UTC)
     except (TypeError, ValueError, OSError):
         return None
-    delta = datetime.now(timezone.utc) - dt
+    delta = datetime.now(UTC) - dt
     return max(delta.days, 0)
 
 
@@ -64,9 +64,7 @@ class LeverScraper(BaseScraper):
         session.headers.update({"User-Agent": "Mozilla/5.0", "Accept": "application/json"})
 
         log.debug("%s: fetching job list", self.name)
-        resp = session.get(
-            API.format(company=company), params={"mode": "json"}, timeout=TIMEOUT
-        )
+        resp = session.get(API.format(company=company), params={"mode": "json"}, timeout=TIMEOUT)
         resp.raise_for_status()
         postings: list[LeverPosting] = resp.json()
         log.debug("%s: %d postings returned", self.name, len(postings))

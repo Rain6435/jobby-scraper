@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Unpack
 
 import pytest
@@ -16,7 +16,8 @@ API = "https://data.usajobs.gov/api/search"
 
 
 def _item(
-    matched_object_id: str = "833196500", **overrides: Unpack[UsajobsMatchedObjectDescriptor],
+    matched_object_id: str = "833196500",
+    **overrides: Unpack[UsajobsMatchedObjectDescriptor],
 ) -> UsajobsSearchResultItem:
     descriptor: UsajobsMatchedObjectDescriptor = {
         "PositionTitle": "  IT Specialist  ",
@@ -27,7 +28,7 @@ def _item(
             {"LocationName": "Washington, District of Columbia"},
             {"LocationName": "Remote"},
         ],
-        "PublicationStartDate": (datetime.now(timezone.utc) - timedelta(days=2)).strftime(
+        "PublicationStartDate": (datetime.now(UTC) - timedelta(days=2)).strftime(
             "%Y-%m-%dT%H:%M:%S.0000"
         ),
         "QualificationSummary": "<p>Must have <b>experience</b>.</p>",
@@ -38,7 +39,9 @@ def _item(
 
 
 @responses.activate
-def test_maps_jobs_with_per_result_company_and_locations(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_maps_jobs_with_per_result_company_and_locations(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     monkeypatch.setenv("USAJOBS_API_KEY", "key")
     monkeypatch.setenv("USAJOBS_USER_AGENT", "test@example.com")
     responses.get(API, json={"SearchResult": {"SearchResultItems": [_item()]}})
@@ -60,7 +63,9 @@ def test_maps_jobs_with_per_result_company_and_locations(monkeypatch: pytest.Mon
 
 
 @responses.activate
-def test_falls_back_to_qualification_summary_and_display_location(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_falls_back_to_qualification_summary_and_display_location(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     monkeypatch.setenv("USAJOBS_API_KEY", "key")
     monkeypatch.setenv("USAJOBS_USER_AGENT", "test@example.com")
     item = _item(
@@ -78,7 +83,9 @@ def test_falls_back_to_qualification_summary_and_display_location(monkeypatch: p
 
 
 @responses.activate
-def test_falls_back_to_department_name_when_organization_name_missing(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_falls_back_to_department_name_when_organization_name_missing(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     monkeypatch.setenv("USAJOBS_API_KEY", "key")
     monkeypatch.setenv("USAJOBS_USER_AGENT", "test@example.com")
     item = _item(OrganizationName="")
