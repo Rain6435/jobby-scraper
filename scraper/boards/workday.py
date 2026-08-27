@@ -12,7 +12,7 @@ fetch is skipped for a posting already known from the previous run (see
 BaseScraper._cached_detail) — otherwise it's called unconditionally, ~3x the
 request volume of a list-only scrape:
     GET <url minus "/jobs"><externalPath>
-→ {"jobPostingInfo": {"location": "...", "additionalLocations": [...], "jobDescription": "<html>..."}}
+→ {"jobPostingInfo": {"location": "...", "additionalLocations": [...], "jobDescription": "<html>...", "postedOn": "..."}}
 
 Every posting is fetched every run, up to MAX_JOBS — no age-based cutoff or
 early-pagination-stop. A job leaves the pool once it stops appearing here,
@@ -21,6 +21,16 @@ semantics: a full run's stored set is exactly this run's `current`).
 `posted_days` is still parsed and stored on Job (it's what
 scraper/db.py::write_jobs derives posted_date from), just no longer used to
 filter or skip anything here.
+
+Some tenants (confirmed on Parsons, 2026-08) omit postedOn from the list
+response entirely, even though the same field is present on the detail
+page — fetch_jobs() falls back to the detail value only when the list gave
+nothing, since the list value is cheaper and (when present) exactly as
+reliable. Only helps newly-discovered jobs: a cached (already-known)
+posting's posted_on is never re-derived here (see _posted_date() in
+scraper/db.py, which preserves a job's first-derived posted_date forever
+once set), so this closes the gap going forward rather than backfilling
+jobs already stuck with posted_days=None from a prior run.
 
 Some tenants' search index carries dangling entries — confirmed on Airbus's
 (2026-08): a posting with only `{"bulletFields": [...]}` and every other
@@ -71,6 +81,7 @@ class WorkdayJobPostingInfo(TypedDict):
     location: NotRequired[str]
     additionalLocations: NotRequired[list[str]]
     jobDescription: NotRequired[str]
+    postedOn: NotRequired[str]
 
 
 class WorkdayJobDetailResponse(TypedDict):
@@ -151,18 +162,17 @@ class WorkdayScraper(BaseScraper):
                     continue
 
                 posted_on = posting.get("postedOn", "").strip()
-                posted_days = parse_posted_days(posted_on)
 
                 external_path = posting.get("externalPath", "")
                 bullet_fields = posting.get("bulletFields") or []
                 external_id = bullet_fields[0] if bullet_fields else external_path
                 job_id = f"{slug}:{external_id}"
 
-                locations, description = cast(
-                    "tuple[list[str], str]",
+                locations, description, detail_posted_on = cast(
+                    "tuple[list[str], str, str]",
                     self._fetch_with_cache(
                         job_id,
-                        ("locations", "description"),
+                        ("locations", "description", "posted_on"),
                         lambda: self._fetch_detail(
                             session,
                             detail_base,
@@ -171,6 +181,15 @@ class WorkdayScraper(BaseScraper):
                         ),
                     ),
                 )
+                # Some tenants (confirmed on Parsons, 2026-08) omit postedOn
+                # from the list response entirely even though it's present
+                # on the job's own detail page — only fall back there when
+                # the list gave us nothing, since the list value is cheaper
+                # and (when present) exactly as reliable.
+                if not posted_on:
+                    posted_on = detail_posted_on
+                posted_days = parse_posted_days(posted_on)
+
                 jobs.append(
                     Job(
                         id=job_id,
@@ -197,12 +216,18 @@ class WorkdayScraper(BaseScraper):
         detail_base: str,
         external_path: str,
         locations_text: str,
-    ) -> tuple[list[str], str]:
+    ) -> tuple[list[str], str, str]:
         """Fetch the job detail endpoint for every posting (not just
         multi-location ones) to resolve 'N Locations' placeholders and get the
-        full description. Returns (locations, description); on any failure,
-        falls back to ([locations_text] or [], "") so a bad detail fetch never
-        drops the job or crashes the run.
+        full description. Returns (locations, description, posted_on); on any
+        failure, falls back to ([locations_text] or [], "", "") so a bad
+        detail fetch never drops the job or crashes the run.
+
+        posted_on here is a fallback source only — some tenants' list
+        response omits postedOn entirely even though the same field is
+        present on the detail page (confirmed on Parsons, 2026-08); the
+        caller prefers the list value when present and only reaches for this
+        one when it's empty.
         """
         fallback_locations = [locations_text] if locations_text else []
         try:
@@ -216,7 +241,8 @@ class WorkdayScraper(BaseScraper):
             else:
                 locations = fallback_locations
             description = html_to_text(info.get("jobDescription", ""))
-            return locations, description
+            posted_on = info.get("postedOn", "").strip()
+            return locations, description, posted_on
         except Exception:
             log.warning("Detail fetch failed for %s%s", detail_base, external_path)
-            return fallback_locations, ""
+            return fallback_locations, "", ""
