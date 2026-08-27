@@ -79,11 +79,13 @@ class BambooHRScraper(BaseScraper):
             where = ", ".join(part for part in (loc.get("city"), loc.get("state")) if part)
             locations = [where] if where else []
             job_id = f"{self.slug}:{r['id']}"
-            cached = self._cached_detail(job_id)
-            description = (
-                cached.description
-                if cached is not None
-                else self._fetch_description(session, subdomain, r["id"])
+            (description,) = cast(
+                "tuple[str]",
+                self._fetch_with_cache(
+                    job_id,
+                    ("description",),
+                    lambda: (self._fetch_description(session, subdomain, r["id"]),),
+                ),
             )
             jobs.append(
                 Job(

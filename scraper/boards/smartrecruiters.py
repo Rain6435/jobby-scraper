@@ -98,11 +98,14 @@ class SmartRecruitersScraper(BaseScraper):
                 locations = [where] if where else []
                 posted_days = posted_days_from_iso(p.get("releasedDate", ""))
                 job_id = f"{self.slug}:{p['id']}"
-                cached = self._cached_detail(job_id)
-                if cached is not None:
-                    description, posting_url = cached.description, cached.url
-                else:
-                    description, posting_url = self._fetch_detail(session, company, p["id"])
+                description, posting_url = cast(
+                    "tuple[str, str]",
+                    self._fetch_with_cache(
+                        job_id,
+                        ("description", "url"),
+                        lambda: self._fetch_detail(session, company, p["id"]),
+                    ),
+                )
                 jobs.append(
                     Job(
                         id=job_id,

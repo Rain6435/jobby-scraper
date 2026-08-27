@@ -158,18 +158,19 @@ class WorkdayScraper(BaseScraper):
                 external_id = bullet_fields[0] if bullet_fields else external_path
                 job_id = f"{slug}:{external_id}"
 
-                cached = self._cached_detail(job_id)
-                if cached is not None:
-                    # Already scraped last run — reuse its detail-only
-                    # fields instead of re-fetching them.
-                    locations, description = cached.locations, cached.description
-                else:
-                    locations, description = self._fetch_detail(
-                        session,
-                        detail_base,
-                        external_path,
-                        posting.get("locationsText", "").strip(),
-                    )
+                locations, description = cast(
+                    "tuple[list[str], str]",
+                    self._fetch_with_cache(
+                        job_id,
+                        ("locations", "description"),
+                        lambda: self._fetch_detail(
+                            session,
+                            detail_base,
+                            external_path,
+                            posting.get("locationsText", "").strip(),
+                        ),
+                    ),
+                )
                 jobs.append(
                     Job(
                         id=job_id,
