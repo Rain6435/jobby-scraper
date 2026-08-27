@@ -1,6 +1,5 @@
 import json
 import os
-from collections.abc import Callable
 from pathlib import Path
 
 import pytest
@@ -50,15 +49,28 @@ def job(
     )
 
 
-def counting_stub(return_value: str = "") -> Callable[..., str]:
+class CountingStub:
     """A summarize_role-shaped stub that tracks how many times it was called."""
 
-    def stub(*args: object) -> str:
-        stub.calls += 1  # type: ignore[attr-defined]
-        return return_value
+    def __init__(self, return_value: str = "") -> None:
+        self.return_value = return_value
+        self.calls = 0
 
-    stub.calls = 0  # type: ignore[attr-defined]
-    return stub
+    def __call__(self, *args: object) -> str:
+        self.calls += 1
+        return self.return_value
+
+
+class CountingWriteJobsStub:
+    """A write_jobs-shaped stub that tracks how many times it was called."""
+
+    def __init__(self, success: bool) -> None:
+        self.success = success
+        self.calls = 0
+
+    def __call__(self, database: str, jobs: list[Job], new_ids: set[str]) -> bool:
+        self.calls += 1
+        return self.success
 
 
 def setup_run(
@@ -119,7 +131,8 @@ def test_full_run_without_database_or_limit_errors(tmp_path: Path) -> None:
         companies=[{"name": "Acme", "board": "stub"}],
         jobs_by_company={"Acme": [job("Acme", "acme:1")]},
     )
-    deps.summarize_role = counting_stub()
+    summarize_calls = CountingStub()
+    deps.summarize_role = summarize_calls
 
     result = main_module.run(deps=deps)  # no database=, no limit=
 
@@ -127,7 +140,7 @@ def test_full_run_without_database_or_limit_errors(tmp_path: Path) -> None:
     # which exempts the smoke-test path) there'd be nowhere to write the
     # results, so this must fail fast rather than silently scrape for nothing.
     assert result == 1
-    assert deps.summarize_role.calls == 0  # type: ignore[attr-defined]
+    assert summarize_calls.calls == 0
 
 
 def test_company_scoped_run_merges_into_existing_snapshot(tmp_path: Path) -> None:
@@ -229,12 +242,12 @@ def test_write_failure_fails_the_run(tmp_path: Path) -> None:
         companies=[{"name": "Acme", "board": "stub"}],
         jobs_by_company={"Acme": [job("Acme", "acme:1")]},
     )
-    write_calls = counting_stub("")
-    deps.write_jobs = lambda *a: (write_calls(*a), False)[1]  # type: ignore[assignment]
+    write_calls = CountingWriteJobsStub(success=False)
+    deps.write_jobs = write_calls
 
     result = main_module.run(database=db_url, deps=deps)
 
-    assert write_calls.calls == 1  # type: ignore[attr-defined]
+    assert write_calls.calls == 1
     assert result == 1
 
 
@@ -273,7 +286,8 @@ def test_interrupted_run_saves_completed_companies_and_keeps_others_unchanged(
             return super().fetch_jobs()
 
     deps.scrapers = {"stub": InterruptingScraper}
-    deps.summarize_role = counting_stub()
+    summarize_calls = CountingStub()
+    deps.summarize_role = summarize_calls
     # concurrency=1 makes ordering deterministic: Acme completes, then
     # Beta's KeyboardInterrupt fires before Zeta is ever submitted.
     result = main_module.run(database=db_url, concurrency=1, deps=deps)
@@ -285,7 +299,7 @@ def test_interrupted_run_saves_completed_companies_and_keeps_others_unchanged(
     # Beta's own scrape raised before producing a job, so nothing new to
     # carry for it either way — this assertion documents that, not a
     # requirement that beta:1 must be absent.
-    assert deps.summarize_role.calls == 0  # type: ignore[attr-defined] # skipped entirely once interrupted
+    assert summarize_calls.calls == 0  # skipped entirely once interrupted
 
 
 def test_concurrency_flag_is_accepted_and_threaded_through(tmp_path: Path) -> None:
@@ -329,13 +343,14 @@ def test_llm_provider_flag_sets_env_for_summarize(
         jobs_by_company={"Acme": [job("Acme", "acme:1")]},
     )
     monkeypatch.delenv("LLM_PROVIDER", raising=False)
-    deps.summarize_role = counting_stub()
+    summarize_calls = CountingStub()
+    deps.summarize_role = summarize_calls
 
     result = main_module.run(llm_provider="ollama", database=db_url, deps=deps)
 
     assert result == 0
     assert os.environ["LLM_PROVIDER"] == "ollama"
-    assert deps.summarize_role.calls == 1  # type: ignore[attr-defined]
+    assert summarize_calls.calls == 1
 
 
 def test_llm_provider_omitted_leaves_env_untouched(
@@ -366,24 +381,26 @@ def test_role_summary_carried_over_for_already_known_job(tmp_path: Path) -> None
         companies=[{"name": "Acme", "board": "stub"}],
         jobs_by_company={"Acme": [job("Acme", "acme:1")]},
     )
-    deps.summarize_role = counting_stub("Builds great things.")
+    first_summarize_calls = CountingStub("Builds great things.")
+    deps.summarize_role = first_summarize_calls
 
     assert main_module.run(database=db_url, deps=deps) == 0
 
     assert db_role_summary(db_url, "acme:1") == "Builds great things."
-    assert deps.summarize_role.calls == 1  # type: ignore[attr-defined]
+    assert first_summarize_calls.calls == 1
 
     # Second run: same job id, but a FRESH Job object (role_summary="" by
     # default) — exactly what every real board scraper produces, since none
     # of them read role_summary back from anywhere.
     jobs_by_company_state["Acme"] = [job("Acme", "acme:1")]
-    deps.summarize_role = counting_stub()
+    second_summarize_calls = CountingStub()
+    deps.summarize_role = second_summarize_calls
 
     assert main_module.run(database=db_url, deps=deps) == 0
 
     # Not re-requested (correct, unchanged behavior) — and critically, the
     # real summary from run 1 must survive, not get overwritten with "".
-    assert deps.summarize_role.calls == 0  # type: ignore[attr-defined]
+    assert second_summarize_calls.calls == 0
     assert db_role_summary(db_url, "acme:1") == "Builds great things."
 
 

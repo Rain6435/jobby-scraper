@@ -207,7 +207,9 @@ def test_falls_back_to_detail_postedon_when_list_omits_it() -> None:
 def test_list_postedon_wins_over_detail_when_both_present() -> None:
     """The list value is cheaper and, when present, exactly as reliable —
     the detail page should never override a real list-level value."""
-    single = posting(title="Single", path="/job/X/Single", loc="Montreal", posted="Posted Today", rid="S-1")
+    single = posting(
+        title="Single", path="/job/X/Single", loc="Montreal", posted="Posted Today", rid="S-1"
+    )
     responses.post(COMPANY["url"], json={"total": 1, "jobPostings": [single]})
     responses.get(
         f"{DETAIL_BASE}/job/X/Single",
