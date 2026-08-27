@@ -49,13 +49,16 @@ import logging
 import os
 import sys
 import time
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 
 from dotenv import load_dotenv
 
 from scraper.boards import SCRAPERS
+from scraper.boards.base import BaseScraper
 from scraper.config_types import CompanyConfig, ConfigFile
 from scraper.db import load_previous, write_jobs
 from scraper.models import Job
@@ -78,6 +81,19 @@ _LEVELS = {
 }
 
 
+@dataclass
+class RunDeps:
+    """Injectable seam for run()'s external effects — real implementations
+    by default; tests substitute stubs here instead of monkeypatching this
+    module's globals."""
+
+    config_path: Path = CONFIG_PATH
+    scrapers: dict[str, type[BaseScraper]] = field(default_factory=lambda: dict(SCRAPERS))
+    summarize_role: Callable[[str, str, str], str] = summarize_role
+    write_jobs: Callable[[str, list[Job], set[str]], bool] = write_jobs
+    load_previous: Callable[[str], dict[str, Job]] = load_previous
+
+
 def _configure_log_level(verbose: bool) -> None:
     """--verbose or LOG_LEVEL=DEBUG bumps every scraper.* logger to DEBUG."""
     level_name = "DEBUG" if verbose else os.environ.get("LOG_LEVEL", "INFO").upper()
@@ -93,16 +109,18 @@ def run(
     concurrency: int | None = None,
     no_detail_cache: bool = False,
     llm_provider: str | None = None,
+    deps: RunDeps | None = None,
 ) -> int:
+    deps = deps or RunDeps()
     _configure_log_level(verbose)
     if llm_provider:
         # scraper/summarize.py reads this to pin to one provider instead of
         # its default try-Anthropic-then-Ollama fallback.
         os.environ["LLM_PROVIDER"] = llm_provider
     run_started = time.monotonic()
-    log.debug("Config path: %s", CONFIG_PATH)
+    log.debug("Config path: %s", deps.config_path)
 
-    config: ConfigFile = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
+    config: ConfigFile = json.loads(deps.config_path.read_text(encoding="utf-8"))
     # board-agnostic options passed to every scraper's __init__ — currently
     # empty (max_age_days was the only one, now removed: every board fetches
     # its full current listing every run, no age-based filtering).
@@ -138,7 +156,7 @@ def run(
     # read would create the file via metadata.create_all(), so it's skipped
     # here too.
     if database and limit is None:
-        previous = load_previous(database)
+        previous = deps.load_previous(database)
     else:
         log.debug("--limit set — skipping --database read for this smoke-test run")
         previous = {}
@@ -171,7 +189,7 @@ def run(
     def scrape_one(company_cfg: CompanyConfig) -> list[Job] | None:
         """Scrape a single company; None signals failure (logged, never fatal)."""
         board = company_cfg["board"]
-        scraper_cls = SCRAPERS.get(board)
+        scraper_cls = deps.scrapers.get(board)
         if scraper_cls is None:
             log.error("Unknown board %r for %s — skipping", board, company_cfg["name"])
             return None
@@ -313,7 +331,7 @@ def run(
     else:
         for job in new_jobs:
             log.debug("Requesting AI role summary for %s @ %s", job.title, job.company)
-            job.role_summary = summarize_role(job.title, job.company, job.description)
+            job.role_summary = deps.summarize_role(job.title, job.company, job.description)
             if job.role_summary:
                 summarized += 1
                 log.info(
@@ -341,7 +359,7 @@ def run(
     # ingest/parse against unchanged data (confirmed happening in practice
     # 2026-08-14 before this check existed).
     assert database is not None  # guaranteed by the --database-required check above
-    if not write_jobs(database, full_current, {j.id for j in new_jobs}):
+    if not deps.write_jobs(database, full_current, {j.id for j in new_jobs}):
         log.error("Database write failed — run's results were NOT persisted")
         return 1
 

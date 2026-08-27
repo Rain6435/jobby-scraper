@@ -184,6 +184,58 @@ def test_fetches_description_for_single_location_postings() -> None:
 
 
 @responses.activate
+def test_falls_back_to_detail_postedon_when_list_omits_it() -> None:
+    """Some tenants (confirmed on Parsons, 2026-08) omit postedOn from the
+    list response entirely, even though the same field is present on the
+    job's own detail page. A newly-discovered job on such a tenant should
+    still get a real posted_days instead of being stuck at None forever."""
+    no_posted_on = posting(title="No Date", path="/job/X/NoDate", loc="Remote", rid="ND-1")
+    del no_posted_on["postedOn"]
+    responses.post(COMPANY["url"], json={"total": 1, "jobPostings": [no_posted_on]})
+    responses.get(
+        f"{DETAIL_BASE}/job/X/NoDate",
+        json={"jobPostingInfo": {"postedOn": "Posted 3 Days Ago"}},
+    )
+
+    jobs = WorkdayScraper(COMPANY).fetch_jobs()
+
+    assert jobs[0].posted_on == "Posted 3 Days Ago"
+    assert jobs[0].posted_days == 3
+
+
+@responses.activate
+def test_list_postedon_wins_over_detail_when_both_present() -> None:
+    """The list value is cheaper and, when present, exactly as reliable —
+    the detail page should never override a real list-level value."""
+    single = posting(
+        title="Single", path="/job/X/Single", loc="Montreal", posted="Posted Today", rid="S-1"
+    )
+    responses.post(COMPANY["url"], json={"total": 1, "jobPostings": [single]})
+    responses.get(
+        f"{DETAIL_BASE}/job/X/Single",
+        json={"jobPostingInfo": {"postedOn": "Posted 30+ Days Ago"}},
+    )
+
+    jobs = WorkdayScraper(COMPANY).fetch_jobs()
+
+    assert jobs[0].posted_on == "Posted Today"
+    assert jobs[0].posted_days == 0
+
+
+@responses.activate
+def test_posted_days_stays_none_when_neither_list_nor_detail_has_it() -> None:
+    no_posted_on = posting(title="No Date", path="/job/X/NoDate", loc="Remote", rid="ND-1")
+    del no_posted_on["postedOn"]
+    responses.post(COMPANY["url"], json={"total": 1, "jobPostings": [no_posted_on]})
+    mock_any_detail({"jobPostingInfo": {}})
+
+    jobs = WorkdayScraper(COMPANY).fetch_jobs()
+
+    assert jobs[0].posted_on == ""
+    assert jobs[0].posted_days is None
+
+
+@responses.activate
 def test_description_empty_on_detail_failure() -> None:
     single = posting(title="Single", path="/job/X/Single", loc="Montreal, Canada", rid="S-1")
     responses.post(COMPANY["url"], json={"total": 1, "jobPostings": [single]})

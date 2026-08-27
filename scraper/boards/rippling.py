@@ -86,11 +86,13 @@ class RipplingScraper(BaseScraper):
                     if where:
                         locations.append(where)
                 job_id = f"{self.slug}:{item['id']}"
-                cached = self._cached_detail(job_id)
-                description = (
-                    cached.description
-                    if cached is not None
-                    else self._fetch_description(session, board_id, item["id"])
+                (description,) = cast(
+                    "tuple[str]",
+                    self._fetch_with_cache(
+                        job_id,
+                        ("description",),
+                        lambda: (self._fetch_description(session, board_id, item["id"]),),
+                    ),
                 )
                 jobs.append(
                     Job(

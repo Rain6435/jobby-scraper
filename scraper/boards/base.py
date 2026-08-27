@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import re
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 
 import requests
 from requests.adapters import HTTPAdapter
@@ -80,6 +81,21 @@ class BaseScraper(ABC):
         """The previous run's Job for this id, if any — lets a board reuse
         detail-only fields (description, etc.) instead of re-fetching them."""
         return self.previous.get(job_id)
+
+    def _fetch_with_cache(
+        self,
+        job_id: str,
+        fields: tuple[str, ...],
+        fetch_fn: Callable[[], tuple[object, ...]],
+    ) -> tuple[object, ...]:
+        """Cached-or-fetch branch shared by every detail-fetch board: pull
+        `fields` off the previous run's cached Job if job_id was already
+        known, otherwise call fetch_fn() — which owns its own exception
+        handling and fallback values, untouched by this helper."""
+        cached = self._cached_detail(job_id)
+        if cached is not None:
+            return tuple(getattr(cached, f) for f in fields)
+        return fetch_fn()
 
     @abstractmethod
     def fetch_jobs(self) -> list[Job]:

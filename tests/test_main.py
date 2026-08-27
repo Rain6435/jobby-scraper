@@ -1,7 +1,6 @@
 import json
 import os
 from pathlib import Path
-from unittest.mock import patch
 
 import pytest
 from sqlalchemy import create_engine, select
@@ -50,19 +49,45 @@ def job(
     )
 
 
+class CountingStub:
+    """A summarize_role-shaped stub that tracks how many times it was called."""
+
+    def __init__(self, return_value: str = "") -> None:
+        self.return_value = return_value
+        self.calls = 0
+
+    def __call__(self, *args: object) -> str:
+        self.calls += 1
+        return self.return_value
+
+
+class CountingWriteJobsStub:
+    """A write_jobs-shaped stub that tracks how many times it was called."""
+
+    def __init__(self, success: bool) -> None:
+        self.success = success
+        self.calls = 0
+
+    def __call__(self, database: str, jobs: list[Job], new_ids: set[str]) -> bool:
+        self.calls += 1
+        return self.success
+
+
 def setup_run(
     tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
     companies: list[CompanyConfig],
     jobs_by_company: dict[str, list[Job]],
-) -> str:
+) -> tuple[str, main_module.RunDeps]:
     global jobs_by_company_state
     jobs_by_company_state = jobs_by_company
     config_path = tmp_path / "config.json"
     write_config(config_path, companies)
-    monkeypatch.setattr(main_module, "CONFIG_PATH", config_path)
-    monkeypatch.setitem(main_module.SCRAPERS, "stub", StubScraper)
-    return f"sqlite:///{tmp_path / 'jobs.db'}"
+    deps = main_module.RunDeps(
+        config_path=config_path,
+        scrapers={"stub": StubScraper},
+        summarize_role=lambda title, company, description: "",
+    )
+    return f"sqlite:///{tmp_path / 'jobs.db'}", deps
 
 
 def db_job_ids(db_url: str) -> set[str]:
@@ -86,50 +111,41 @@ def db_first_seen_and_posted_date(db_url: str, job_id: str) -> tuple[str | None,
         return row.first_seen, row.posted_date
 
 
-def test_full_run_stores_every_job_unfiltered(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    db_url = setup_run(
+def test_full_run_stores_every_job_unfiltered(tmp_path: Path) -> None:
+    db_url, deps = setup_run(
         tmp_path,
-        monkeypatch,
         companies=[{"name": "Acme", "board": "stub"}],
         jobs_by_company={"Acme": [job("Acme", "acme:1")]},
     )
 
-    with patch.object(main_module, "summarize_role", return_value=""):
-        result = main_module.run(database=db_url)
+    result = main_module.run(database=db_url, deps=deps)
 
     assert result == 0
     # A blacklisted-looking, all-foreign-location job survives — no storage filter.
     assert db_job_ids(db_url) == {"acme:1"}
 
 
-def test_full_run_without_database_or_limit_errors(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    setup_run(
+def test_full_run_without_database_or_limit_errors(tmp_path: Path) -> None:
+    _db_url, deps = setup_run(
         tmp_path,
-        monkeypatch,
         companies=[{"name": "Acme", "board": "stub"}],
         jobs_by_company={"Acme": [job("Acme", "acme:1")]},
     )
+    summarize_calls = CountingStub()
+    deps.summarize_role = summarize_calls
 
-    with patch.object(main_module, "summarize_role", return_value="") as mock_summarize:
-        result = main_module.run()  # no database=, no limit=
+    result = main_module.run(deps=deps)  # no database=, no limit=
 
     # --database is the only sink now — without it (and without --limit,
     # which exempts the smoke-test path) there'd be nowhere to write the
     # results, so this must fail fast rather than silently scrape for nothing.
     assert result == 1
-    mock_summarize.assert_not_called()
+    assert summarize_calls.calls == 0
 
 
-def test_company_scoped_run_merges_into_existing_snapshot(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    db_url = setup_run(
+def test_company_scoped_run_merges_into_existing_snapshot(tmp_path: Path) -> None:
+    db_url, deps = setup_run(
         tmp_path,
-        monkeypatch,
         companies=[
             {"name": "Acme", "board": "stub"},
             {"name": "Beta", "board": "stub"},
@@ -140,124 +156,103 @@ def test_company_scoped_run_merges_into_existing_snapshot(
         },
     )
 
-    with patch.object(main_module, "summarize_role", return_value=""):
-        # Seed a full previous state (in --database, the --company merge's
-        # source) with both companies.
-        assert main_module.run(database=db_url) == 0
+    # Seed a full previous state (in --database, the --company merge's
+    # source) with both companies.
+    assert main_module.run(database=db_url, deps=deps) == 0
 
-        # Now Acme has a fresh listing; Beta isn't re-scraped this run.
-        jobs_by_company_state["Acme"] = [job("Acme", "acme:2")]
-        result = main_module.run(company="Acme", database=db_url)
+    # Now Acme has a fresh listing; Beta isn't re-scraped this run.
+    jobs_by_company_state["Acme"] = [job("Acme", "acme:2")]
+    result = main_module.run(company="Acme", database=db_url, deps=deps)
 
     assert result == 0
     # Beta's job is untouched; Acme's old job is gone, replaced by the fresh one.
     assert db_job_ids(db_url) == {"beta:1", "acme:2"}
 
 
-def test_company_scoped_run_requires_database(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    setup_run(
+def test_company_scoped_run_requires_database(tmp_path: Path) -> None:
+    _db_url, deps = setup_run(
         tmp_path,
-        monkeypatch,
         companies=[{"name": "Acme", "board": "stub"}],
         jobs_by_company={"Acme": [job("Acme", "acme:1")]},
     )
 
-    with patch.object(main_module, "summarize_role", return_value=""):
-        result = main_module.run(company="Acme")  # no database=
+    result = main_module.run(company="Acme", deps=deps)  # no database=
 
     assert result == 1
 
 
-def test_company_scoped_run_with_limit_does_not_require_database(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    setup_run(
+def test_company_scoped_run_with_limit_does_not_require_database(tmp_path: Path) -> None:
+    _db_url, deps = setup_run(
         tmp_path,
-        monkeypatch,
         companies=[{"name": "Acme", "board": "stub"}],
         jobs_by_company={"Acme": [job("Acme", "acme:1")]},
     )
 
-    with patch.object(main_module, "summarize_role", return_value=""):
-        # --limit is a smoke test — skips the --database requirement too.
-        result = main_module.run(company="Acme", limit=1)
+    # --limit is a smoke test — skips the --database requirement too.
+    result = main_module.run(company="Acme", limit=1, deps=deps)
 
     assert result == 0
 
 
-def test_unknown_company_name_errors(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    db_url = setup_run(
+def test_unknown_company_name_errors(tmp_path: Path) -> None:
+    db_url, deps = setup_run(
         tmp_path,
-        monkeypatch,
         companies=[{"name": "Acme", "board": "stub"}],
         jobs_by_company={"Acme": []},
     )
 
-    assert main_module.run(company="Nonexistent", database=db_url) == 1
+    assert main_module.run(company="Nonexistent", database=db_url, deps=deps) == 1
 
 
-def test_database_flag_mirrors_snapshot_into_sql_db(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    db_url = setup_run(
+def test_database_flag_mirrors_snapshot_into_sql_db(tmp_path: Path) -> None:
+    db_url, deps = setup_run(
         tmp_path,
-        monkeypatch,
         companies=[{"name": "Acme", "board": "stub"}],
         jobs_by_company={"Acme": [job("Acme", "acme:1")]},
     )
 
-    with patch.object(main_module, "summarize_role", return_value=""):
-        result = main_module.run(database=db_url)
+    result = main_module.run(database=db_url, deps=deps)
 
     assert result == 0
     assert db_job_ids(db_url) == {"acme:1"}
 
 
-def test_database_write_skipped_when_limit_set(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    db_url = setup_run(
+def test_database_write_skipped_when_limit_set(tmp_path: Path) -> None:
+    db_url, deps = setup_run(
         tmp_path,
-        monkeypatch,
         companies=[{"name": "Acme", "board": "stub"}],
         jobs_by_company={"Acme": [job("Acme", "acme:1")]},
     )
     db_path = tmp_path / "jobs.db"
 
-    with patch.object(main_module, "summarize_role", return_value=""):
-        result = main_module.run(limit=1, database=db_url)
+    result = main_module.run(limit=1, database=db_url, deps=deps)
 
     assert result == 0
     assert not db_path.exists()
 
 
-def test_write_failure_fails_the_run(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_write_failure_fails_the_run(tmp_path: Path) -> None:
     """write_jobs() now reports success/failure explicitly instead of
     swallowing every exception — confirmed in practice 2026-08-14 that a
     silently-swallowed write failure let --jobscraper-pipeline see exit 0
     and proceed against unchanged data. run() must propagate a real failure
     into a non-zero exit code."""
-    db_url = setup_run(
+    db_url, deps = setup_run(
         tmp_path,
-        monkeypatch,
         companies=[{"name": "Acme", "board": "stub"}],
         jobs_by_company={"Acme": [job("Acme", "acme:1")]},
     )
+    write_calls = CountingWriteJobsStub(success=False)
+    deps.write_jobs = write_calls
 
-    with (
-        patch.object(main_module, "summarize_role", return_value=""),
-        patch.object(main_module, "write_jobs", return_value=False) as mock_write,
-    ):
-        result = main_module.run(database=db_url)
+    result = main_module.run(database=db_url, deps=deps)
 
-    mock_write.assert_called_once()
+    assert write_calls.calls == 1
     assert result == 1
 
 
 def test_interrupted_run_saves_completed_companies_and_keeps_others_unchanged(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path,
 ) -> None:
     """Ctrl-C partway through a full run must not lose whatever already
     finished, and must not silently delete companies that hadn't been
@@ -266,9 +261,8 @@ def test_interrupted_run_saves_completed_companies_and_keeps_others_unchanged(
     land mid-request) — Zeta, already in a previous snapshot, was never
     even reached this run.
     """
-    db_url = setup_run(
+    db_url, deps = setup_run(
         tmp_path,
-        monkeypatch,
         companies=[
             {"name": "Acme", "board": "stub"},
             {"name": "Beta", "board": "stub"},
@@ -283,8 +277,7 @@ def test_interrupted_run_saves_completed_companies_and_keeps_others_unchanged(
 
     # Seed a previous snapshot so Zeta (never reached this run) has
     # something to be carried forward from, rather than trivially absent.
-    with patch.object(main_module, "summarize_role", return_value=""):
-        main_module.run(database=db_url)
+    main_module.run(database=db_url, deps=deps)
 
     class InterruptingScraper(StubScraper):
         def fetch_jobs(self) -> list[Job]:
@@ -292,11 +285,12 @@ def test_interrupted_run_saves_completed_companies_and_keeps_others_unchanged(
                 raise KeyboardInterrupt
             return super().fetch_jobs()
 
-    monkeypatch.setitem(main_module.SCRAPERS, "stub", InterruptingScraper)
+    deps.scrapers = {"stub": InterruptingScraper}
+    summarize_calls = CountingStub()
+    deps.summarize_role = summarize_calls
     # concurrency=1 makes ordering deterministic: Acme completes, then
     # Beta's KeyboardInterrupt fires before Zeta is ever submitted.
-    with patch.object(main_module, "summarize_role", return_value="") as mock_summarize:
-        result = main_module.run(database=db_url, concurrency=1)
+    result = main_module.run(database=db_url, concurrency=1, deps=deps)
 
     assert result == 130  # 128+SIGINT — distinguishes interrupted-but-saved from clean/failed
     ids = db_job_ids(db_url)
@@ -305,15 +299,12 @@ def test_interrupted_run_saves_completed_companies_and_keeps_others_unchanged(
     # Beta's own scrape raised before producing a job, so nothing new to
     # carry for it either way — this assertion documents that, not a
     # requirement that beta:1 must be absent.
-    mock_summarize.assert_not_called()  # skipped entirely once interrupted
+    assert summarize_calls.calls == 0  # skipped entirely once interrupted
 
 
-def test_concurrency_flag_is_accepted_and_threaded_through(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    db_url = setup_run(
+def test_concurrency_flag_is_accepted_and_threaded_through(tmp_path: Path) -> None:
+    db_url, deps = setup_run(
         tmp_path,
-        monkeypatch,
         companies=[
             {"name": "Acme", "board": "stub"},
             {"name": "Beta", "board": "stub"},
@@ -324,25 +315,20 @@ def test_concurrency_flag_is_accepted_and_threaded_through(
         },
     )
 
-    with patch.object(main_module, "summarize_role", return_value=""):
-        result = main_module.run(concurrency=1, database=db_url)
+    result = main_module.run(concurrency=1, database=db_url, deps=deps)
 
     assert result == 0
     assert db_job_ids(db_url) == {"acme:1", "beta:1"}
 
 
-def test_concurrency_flag_defaults_when_omitted(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    db_url = setup_run(
+def test_concurrency_flag_defaults_when_omitted(tmp_path: Path) -> None:
+    db_url, deps = setup_run(
         tmp_path,
-        monkeypatch,
         companies=[{"name": "Acme", "board": "stub"}],
         jobs_by_company={"Acme": [job("Acme", "acme:1")]},
     )
 
-    with patch.object(main_module, "summarize_role", return_value=""):
-        result = main_module.run(database=db_url)
+    result = main_module.run(database=db_url, deps=deps)
 
     assert result == 0
     assert db_job_ids(db_url) == {"acme:1"}
@@ -351,123 +337,107 @@ def test_concurrency_flag_defaults_when_omitted(
 def test_llm_provider_flag_sets_env_for_summarize(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    db_url = setup_run(
+    db_url, deps = setup_run(
         tmp_path,
-        monkeypatch,
         companies=[{"name": "Acme", "board": "stub"}],
         jobs_by_company={"Acme": [job("Acme", "acme:1")]},
     )
     monkeypatch.delenv("LLM_PROVIDER", raising=False)
+    summarize_calls = CountingStub()
+    deps.summarize_role = summarize_calls
 
-    with patch.object(main_module, "summarize_role", return_value="") as mock_summarize:
-        result = main_module.run(llm_provider="ollama", database=db_url)
+    result = main_module.run(llm_provider="ollama", database=db_url, deps=deps)
 
     assert result == 0
     assert os.environ["LLM_PROVIDER"] == "ollama"
-    mock_summarize.assert_called_once()
+    assert summarize_calls.calls == 1
 
 
 def test_llm_provider_omitted_leaves_env_untouched(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    db_url = setup_run(
+    db_url, deps = setup_run(
         tmp_path,
-        monkeypatch,
         companies=[{"name": "Acme", "board": "stub"}],
         jobs_by_company={"Acme": [job("Acme", "acme:1")]},
     )
     monkeypatch.delenv("LLM_PROVIDER", raising=False)
 
-    with patch.object(main_module, "summarize_role", return_value=""):
-        result = main_module.run(database=db_url)
+    result = main_module.run(database=db_url, deps=deps)
 
     assert result == 0
     assert "LLM_PROVIDER" not in os.environ
 
 
-def test_role_summary_carried_over_for_already_known_job(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_role_summary_carried_over_for_already_known_job(tmp_path: Path) -> None:
     """Every board scraper builds a fresh Job() each run (role_summary=""
     by dataclass default), and the summarize step only runs for genuinely
     new jobs — without carrying the previous run's role_summary forward for
     already-known jobs, their real summary would be silently overwritten
     with "" on every subsequent run, even though summarize_role is
     correctly never re-called for them."""
-    db_url = setup_run(
+    db_url, deps = setup_run(
         tmp_path,
-        monkeypatch,
         companies=[{"name": "Acme", "board": "stub"}],
         jobs_by_company={"Acme": [job("Acme", "acme:1")]},
     )
+    first_summarize_calls = CountingStub("Builds great things.")
+    deps.summarize_role = first_summarize_calls
 
-    with patch.object(
-        main_module, "summarize_role", return_value="Builds great things."
-    ) as mock_summarize:
-        assert main_module.run(database=db_url) == 0
+    assert main_module.run(database=db_url, deps=deps) == 0
 
     assert db_role_summary(db_url, "acme:1") == "Builds great things."
-    mock_summarize.assert_called_once()
+    assert first_summarize_calls.calls == 1
 
     # Second run: same job id, but a FRESH Job object (role_summary="" by
     # default) — exactly what every real board scraper produces, since none
     # of them read role_summary back from anywhere.
     jobs_by_company_state["Acme"] = [job("Acme", "acme:1")]
+    second_summarize_calls = CountingStub()
+    deps.summarize_role = second_summarize_calls
 
-    with patch.object(main_module, "summarize_role", return_value="") as mock_summarize:
-        assert main_module.run(database=db_url) == 0
+    assert main_module.run(database=db_url, deps=deps) == 0
 
     # Not re-requested (correct, unchanged behavior) — and critically, the
     # real summary from run 1 must survive, not get overwritten with "".
-    mock_summarize.assert_not_called()
+    assert second_summarize_calls.calls == 0
     assert db_role_summary(db_url, "acme:1") == "Builds great things."
 
 
-def test_new_job_gets_first_seen_stamped_and_posted_date_derived(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
+def test_new_job_gets_first_seen_stamped_and_posted_date_derived(tmp_path: Path) -> None:
     """Every board scraper builds a fresh Job() each run (first_seen="" by
     dataclass default). Without main.py stamping first_seen for genuinely
     new jobs, db.py's _posted_date() can never derive a real posted_date
     from posted_days, even when the board supplied one — and since
     first_seen/posted_date round-trip unchanged via load_previous(), the
     job would stay dateless forever, not just on this first run."""
-    db_url = setup_run(
+    db_url, deps = setup_run(
         tmp_path,
-        monkeypatch,
         companies=[{"name": "Acme", "board": "stub"}],
         jobs_by_company={"Acme": [job("Acme", "acme:1", posted_days=3)]},
     )
 
-    with patch.object(main_module, "summarize_role", return_value=""):
-        assert main_module.run(database=db_url) == 0
+    assert main_module.run(database=db_url, deps=deps) == 0
 
     first_seen, posted_date = db_first_seen_and_posted_date(db_url, "acme:1")
     assert first_seen  # non-empty — the whole point of the fix
     assert posted_date is not None
 
 
-def test_first_seen_survives_unchanged_across_runs(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    db_url = setup_run(
+def test_first_seen_survives_unchanged_across_runs(tmp_path: Path) -> None:
+    db_url, deps = setup_run(
         tmp_path,
-        monkeypatch,
         companies=[{"name": "Acme", "board": "stub"}],
         jobs_by_company={"Acme": [job("Acme", "acme:1", posted_days=3)]},
     )
 
-    with patch.object(main_module, "summarize_role", return_value=""):
-        assert main_module.run(database=db_url) == 0
+    assert main_module.run(database=db_url, deps=deps) == 0
     first_seen_1, posted_date_1 = db_first_seen_and_posted_date(db_url, "acme:1")
 
     # Second run: same job id, fresh Job object — exactly what a real board
     # scraper produces (first_seen="" again, since no board reads it back).
     jobs_by_company_state["Acme"] = [job("Acme", "acme:1", posted_days=3)]
-    with patch.object(main_module, "summarize_role", return_value=""):
-        assert main_module.run(database=db_url) == 0
+    assert main_module.run(database=db_url, deps=deps) == 0
     first_seen_2, posted_date_2 = db_first_seen_and_posted_date(db_url, "acme:1")
 
     assert first_seen_2 == first_seen_1
