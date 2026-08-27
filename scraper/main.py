@@ -50,11 +50,13 @@ import os
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import datetime, timezone
 from pathlib import Path
 
 from dotenv import load_dotenv
 
 from scraper.boards import SCRAPERS
+from scraper.config_types import CompanyConfig, ConfigFile
 from scraper.db import load_previous, write_jobs
 from scraper.models import Job
 from scraper.storage import diff
@@ -100,11 +102,11 @@ def run(
     run_started = time.monotonic()
     log.debug("Config path: %s", CONFIG_PATH)
 
-    config = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
+    config: ConfigFile = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
     # board-agnostic options passed to every scraper's __init__ — currently
     # empty (max_age_days was the only one, now removed: every board fetches
     # its full current listing every run, no age-based filtering).
-    settings: dict = {}
+    settings: dict[str, object] = {}
     log.debug("Loaded config: %d companies", len(config["companies"]))
 
     # --database is the only sink now (docs/jobs.json is no longer written),
@@ -166,7 +168,7 @@ def run(
             len(previous),
         )
 
-    def scrape_one(company_cfg: dict) -> list[Job] | None:
+    def scrape_one(company_cfg: CompanyConfig) -> list[Job] | None:
         """Scrape a single company; None signals failure (logged, never fatal)."""
         board = company_cfg["board"]
         scraper_cls = SCRAPERS.get(board)
@@ -250,17 +252,25 @@ def run(
     for job in current:
         job.company_blurb = blurbs.get(job.company, "")
 
-    # Carry over first_seen and role_summary for jobs we already knew about.
-    # Every board scraper builds a fresh Job() each run (role_summary="" by
-    # dataclass default), and the summarize step below only runs for
-    # new_jobs — so without this, every already-known job's previously
-    # generated summary would be silently overwritten with "" on the next
-    # write, even though the summarize step correctly never re-requests it.
-    # Same failure mode Job.posted_date already documents and guards against.
+    # Carry over first_seen and role_summary for jobs we already knew about;
+    # stamp first_seen for jobs we're seeing for the first time. Every board
+    # scraper builds a fresh Job() each run (first_seen="" and role_summary=""
+    # by dataclass default) — without the carryover half, every already-known
+    # job's previously generated summary would be silently overwritten with
+    # "" on the next write, even though the summarize step correctly never
+    # re-requests it (same failure mode Job.posted_date already documents and
+    # guards against). Without the stamping half, first_seen would stay ""
+    # forever: db.py's _posted_date() requires a truthy first_seen to derive
+    # posted_date from a board's posted_days, so an unstamped new job is
+    # written with posted_date=NULL and — since load_previous() round-trips
+    # both fields unchanged — never self-heals on a later run either.
+    now = datetime.now(timezone.utc).isoformat(timespec="seconds")
     for job in current:
         if job.id in previous:
             job.first_seen = previous[job.id].first_seen
             job.role_summary = previous[job.id].role_summary
+        else:
+            job.first_seen = now
 
     # When scoped to one company (on-demand refresh), the full snapshot to
     # diff/save is: everyone else's jobs from the previous snapshot, unchanged,
