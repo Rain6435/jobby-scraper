@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import logging
 import os
+from typing import NotRequired, TypedDict
 
 from scraper.boards.base import BaseScraper, make_session
 from scraper.boards.greenhouse import posted_days_from_iso, relative_day_text
@@ -38,6 +39,43 @@ MAX_PAGES = 10  # safety cap against runaway pagination, ~5000 jobs
 TIMEOUT = 30
 
 log = logging.getLogger("scraper.usajobs")
+
+
+class UsajobsLocation(TypedDict):
+    LocationName: NotRequired[str]
+
+
+class UsajobsDetails(TypedDict):
+    JobSummary: NotRequired[str]
+
+
+class UsajobsUserArea(TypedDict):
+    Details: NotRequired[UsajobsDetails]
+
+
+class UsajobsMatchedObjectDescriptor(TypedDict):
+    PositionTitle: NotRequired[str]
+    OrganizationName: NotRequired[str]
+    DepartmentName: NotRequired[str]
+    PositionLocation: NotRequired[list[UsajobsLocation]]
+    PositionLocationDisplay: NotRequired[str]
+    PositionURI: NotRequired[str]
+    PublicationStartDate: NotRequired[str]
+    UserArea: NotRequired[UsajobsUserArea]
+    QualificationSummary: NotRequired[str]
+
+
+class UsajobsSearchResultItem(TypedDict):
+    MatchedObjectId: NotRequired[str]
+    MatchedObjectDescriptor: NotRequired[UsajobsMatchedObjectDescriptor]
+
+
+class UsajobsSearchResult(TypedDict):
+    SearchResultItems: NotRequired[list[UsajobsSearchResultItem]]
+
+
+class UsajobsSearchResponse(TypedDict):
+    SearchResult: NotRequired[UsajobsSearchResult]
 
 
 class UsajobsScraper(BaseScraper):
@@ -69,7 +107,8 @@ class UsajobsScraper(BaseScraper):
                 timeout=TIMEOUT,
             )
             resp.raise_for_status()
-            items = resp.json().get("SearchResult", {}).get("SearchResultItems", [])
+            body: UsajobsSearchResponse = resp.json()
+            items = body.get("SearchResult", {}).get("SearchResultItems", [])
             log.debug("%s: page=%d returned %d items", self.name, page, len(items))
             for item in items:
                 jobs.append(self._to_job(item))
@@ -79,7 +118,7 @@ class UsajobsScraper(BaseScraper):
         log.debug("%s: fetched %d jobs", self.name, len(jobs))
         return jobs
 
-    def _to_job(self, item: dict) -> Job:
+    def _to_job(self, item: UsajobsSearchResultItem) -> Job:
         descriptor = item.get("MatchedObjectDescriptor", {})
         locations = self._locations(descriptor)
         posted_days = posted_days_from_iso(descriptor.get("PublicationStartDate", ""))
@@ -98,7 +137,7 @@ class UsajobsScraper(BaseScraper):
         )
 
     @staticmethod
-    def _locations(descriptor: dict) -> list[str]:
+    def _locations(descriptor: UsajobsMatchedObjectDescriptor) -> list[str]:
         locs = [loc.get("LocationName") for loc in descriptor.get("PositionLocation") or []]
         locs = [loc for loc in locs if loc]
         if locs:
@@ -107,7 +146,7 @@ class UsajobsScraper(BaseScraper):
         return [display] if display else []
 
     @staticmethod
-    def _description(descriptor: dict) -> str:
+    def _description(descriptor: UsajobsMatchedObjectDescriptor) -> str:
         summary = descriptor.get("UserArea", {}).get("Details", {}).get("JobSummary", "")
         text = summary or descriptor.get("QualificationSummary", "")
         return html_to_text(text)

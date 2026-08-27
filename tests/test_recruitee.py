@@ -4,11 +4,13 @@ import responses
 
 from scraper.boards.recruitee import RecruiteeScraper, posted_days_from_recruitee_ts
 
-COMPANY = {"name": "Sendcloud", "board": "recruitee", "company": "sendcloud"}
+from scraper.config_types import RecruiteeConfig
+
+COMPANY: RecruiteeConfig = {"name": "Sendcloud", "board": "recruitee", "company": "sendcloud"}
 API = "https://sendcloud.recruitee.com/api/offers/"
 
 
-def test_posted_days_from_recruitee_ts():
+def test_posted_days_from_recruitee_ts() -> None:
     three_ago = (datetime.now(timezone.utc) - timedelta(days=3, hours=2)).strftime(
         "%Y-%m-%d %H:%M:%S UTC"
     )
@@ -18,7 +20,7 @@ def test_posted_days_from_recruitee_ts():
 
 
 @responses.activate
-def test_maps_jobs_with_dates_and_structured_locations():
+def test_maps_jobs_with_dates_and_structured_locations() -> None:
     published = (datetime.now(timezone.utc) - timedelta(days=2)).strftime(
         "%Y-%m-%d %H:%M:%S UTC"
     )
@@ -54,7 +56,7 @@ def test_maps_jobs_with_dates_and_structured_locations():
 
 
 @responses.activate
-def test_falls_back_to_flat_fields_without_structured_locations():
+def test_falls_back_to_flat_fields_without_structured_locations() -> None:
     responses.get(API, json={"offers": [
         {"id": 1, "title": "Dev", "careers_url": "u", "published_at": "",
          "city": "Berlin", "country": "Germany"},
@@ -69,7 +71,7 @@ def test_falls_back_to_flat_fields_without_structured_locations():
 
 
 @responses.activate
-def test_falls_back_when_no_location_at_all():
+def test_falls_back_when_no_location_at_all() -> None:
     responses.get(API, json={"offers": [
         {"id": 1, "title": "Dev", "careers_url": "u", "published_at": ""},
     ]})

@@ -1,17 +1,26 @@
 import json
 import re
 from pathlib import Path
+from typing import TypedDict, cast
 
 import responses
 
-from scraper.boards.workday import WorkdayScraper, PAGE_SIZE, parse_posted_days
+from scraper.boards.workday import (
+    PAGE_SIZE,
+    WorkdayJobDetailResponse,
+    WorkdayJobPosting,
+    WorkdayJobPostingsResponse,
+    WorkdayScraper,
+    parse_posted_days,
+)
+from scraper.config_types import WorkdayConfig
 from scraper.models import Job
 
-FIXTURE = json.loads(
+FIXTURE: WorkdayJobPostingsResponse = json.loads(
     (Path(__file__).parent / "fixtures" / "workday_response.json").read_text(encoding="utf-8")
 )
 
-COMPANY = {
+COMPANY: WorkdayConfig = {
     "name": "CAE",
     "board": "workday",
     "url": "https://cae.wd3.myworkdayjobs.com/wday/cxs/cae/career/jobs",
@@ -21,7 +30,17 @@ DETAIL_BASE = "https://cae.wd3.myworkdayjobs.com/wday/cxs/cae/career"
 DETAIL_RE = re.compile(re.escape(DETAIL_BASE) + r"/.*")
 
 
-def posting(title="Job", path="/job/X/Job-1", loc="Montreal", posted="Posted Today", rid="JR-1"):
+class WorkdayJobPostingsRequest(TypedDict):
+    appliedFacets: dict[str, object]
+    limit: int
+    offset: int
+    searchText: str
+
+
+def posting(
+    title: str = "Job", path: str = "/job/X/Job-1", loc: str = "Montreal",
+    posted: str = "Posted Today", rid: str = "JR-1",
+) -> WorkdayJobPosting:
     return {
         "title": title,
         "externalPath": path,
@@ -31,7 +50,7 @@ def posting(title="Job", path="/job/X/Job-1", loc="Montreal", posted="Posted Tod
     }
 
 
-def mock_any_detail(json_body=None):
+def mock_any_detail(json_body: WorkdayJobDetailResponse | None = None) -> None:
     """Mock every detail-endpoint GET this test's scraper might issue (now
     unconditional for every posting, not just multi-location ones)."""
     responses.add(
@@ -40,7 +59,7 @@ def mock_any_detail(json_body=None):
     )
 
 
-def test_parse_posted_days():
+def test_parse_posted_days() -> None:
     assert parse_posted_days("Posted Today") == 0
     assert parse_posted_days("Posted Yesterday") == 1
     assert parse_posted_days("Posted 3 Days Ago") == 3
@@ -49,7 +68,7 @@ def test_parse_posted_days():
 
 
 @responses.activate
-def test_parses_postings_with_no_age_filtering():
+def test_parses_postings_with_no_age_filtering() -> None:
     responses.post(COMPANY["url"], json=FIXTURE)
     mock_any_detail({"jobPostingInfo": {"jobDescription": "<p>Build things.</p>"}})
 
@@ -75,8 +94,8 @@ def test_parses_postings_with_no_age_filtering():
 
 
 @responses.activate
-def test_paginates_until_total():
-    def page(offset, total, count):
+def test_paginates_until_total() -> None:
+    def page(offset: int, total: int, count: int) -> WorkdayJobPostingsResponse:
         return {
             "total": total,
             "jobPostings": [
@@ -96,8 +115,8 @@ def test_paginates_until_total():
 
     assert len(jobs) == total
     assert len(responses.calls) == 2 + total  # 2 list pages + 1 detail call/job
-    post_bodies = [
-        json.loads(c.request.body)
+    post_bodies: list[WorkdayJobPostingsRequest] = [
+        json.loads(cast(bytes, c.request.body))
         for c in responses.calls
         if c.request.method == "POST" and c.request.body is not None
     ]
@@ -105,7 +124,7 @@ def test_paginates_until_total():
 
 
 @responses.activate
-def test_expands_multi_location_postings_via_detail_endpoint():
+def test_expands_multi_location_postings_via_detail_endpoint() -> None:
     multi = posting(title="Multi", path="/job/X/Multi", loc="3 Locations", rid="M-1")
     responses.post(COMPANY["url"], json={"total": 1, "jobPostings": [multi]})
     responses.get(
@@ -125,7 +144,7 @@ def test_expands_multi_location_postings_via_detail_endpoint():
 
 
 @responses.activate
-def test_multi_location_falls_back_to_text_on_detail_failure():
+def test_multi_location_falls_back_to_text_on_detail_failure() -> None:
     multi = posting(title="Multi", path="/job/X/Multi", loc="3 Locations", rid="M-1")
     responses.post(COMPANY["url"], json={"total": 1, "jobPostings": [multi]})
     responses.get(f"{DETAIL_BASE}/job/X/Multi", status=500)
@@ -137,7 +156,7 @@ def test_multi_location_falls_back_to_text_on_detail_failure():
 
 
 @responses.activate
-def test_fetches_description_for_single_location_postings():
+def test_fetches_description_for_single_location_postings() -> None:
     single = posting(title="Single", path="/job/X/Single", loc="Montreal, Canada", rid="S-1")
     responses.post(COMPANY["url"], json={"total": 1, "jobPostings": [single]})
     responses.get(
@@ -154,7 +173,7 @@ def test_fetches_description_for_single_location_postings():
 
 
 @responses.activate
-def test_description_empty_on_detail_failure():
+def test_description_empty_on_detail_failure() -> None:
     single = posting(title="Single", path="/job/X/Single", loc="Montreal, Canada", rid="S-1")
     responses.post(COMPANY["url"], json={"total": 1, "jobPostings": [single]})
     responses.get(f"{DETAIL_BASE}/job/X/Single", status=500)
@@ -168,7 +187,7 @@ def test_description_empty_on_detail_failure():
 
 
 @responses.activate
-def test_skips_detail_fetch_for_job_already_in_previous_snapshot():
+def test_skips_detail_fetch_for_job_already_in_previous_snapshot() -> None:
     single = posting(title="Single", path="/job/X/Single", loc="Montreal, Canada", rid="S-1")
     responses.post(COMPANY["url"], json={"total": 1, "jobPostings": [single]})
     # Deliberately no detail-endpoint mock registered — if the scraper tries
@@ -194,7 +213,7 @@ def test_skips_detail_fetch_for_job_already_in_previous_snapshot():
 
 
 @responses.activate
-def test_fetches_detail_for_job_not_in_previous_snapshot():
+def test_fetches_detail_for_job_not_in_previous_snapshot() -> None:
     single = posting(title="Single", path="/job/X/Single", loc="Montreal, Canada", rid="S-1")
     responses.post(COMPANY["url"], json={"total": 1, "jobPostings": [single]})
     mock_any_detail({"jobPostingInfo": {"jobDescription": "<p>Freshly fetched.</p>"}})
@@ -211,8 +230,8 @@ def test_fetches_detail_for_job_not_in_previous_snapshot():
 
 
 @responses.activate
-def test_falls_back_to_external_path_when_no_bullet_fields():
-    fixture = {
+def test_falls_back_to_external_path_when_no_bullet_fields() -> None:
+    fixture: WorkdayJobPostingsResponse = {
         "total": 1,
         "jobPostings": [
             {
@@ -233,7 +252,7 @@ def test_falls_back_to_external_path_when_no_bullet_fields():
 
 
 @responses.activate
-def test_skips_dangling_index_entries_with_no_title():
+def test_skips_dangling_index_entries_with_no_title() -> None:
     """Real payload shape confirmed on Airbus's Workday tenant (2026-08): a
     posting with ONLY bulletFields present, every other field absent — a
     requisition still in the search index but whose own detail endpoint
@@ -241,7 +260,7 @@ def test_skips_dangling_index_entries_with_no_title():
     detail fetch is attempted (there is nothing valid to fetch), not stored
     as a job with empty title/location/url.
     """
-    fixture = {
+    fixture: WorkdayJobPostingsResponse = {
         "total": 2,
         "jobPostings": [
             {"bulletFields": ["JR10434331"]},  # dangling entry, no title
@@ -260,8 +279,8 @@ def test_skips_dangling_index_entries_with_no_title():
 
 
 @responses.activate
-def test_skips_dangling_index_entry_even_with_whitespace_only_title():
-    fixture = {
+def test_skips_dangling_index_entry_even_with_whitespace_only_title() -> None:
+    fixture: WorkdayJobPostingsResponse = {
         "total": 1,
         "jobPostings": [
             {"title": "   ", "bulletFields": ["JR10434331"]},

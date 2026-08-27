@@ -2,7 +2,9 @@ import responses
 
 from scraper.boards.cip_planning import FEED_URL, CipPlanningScraper
 
-COMPANY = {"name": "CIP National Planning Job Board", "board": "cip_planning"}
+from scraper.config_types import CipPlanningConfig
+
+COMPANY: CipPlanningConfig = {"name": "CIP National Planning Job Board", "board": "cip_planning"}
 
 _FEED_XML = """<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"
 	xmlns:content="http://purl.org/rss/1.0/modules/content/"
@@ -24,7 +26,7 @@ _FEED_XML = """<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"
 
 
 @responses.activate
-def test_extracts_and_maps_postings():
+def test_extracts_and_maps_postings() -> None:
     responses.get(FEED_URL, body=_FEED_XML)
 
     jobs = CipPlanningScraper(COMPANY).fetch_jobs()

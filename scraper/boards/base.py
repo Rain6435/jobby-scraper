@@ -16,6 +16,7 @@ import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util import Retry
 
+from scraper.config_types import CompanyConfig
 from scraper.models import Job
 
 
@@ -50,8 +51,8 @@ class BaseScraper(ABC):
 
     def __init__(
         self,
-        company: dict,
-        settings: dict | None = None,
+        company: CompanyConfig,
+        settings: dict[str, object] | None = None,
         previous: dict[str, Job] | None = None,
     ):
         """company: one entry from config.json's "companies" list.

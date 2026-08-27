@@ -13,9 +13,11 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timezone
+from typing import cast, NotRequired, TypedDict
 
 from scraper.boards.base import BaseScraper, make_session
 from scraper.boards.greenhouse import relative_day_text
+from scraper.config_types import LeverConfig
 from scraper.models import Job
 from scraper.text import html_to_text
 
@@ -23,6 +25,21 @@ API = "https://api.lever.co/v0/postings/{company}"
 TIMEOUT = 30
 
 log = logging.getLogger("scraper.lever")
+
+
+class LeverCategories(TypedDict):
+    location: NotRequired[str]
+    allLocations: NotRequired[list[str]]
+
+
+class LeverPosting(TypedDict):
+    id: str
+    text: NotRequired[str]
+    hostedUrl: NotRequired[str]
+    createdAt: NotRequired[int]
+    categories: NotRequired[LeverCategories]
+    descriptionPlain: NotRequired[str]
+    description: NotRequired[str]
 
 
 def posted_days_from_epoch_ms(ms: int | None) -> int | None:
@@ -41,7 +58,8 @@ class LeverScraper(BaseScraper):
     source = "lever"
 
     def fetch_jobs(self) -> list[Job]:
-        company = self.company["company"]
+        cfg: LeverConfig = cast(LeverConfig, self.company)
+        company = cfg["company"]
         session = make_session()
         session.headers.update({"User-Agent": "Mozilla/5.0", "Accept": "application/json"})
 
@@ -50,7 +68,7 @@ class LeverScraper(BaseScraper):
             API.format(company=company), params={"mode": "json"}, timeout=TIMEOUT
         )
         resp.raise_for_status()
-        postings = resp.json()
+        postings: list[LeverPosting] = resp.json()
         log.debug("%s: %d postings returned", self.name, len(postings))
 
         jobs: list[Job] = []
@@ -75,7 +93,7 @@ class LeverScraper(BaseScraper):
         return jobs
 
     @staticmethod
-    def _description(posting: dict) -> str:
+    def _description(posting: LeverPosting) -> str:
         """Prefer descriptionPlain (already plain text, no strip needed) over
         stripping the HTML description."""
         plain = (posting.get("descriptionPlain") or "").strip()
@@ -84,7 +102,7 @@ class LeverScraper(BaseScraper):
         return html_to_text(posting.get("description", ""))
 
     @staticmethod
-    def _locations(posting: dict) -> list[str]:
+    def _locations(posting: LeverPosting) -> list[str]:
         """categories.allLocations, falling back to the single categories.location."""
         categories = posting.get("categories") or {}
         locs = categories.get("allLocations") or []

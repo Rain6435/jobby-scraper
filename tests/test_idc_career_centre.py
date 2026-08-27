@@ -2,7 +2,9 @@ import responses
 
 from scraper.boards.idc_career_centre import FEED_URL, IdcCareerCentreScraper
 
-COMPANY = {"name": "IDC Career Centre", "board": "idc_career_centre"}
+from scraper.config_types import IdcCareerCentreConfig
+
+COMPANY: IdcCareerCentreConfig = {"name": "IDC Career Centre", "board": "idc_career_centre"}
 
 _FEED_XML = """<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"
 	xmlns:content="http://purl.org/rss/1.0/modules/content/"
@@ -35,7 +37,7 @@ _FEED_XML = """<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"
 
 
 @responses.activate
-def test_extracts_and_maps_postings():
+def test_extracts_and_maps_postings() -> None:
     responses.get(FEED_URL, body=_FEED_XML)
 
     jobs = IdcCareerCentreScraper(COMPANY).fetch_jobs()
@@ -53,7 +55,7 @@ def test_extracts_and_maps_postings():
 
 
 @responses.activate
-def test_decodes_html_entity_in_title():
+def test_decodes_html_entity_in_title() -> None:
     responses.get(FEED_URL, body=_FEED_XML)
 
     jobs = IdcCareerCentreScraper(COMPANY).fetch_jobs()
@@ -62,7 +64,7 @@ def test_decodes_html_entity_in_title():
 
 
 @responses.activate
-def test_falls_back_to_board_name_when_company_missing():
+def test_falls_back_to_board_name_when_company_missing() -> None:
     xml = _FEED_XML.replace(
         "<job_listing:company><![CDATA[Division9]]></job_listing:company>", ""
     )
@@ -74,7 +76,7 @@ def test_falls_back_to_board_name_when_company_missing():
 
 
 @responses.activate
-def test_skips_items_without_a_guid_id():
+def test_skips_items_without_a_guid_id() -> None:
     xml = _FEED_XML.replace(
         '<guid isPermaLink="false">https://idcanada.org/?post_type=job_listing&#038;p=24967</guid>',
         '<guid isPermaLink="false">https://idcanada.org/malformed</guid>',

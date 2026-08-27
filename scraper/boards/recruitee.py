@@ -13,9 +13,11 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timezone
+from typing import cast, NotRequired, TypedDict
 
 from scraper.boards.base import BaseScraper, make_session
 from scraper.boards.greenhouse import relative_day_text
+from scraper.config_types import RecruiteeConfig
 from scraper.models import Job
 from scraper.text import html_to_text
 
@@ -23,6 +25,28 @@ API = "https://{company}.recruitee.com/api/offers/"
 TIMEOUT = 30
 
 log = logging.getLogger("scraper.recruitee")
+
+
+class RecruiteeLocation(TypedDict):
+    city: NotRequired[str]
+    state: NotRequired[str]
+    country: NotRequired[str]
+
+
+class RecruiteeOffer(TypedDict):
+    id: int
+    title: NotRequired[str]
+    careers_url: NotRequired[str]
+    published_at: NotRequired[str]
+    description: NotRequired[str]
+    locations: NotRequired[list[RecruiteeLocation]]
+    city: NotRequired[str]
+    state_name: NotRequired[str]
+    country: NotRequired[str]
+
+
+class RecruiteeOffersResponse(TypedDict):
+    offers: NotRequired[list[RecruiteeOffer]]
 
 
 def posted_days_from_recruitee_ts(ts: str) -> int | None:
@@ -41,14 +65,16 @@ class RecruiteeScraper(BaseScraper):
     source = "recruitee"
 
     def fetch_jobs(self) -> list[Job]:
-        company = self.company["company"]
+        cfg: RecruiteeConfig = cast(RecruiteeConfig, self.company)
+        company = cfg["company"]
         session = make_session()
         session.headers.update({"User-Agent": "Mozilla/5.0", "Accept": "application/json"})
 
         log.debug("%s: fetching job list", self.name)
         resp = session.get(API.format(company=company), timeout=TIMEOUT)
         resp.raise_for_status()
-        offers = resp.json().get("offers", [])
+        body: RecruiteeOffersResponse = resp.json()
+        offers = body.get("offers", [])
         log.debug("%s: %d offers returned", self.name, len(offers))
 
         jobs: list[Job] = []
@@ -73,10 +99,10 @@ class RecruiteeScraper(BaseScraper):
         return jobs
 
     @staticmethod
-    def _locations(offer: dict) -> list[str]:
+    def _locations(offer: RecruiteeOffer) -> list[str]:
         """Structured locations[] ("City, State, Country"), falling back to the
         offer's flat city/country fields."""
-        locs = []
+        locs: list[str] = []
         for loc in offer.get("locations") or []:
             parts = [loc.get("city"), loc.get("state"), loc.get("country")]
             where = ", ".join(p for p in parts if p)

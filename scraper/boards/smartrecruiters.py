@@ -14,11 +14,13 @@ Config: {"board": "smartrecruiters", "company": "<identifier>"}.
 from __future__ import annotations
 
 import logging
+from typing import cast, NotRequired, TypedDict
 
 import requests
 
 from scraper.boards.base import BaseScraper, make_session
 from scraper.boards.greenhouse import posted_days_from_iso, relative_day_text
+from scraper.config_types import SmartRecruitersConfig
 from scraper.models import Job
 from scraper.text import html_to_text
 
@@ -31,11 +33,45 @@ TIMEOUT = 30
 log = logging.getLogger("scraper.smartrecruiters")
 
 
+class SmartRecruitersLocation(TypedDict):
+    fullLocation: NotRequired[str]
+
+
+class SmartRecruitersPosting(TypedDict):
+    id: str
+    name: NotRequired[str]
+    releasedDate: NotRequired[str]
+    location: NotRequired[SmartRecruitersLocation]
+
+
+class SmartRecruitersListResponse(TypedDict):
+    totalFound: NotRequired[int]
+    content: NotRequired[list[SmartRecruitersPosting]]
+
+
+class SmartRecruitersJobDescriptionSection(TypedDict):
+    text: NotRequired[str]
+
+
+class SmartRecruitersJobAdSections(TypedDict):
+    jobDescription: NotRequired[SmartRecruitersJobDescriptionSection]
+
+
+class SmartRecruitersJobAd(TypedDict):
+    sections: NotRequired[SmartRecruitersJobAdSections]
+
+
+class SmartRecruitersDetailResponse(TypedDict):
+    postingUrl: NotRequired[str]
+    jobAd: NotRequired[SmartRecruitersJobAd]
+
+
 class SmartRecruitersScraper(BaseScraper):
     source = "smartrecruiters"
 
     def fetch_jobs(self) -> list[Job]:
-        company = self.company["company"]
+        cfg: SmartRecruitersConfig = cast(SmartRecruitersConfig, self.company)
+        company = cfg["company"]
         url = API.format(company=company)
         session = make_session()
         session.headers.update({"User-Agent": "Mozilla/5.0", "Accept": "application/json"})
@@ -48,7 +84,7 @@ class SmartRecruitersScraper(BaseScraper):
                 url, params={"limit": PAGE_LIMIT, "offset": offset}, timeout=TIMEOUT
             )
             resp.raise_for_status()
-            data = resp.json()
+            data: SmartRecruitersListResponse = resp.json()
             postings = data.get("content", [])
             total_found = data.get("totalFound", len(postings))
             log.debug("%s: %d postings on this page (totalFound=%d)", self.name, len(postings), total_found)
@@ -93,7 +129,7 @@ class SmartRecruitersScraper(BaseScraper):
                 DETAIL_URL.format(company=company, posting_id=posting_id), timeout=TIMEOUT
             )
             resp.raise_for_status()
-            detail = resp.json()
+            detail: SmartRecruitersDetailResponse = resp.json()
             sections = (detail.get("jobAd") or {}).get("sections") or {}
             html = (sections.get("jobDescription") or {}).get("text", "")
             return html_to_text(html), detail.get("postingUrl", "")

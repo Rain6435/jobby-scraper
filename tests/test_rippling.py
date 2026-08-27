@@ -1,18 +1,19 @@
 import responses
 
-from scraper.boards.rippling import RipplingScraper, PAGE_SIZE
+from scraper.boards.rippling import PAGE_SIZE, RipplingJobsResponse, RipplingScraper
+from scraper.config_types import RipplingConfig
 from scraper.models import Job
 
-COMPANY = {"name": "Octasic", "board": "rippling", "board_id": "octasic-inc"}
+COMPANY: RipplingConfig = {"name": "Octasic", "board": "rippling", "board_id": "octasic-inc"}
 API = "https://ats.rippling.com/api/v2/board/octasic-inc/jobs"
 
 
-def detail_url(job_id):
+def detail_url(job_id: str) -> str:
     return f"https://ats.rippling.com/api/v2/board/octasic-inc/jobs/{job_id}"
 
 
 @responses.activate
-def test_maps_jobs_with_structured_locations_and_no_date():
+def test_maps_jobs_with_structured_locations_and_no_date() -> None:
     responses.get(API, json={
         "items": [{
             "id": "83fb1287-uuid",
@@ -46,7 +47,7 @@ def test_maps_jobs_with_structured_locations_and_no_date():
 
 
 @responses.activate
-def test_description_handles_plain_string_shape():
+def test_description_handles_plain_string_shape() -> None:
     """Some Rippling boards may return description as a plain string instead
     of the usual {"role": ..., "company": ...} object — handle both."""
     responses.get(API, json={
@@ -61,7 +62,7 @@ def test_description_handles_plain_string_shape():
 
 
 @responses.activate
-def test_description_empty_on_detail_failure():
+def test_description_empty_on_detail_failure() -> None:
     responses.get(API, json={
         "items": [{"id": "x1", "name": "Dev", "url": "u", "locations": []}],
         "totalPages": 1,
@@ -75,7 +76,7 @@ def test_description_empty_on_detail_failure():
 
 
 @responses.activate
-def test_skips_detail_fetch_for_job_already_in_previous_snapshot():
+def test_skips_detail_fetch_for_job_already_in_previous_snapshot() -> None:
     responses.get(API, json={
         "items": [{"id": "x1", "name": "Dev", "url": "u", "locations": []}],
         "totalPages": 1,
@@ -99,7 +100,7 @@ def test_skips_detail_fetch_for_job_already_in_previous_snapshot():
 
 
 @responses.activate
-def test_fetches_detail_for_job_not_in_previous_snapshot():
+def test_fetches_detail_for_job_not_in_previous_snapshot() -> None:
     responses.get(API, json={
         "items": [{"id": "x1", "name": "Dev", "url": "u", "locations": []}],
         "totalPages": 1,
@@ -112,8 +113,8 @@ def test_fetches_detail_for_job_not_in_previous_snapshot():
 
 
 @responses.activate
-def test_paginates_across_pages():
-    def page(n, count):
+def test_paginates_across_pages() -> None:
+    def page(n: int, count: int) -> RipplingJobsResponse:
         return {
             "items": [
                 {"id": f"id-{n}-{i}", "name": f"Job {n}-{i}", "url": "u",

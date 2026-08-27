@@ -1,14 +1,18 @@
 from datetime import datetime, timedelta, timezone
+from typing import Unpack, cast
 
 import responses
 
-from scraper.boards.climatebase import API, ClimatebaseScraper
+from scraper.boards.climatebase import API, ClimatebaseHit, ClimatebaseScraper
+from scraper.config_types import ClimatebaseConfig
 
-COMPANY = {"name": "Climatebase", "board": "climatebase", "keywords": ["environmental analyst"]}
+COMPANY: ClimatebaseConfig = {
+    "name": "Climatebase", "board": "climatebase", "keywords": ["environmental analyst"],
+}
 
 
-def _hit(job_id: int = 12345, **overrides) -> dict:
-    hit = {
+def _hit(job_id: str = "12345", **overrides: Unpack[ClimatebaseHit]) -> ClimatebaseHit:
+    hit: ClimatebaseHit = {
         "id": job_id,
         "title": "  Environmental Analyst  ",
         "name_of_employer": "GFL Environmental",
@@ -24,12 +28,12 @@ def _hit(job_id: int = 12345, **overrides) -> dict:
     return hit
 
 
-def _page(hits: list[dict], page: int = 0, nb_pages: int = 1) -> dict:
+def _page(hits: list[ClimatebaseHit], page: int = 0, nb_pages: int = 1) -> dict[str, object]:
     return {"hits": hits, "page": page, "nbPages": nb_pages, "nbHits": len(hits)}
 
 
 @responses.activate
-def test_maps_a_hit():
+def test_maps_a_hit() -> None:
     responses.post(API, json=_page([_hit()]))
 
     jobs = ClimatebaseScraper(COMPANY).fetch_jobs()
@@ -49,7 +53,7 @@ def test_maps_a_hit():
 
 
 @responses.activate
-def test_falls_back_to_board_name_when_employer_missing():
+def test_falls_back_to_board_name_when_employer_missing() -> None:
     responses.post(API, json=_page([_hit(name_of_employer="")]))
 
     jobs = ClimatebaseScraper(COMPANY).fetch_jobs()
@@ -58,8 +62,11 @@ def test_falls_back_to_board_name_when_employer_missing():
 
 
 @responses.activate
-def test_dedupes_jobs_matched_by_more_than_one_keyword():
-    company = {**COMPANY, "keywords": ["environmental analyst", "sustainability"]}
+def test_dedupes_jobs_matched_by_more_than_one_keyword() -> None:
+    company: ClimatebaseConfig = {
+        "name": "Climatebase", "board": "climatebase",
+        "keywords": ["environmental analyst", "sustainability"],
+    }
     responses.post(API, json=_page([_hit()]))
     responses.post(API, json=_page([_hit()]))
 
@@ -70,10 +77,12 @@ def test_dedupes_jobs_matched_by_more_than_one_keyword():
 
 
 @responses.activate
-def test_paginates_until_last_page():
-    company = {**COMPANY, "keywords": ["environmental"]}
-    responses.post(API, json=_page([_hit(1), _hit(2)], page=0, nb_pages=2))
-    responses.post(API, json=_page([_hit(3)], page=1, nb_pages=2))
+def test_paginates_until_last_page() -> None:
+    company: ClimatebaseConfig = {
+        "name": "Climatebase", "board": "climatebase", "keywords": ["environmental"],
+    }
+    responses.post(API, json=_page([_hit("1"), _hit("2")], page=0, nb_pages=2))
+    responses.post(API, json=_page([_hit("3")], page=1, nb_pages=2))
 
     jobs = ClimatebaseScraper(company).fetch_jobs()
 
@@ -82,13 +91,13 @@ def test_paginates_until_last_page():
 
 
 @responses.activate
-def test_defaults_to_empty_query_when_no_keywords_configured():
-    company = {"name": "Climatebase", "board": "climatebase"}
+def test_defaults_to_empty_query_when_no_keywords_configured() -> None:
+    company: ClimatebaseConfig = {"name": "Climatebase", "board": "climatebase"}
     responses.post(API, json=_page([_hit()]))
 
     jobs = ClimatebaseScraper(company).fetch_jobs()
 
     assert len(jobs) == 1
     import json as json_module
-    sent = json_module.loads(responses.calls[0].request.body)
+    sent = json_module.loads(cast(bytes, responses.calls[0].request.body))
     assert sent["query"] == ""

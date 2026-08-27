@@ -1,15 +1,24 @@
 from datetime import datetime, timedelta, timezone
+from typing import Unpack
 
+import pytest
 import responses
 
-from scraper.boards.usajobs import UsajobsScraper
+from scraper.boards.usajobs import (
+    UsajobsMatchedObjectDescriptor,
+    UsajobsScraper,
+    UsajobsSearchResultItem,
+)
+from scraper.config_types import UsajobsConfig
 
-COMPANY = {"name": "US Federal Government", "board": "usajobs"}
+COMPANY: UsajobsConfig = {"name": "US Federal Government", "board": "usajobs"}
 API = "https://data.usajobs.gov/api/search"
 
 
-def _item(matched_object_id: str = "833196500", **overrides) -> dict:
-    descriptor = {
+def _item(
+    matched_object_id: str = "833196500", **overrides: Unpack[UsajobsMatchedObjectDescriptor],
+) -> UsajobsSearchResultItem:
+    descriptor: UsajobsMatchedObjectDescriptor = {
         "PositionTitle": "  IT Specialist  ",
         "OrganizationName": "Department of Veterans Affairs",
         "DepartmentName": "Department of Veterans Affairs",
@@ -29,7 +38,7 @@ def _item(matched_object_id: str = "833196500", **overrides) -> dict:
 
 
 @responses.activate
-def test_maps_jobs_with_per_result_company_and_locations(monkeypatch):
+def test_maps_jobs_with_per_result_company_and_locations(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("USAJOBS_API_KEY", "key")
     monkeypatch.setenv("USAJOBS_USER_AGENT", "test@example.com")
     responses.get(API, json={"SearchResult": {"SearchResultItems": [_item()]}})
@@ -51,7 +60,7 @@ def test_maps_jobs_with_per_result_company_and_locations(monkeypatch):
 
 
 @responses.activate
-def test_falls_back_to_qualification_summary_and_display_location(monkeypatch):
+def test_falls_back_to_qualification_summary_and_display_location(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("USAJOBS_API_KEY", "key")
     monkeypatch.setenv("USAJOBS_USER_AGENT", "test@example.com")
     item = _item(
@@ -69,7 +78,7 @@ def test_falls_back_to_qualification_summary_and_display_location(monkeypatch):
 
 
 @responses.activate
-def test_falls_back_to_department_name_when_organization_name_missing(monkeypatch):
+def test_falls_back_to_department_name_when_organization_name_missing(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("USAJOBS_API_KEY", "key")
     monkeypatch.setenv("USAJOBS_USER_AGENT", "test@example.com")
     item = _item(OrganizationName="")
@@ -80,7 +89,7 @@ def test_falls_back_to_department_name_when_organization_name_missing(monkeypatc
     assert jobs[0].company == "Department of Veterans Affairs"
 
 
-def test_returns_empty_without_credentials(monkeypatch):
+def test_returns_empty_without_credentials(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("USAJOBS_API_KEY", raising=False)
     monkeypatch.delenv("USAJOBS_USER_AGENT", raising=False)
 
@@ -90,7 +99,7 @@ def test_returns_empty_without_credentials(monkeypatch):
 
 
 @responses.activate
-def test_paginates_until_a_short_page(monkeypatch):
+def test_paginates_until_a_short_page(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("USAJOBS_API_KEY", "key")
     monkeypatch.setenv("USAJOBS_USER_AGENT", "test@example.com")
     full_page = [_item(str(i)) for i in range(500)]

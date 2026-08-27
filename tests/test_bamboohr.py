@@ -1,18 +1,19 @@
 import responses
 
 from scraper.boards.bamboohr import BambooHRScraper
+from scraper.config_types import BambooHrConfig
 from scraper.models import Job
 
-COMPANY = {"name": "Euna", "board": "bamboohr", "company": "euna"}
+COMPANY: BambooHrConfig = {"name": "Euna", "board": "bamboohr", "company": "euna"}
 LIST_URL = "https://euna.bamboohr.com/careers/list"
 
 
-def detail_url(job_id):
+def detail_url(job_id: str) -> str:
     return f"https://euna.bamboohr.com/careers/{job_id}/detail"
 
 
 @responses.activate
-def test_maps_list_rows_with_constructed_url_and_no_date():
+def test_maps_list_rows_with_constructed_url_and_no_date() -> None:
     responses.get(LIST_URL, json={"result": [
         {
             "id": "562",
@@ -40,7 +41,7 @@ def test_maps_list_rows_with_constructed_url_and_no_date():
 
 
 @responses.activate
-def test_handles_missing_location_parts():
+def test_handles_missing_location_parts() -> None:
     responses.get(LIST_URL, json={"result": [
         {"id": "9", "jobOpeningName": "Remote Role", "location": {"city": "Toronto"}},
     ]})
@@ -54,7 +55,7 @@ def test_handles_missing_location_parts():
 
 
 @responses.activate
-def test_description_empty_on_detail_failure():
+def test_description_empty_on_detail_failure() -> None:
     responses.get(LIST_URL, json={"result": [
         {"id": "9", "jobOpeningName": "Remote Role", "location": {}},
     ]})
@@ -67,7 +68,7 @@ def test_description_empty_on_detail_failure():
 
 
 @responses.activate
-def test_skips_detail_fetch_for_job_already_in_previous_snapshot():
+def test_skips_detail_fetch_for_job_already_in_previous_snapshot() -> None:
     responses.get(LIST_URL, json={"result": [
         {"id": "562", "jobOpeningName": "Software Developer", "location": {"city": "Oakville"}},
     ]})
@@ -86,7 +87,7 @@ def test_skips_detail_fetch_for_job_already_in_previous_snapshot():
 
 
 @responses.activate
-def test_fetches_detail_for_job_not_in_previous_snapshot():
+def test_fetches_detail_for_job_not_in_previous_snapshot() -> None:
     responses.get(LIST_URL, json={"result": [
         {"id": "562", "jobOpeningName": "Software Developer", "location": {"city": "Oakville"}},
     ]})

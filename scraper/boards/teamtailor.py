@@ -13,9 +13,11 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timezone
+from typing import cast, NotRequired, TypedDict
 
 from scraper.boards.base import BaseScraper, make_session
 from scraper.boards.greenhouse import relative_day_text
+from scraper.config_types import TeamtailorConfig
 from scraper.models import Job
 from scraper.text import html_to_text
 
@@ -23,6 +25,33 @@ API = "https://{slug}.teamtailor.com/jobs.json"
 TIMEOUT = 30
 
 log = logging.getLogger("scraper.teamtailor")
+
+
+class TeamtailorAddress(TypedDict):
+    addressLocality: NotRequired[str]
+    addressRegion: NotRequired[str]
+    addressCountry: NotRequired[str]
+
+
+class TeamtailorJobLocationEntry(TypedDict):
+    address: NotRequired[TeamtailorAddress]
+
+
+class TeamtailorJobPosting(TypedDict):
+    jobLocation: NotRequired[list[TeamtailorJobLocationEntry]]
+
+
+class TeamtailorItem(TypedDict):
+    id: str
+    title: NotRequired[str]
+    url: NotRequired[str]
+    date_published: NotRequired[str]
+    content_html: NotRequired[str]
+    _jobposting: NotRequired[TeamtailorJobPosting]
+
+
+class TeamtailorJobsResponse(TypedDict):
+    items: NotRequired[list[TeamtailorItem]]
 
 
 def posted_days_from_iso(iso: str | None) -> int | None:
@@ -43,14 +72,16 @@ class TeamtailorScraper(BaseScraper):
     source = "teamtailor"
 
     def fetch_jobs(self) -> list[Job]:
-        slug = self.company["company"]
+        company: TeamtailorConfig = cast(TeamtailorConfig, self.company)
+        slug = company["company"]
         session = make_session()
         session.headers.update({"User-Agent": "Mozilla/5.0", "Accept": "application/json"})
 
         log.debug("%s: fetching job list", self.name)
         resp = session.get(API.format(slug=slug), timeout=TIMEOUT)
         resp.raise_for_status()
-        postings = resp.json().get("items", [])
+        body: TeamtailorJobsResponse = resp.json()
+        postings = body.get("items", [])
         log.debug("%s: %d postings returned", self.name, len(postings))
 
         jobs: list[Job] = []
@@ -75,7 +106,7 @@ class TeamtailorScraper(BaseScraper):
         return jobs
 
     @staticmethod
-    def _locations(posting: dict) -> list[str]:
+    def _locations(posting: TeamtailorItem) -> list[str]:
         """schema.org _jobposting.jobLocation[].address, best-effort — absent
         or malformed on some postings, so any missing piece just yields []."""
         jobposting = posting.get("_jobposting") or {}

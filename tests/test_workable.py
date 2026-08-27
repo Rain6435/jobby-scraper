@@ -4,11 +4,13 @@ import responses
 
 from scraper.boards.workable import WorkableScraper, posted_days_from_date_str
 
-COMPANY = {"name": "Hugging Face", "board": "workable", "company": "huggingface"}
+from scraper.config_types import WorkableConfig
+
+COMPANY: WorkableConfig = {"name": "Hugging Face", "board": "workable", "company": "huggingface"}
 API = "https://apply.workable.com/api/v1/widget/accounts/huggingface"
 
 
-def test_posted_days_from_date_str():
+def test_posted_days_from_date_str() -> None:
     three_ago = (datetime.now(timezone.utc) - timedelta(days=3)).strftime("%Y-%m-%d")
     assert posted_days_from_date_str(three_ago) == 3
     assert posted_days_from_date_str(None) is None
@@ -17,7 +19,7 @@ def test_posted_days_from_date_str():
 
 
 @responses.activate
-def test_maps_jobs_with_dates_and_locations():
+def test_maps_jobs_with_dates_and_locations() -> None:
     published = (datetime.now(timezone.utc) - timedelta(days=2)).strftime("%Y-%m-%d")
     responses.get(API, json={
         "name": "Hugging Face",
@@ -57,7 +59,7 @@ def test_maps_jobs_with_dates_and_locations():
 
 
 @responses.activate
-def test_falls_back_to_top_level_location_fields():
+def test_falls_back_to_top_level_location_fields() -> None:
     responses.get(API, json={
         "jobs": [
             {
@@ -80,7 +82,7 @@ def test_falls_back_to_top_level_location_fields():
 
 
 @responses.activate
-def test_no_locations_at_all():
+def test_no_locations_at_all() -> None:
     responses.get(API, json={
         "jobs": [
             {"title": "Dev", "shortcode": "x2", "url": "u"},

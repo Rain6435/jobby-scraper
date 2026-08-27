@@ -4,11 +4,13 @@ import responses
 
 from scraper.boards.lever import LeverScraper, posted_days_from_epoch_ms
 
-COMPANY = {"name": "Palantir", "board": "lever", "company": "palantir"}
+from scraper.config_types import LeverConfig
+
+COMPANY: LeverConfig = {"name": "Palantir", "board": "lever", "company": "palantir"}
 API = "https://api.lever.co/v0/postings/palantir"
 
 
-def test_posted_days_from_epoch_ms():
+def test_posted_days_from_epoch_ms() -> None:
     three_ago_ms = int((datetime.now(timezone.utc) - timedelta(days=3, hours=2)).timestamp() * 1000)
     assert posted_days_from_epoch_ms(three_ago_ms) == 3
     assert posted_days_from_epoch_ms(None) is None
@@ -16,7 +18,7 @@ def test_posted_days_from_epoch_ms():
 
 
 @responses.activate
-def test_maps_jobs_with_dates_and_all_locations():
+def test_maps_jobs_with_dates_and_all_locations() -> None:
     created_ms = int((datetime.now(timezone.utc) - timedelta(days=2)).timestamp() * 1000)
     responses.get(API, json=[
         {
@@ -49,7 +51,7 @@ def test_maps_jobs_with_dates_and_all_locations():
 
 
 @responses.activate
-def test_falls_back_to_stripped_html_without_plain_description():
+def test_falls_back_to_stripped_html_without_plain_description() -> None:
     responses.get(API, json=[
         {"id": "x2", "text": "Dev", "hostedUrl": "u", "createdAt": None,
          "categories": {}, "description": "<p>HTML only</p>"},
@@ -61,7 +63,7 @@ def test_falls_back_to_stripped_html_without_plain_description():
 
 
 @responses.activate
-def test_falls_back_when_no_all_locations_or_date():
+def test_falls_back_when_no_all_locations_or_date() -> None:
     responses.get(API, json=[
         {"id": "x1", "text": "Dev", "hostedUrl": "u", "createdAt": None,
          "categories": {"location": "Remote"}},
@@ -76,7 +78,7 @@ def test_falls_back_when_no_all_locations_or_date():
 
 
 @responses.activate
-def test_does_not_truncate_long_plain_description():
+def test_does_not_truncate_long_plain_description() -> None:
     """descriptionPlain used to be sliced at [:1500] here, independently of
     html_to_text's cap — so removing that cap alone left Lever truncated."""
     body = "Build great software. " * 500

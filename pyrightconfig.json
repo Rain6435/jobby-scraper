@@ -1,0 +1,15 @@
+{
+  "typeCheckingMode": "strict",
+  "include": ["scraper", "tests"],
+  "exclude": ["exploration", ".venv"],
+  "venvPath": ".",
+  "venv": ".venv",
+  "executionEnvironments": [
+    {
+      "root": "tests",
+      "extraPaths": ["."],
+      "reportPrivateUsage": false,
+      "reportUnusedFunction": false
+    }
+  ]
+}

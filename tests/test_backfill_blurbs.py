@@ -1,14 +1,23 @@
 import json
+from pathlib import Path
+from typing import TypedDict
 from unittest.mock import patch
+
+import pytest
 
 import scraper.backfill_blurbs as backfill_module
 
 
-def write_config(path, companies):
+class _CompanyStub(TypedDict, total=False):
+    name: str
+    blurb: str
+
+
+def write_config(path: Path, companies: list[_CompanyStub]) -> None:
     path.write_text(json.dumps({"companies": companies}), encoding="utf-8")
 
 
-def test_writes_blurbs_for_companies_missing_one(tmp_path, monkeypatch):
+def test_writes_blurbs_for_companies_missing_one(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     config_path = tmp_path / "config.json"
     write_config(config_path, [
         {"name": "Acme"}, {"name": "Beta", "blurb": "Already has one."},
@@ -24,7 +33,7 @@ def test_writes_blurbs_for_companies_missing_one(tmp_path, monkeypatch):
     assert blurbs == {"Acme": "Makes widgets.", "Beta": "Already has one."}
 
 
-def test_skips_companies_with_existing_blurb_unless_forced(tmp_path, monkeypatch):
+def test_skips_companies_with_existing_blurb_unless_forced(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     config_path = tmp_path / "config.json"
     write_config(config_path, [{"name": "Beta", "blurb": "Old blurb."}])
     monkeypatch.setattr(backfill_module, "CONFIG_PATH", config_path)
@@ -40,7 +49,7 @@ def test_skips_companies_with_existing_blurb_unless_forced(tmp_path, monkeypatch
     assert data["companies"][0]["blurb"] == "New blurb."
 
 
-def test_dry_run_writes_nothing(tmp_path, monkeypatch):
+def test_dry_run_writes_nothing(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     config_path = tmp_path / "config.json"
     write_config(config_path, [{"name": "Acme"}])
     original_mtime = config_path.stat().st_mtime
@@ -54,7 +63,7 @@ def test_dry_run_writes_nothing(tmp_path, monkeypatch):
     assert "blurb" not in data["companies"][0]
 
 
-def test_failed_summarizer_call_leaves_company_without_blurb(tmp_path, monkeypatch):
+def test_failed_summarizer_call_leaves_company_without_blurb(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     config_path = tmp_path / "config.json"
     write_config(config_path, [{"name": "Acme"}, {"name": "Beta"}])
     monkeypatch.setattr(backfill_module, "CONFIG_PATH", config_path)

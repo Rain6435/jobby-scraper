@@ -13,10 +13,12 @@ Each result has id, jobOpeningName, location{city,state}. Config:
 from __future__ import annotations
 
 import logging
+from typing import cast, NotRequired, TypedDict
 
 import requests
 
 from scraper.boards.base import BaseScraper, make_session
+from scraper.config_types import BambooHrConfig
 from scraper.models import Job
 from scraper.text import html_to_text
 
@@ -28,18 +30,47 @@ TIMEOUT = 30
 log = logging.getLogger("scraper.bamboohr")
 
 
+class BambooHrLocation(TypedDict):
+    city: NotRequired[str]
+    state: NotRequired[str]
+
+
+class BambooHrListing(TypedDict):
+    id: str
+    jobOpeningName: NotRequired[str]
+    location: NotRequired[BambooHrLocation]
+
+
+class BambooHrListResponse(TypedDict):
+    result: NotRequired[list[BambooHrListing]]
+
+
+class BambooHrJobOpening(TypedDict):
+    description: NotRequired[str]
+
+
+class BambooHrDetailResult(TypedDict):
+    jobOpening: NotRequired[BambooHrJobOpening]
+
+
+class BambooHrDetailResponse(TypedDict):
+    result: NotRequired[BambooHrDetailResult]
+
+
 class BambooHRScraper(BaseScraper):
     source = "bamboohr"
 
     def fetch_jobs(self) -> list[Job]:
-        subdomain = self.company["company"]
+        company: BambooHrConfig = cast(BambooHrConfig, self.company)
+        subdomain = company["company"]
         session = make_session()
         session.headers.update({"User-Agent": "Mozilla/5.0", "Accept": "application/json"})
 
         log.debug("%s: fetching job list", self.name)
         resp = session.get(LIST_URL.format(company=subdomain), timeout=TIMEOUT)
         resp.raise_for_status()
-        results = resp.json().get("result", [])
+        body: BambooHrListResponse = resp.json()
+        results = body.get("result", [])
         log.debug("%s: %d listings returned", self.name, len(results))
 
         jobs: list[Job] = []
@@ -73,13 +104,14 @@ class BambooHRScraper(BaseScraper):
         return jobs
 
     @staticmethod
-    def _fetch_description(session: requests.Session, subdomain: str, job_id) -> str:
+    def _fetch_description(session: requests.Session, subdomain: str, job_id: str) -> str:
         try:
             resp = session.get(
                 DETAIL_URL.format(company=subdomain, id=job_id), timeout=TIMEOUT
             )
             resp.raise_for_status()
-            opening = resp.json().get("result", {}).get("jobOpening", {})
+            detail: BambooHrDetailResponse = resp.json()
+            opening = detail.get("result", {}).get("jobOpening", {})
             return html_to_text(opening.get("description", ""))
         except Exception:
             log.warning("BambooHR detail fetch failed for job %s", job_id)

@@ -33,9 +33,11 @@ from __future__ import annotations
 
 import json
 import logging
+from typing import NotRequired, TypedDict, cast
 
 from scraper.boards.base import BaseScraper, make_session
 from scraper.boards.greenhouse import posted_days_from_iso, relative_day_text
+from scraper.config_types import ClimatebaseConfig
 from scraper.models import Job
 from scraper.text import html_to_text
 
@@ -54,11 +56,28 @@ ATTRIBUTES = [
 log = logging.getLogger("scraper.climatebase")
 
 
+class ClimatebaseHit(TypedDict):
+    id: NotRequired[str]
+    title: NotRequired[str]
+    locations: NotRequired[list[str]]
+    countries: NotRequired[list[str]]
+    how_to_apply: NotRequired[str]
+    name_of_employer: NotRequired[str]
+    description: NotRequired[str]
+    activation_date: NotRequired[str]
+
+
+class ClimatebaseSearchResponse(TypedDict):
+    hits: NotRequired[list[ClimatebaseHit]]
+    nbPages: NotRequired[int]
+
+
 class ClimatebaseScraper(BaseScraper):
     source = "climatebase"
 
     def fetch_jobs(self) -> list[Job]:
-        keywords: list[str] = self.company.get("keywords") or [""]
+        cfg: ClimatebaseConfig = cast(ClimatebaseConfig, self.company)
+        keywords: list[str] = cfg.get("keywords") or [""]
         session = make_session()
         session.headers.update({
             "x-algolia-application-id": APP_ID,
@@ -79,7 +98,7 @@ class ClimatebaseScraper(BaseScraper):
                 })
                 resp = session.post(API, data=body, timeout=TIMEOUT)
                 resp.raise_for_status()
-                data = resp.json()
+                data: ClimatebaseSearchResponse = resp.json()
                 hits = data.get("hits", [])
                 log.debug("%s: keyword=%r page=%d returned %d hits", self.name, keyword, page, len(hits))
                 for hit in hits:
@@ -92,7 +111,7 @@ class ClimatebaseScraper(BaseScraper):
         log.debug("%s: fetched %d unique jobs across %d keyword(s)", self.name, len(jobs), len(keywords))
         return jobs
 
-    def _to_job(self, hit: dict) -> Job:
+    def _to_job(self, hit: ClimatebaseHit) -> Job:
         locations = [loc for loc in (hit.get("locations") or []) if loc]
         posted_days = posted_days_from_iso(hit.get("activation_date") or "")
         return Job(

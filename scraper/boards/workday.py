@@ -35,10 +35,12 @@ from __future__ import annotations
 
 import logging
 import re
+from typing import cast, NotRequired, TypedDict
 
 import requests
 
 from scraper.boards.base import BaseScraper, make_session
+from scraper.config_types import WorkdayConfig
 from scraper.models import Job
 from scraper.text import html_to_text
 
@@ -50,6 +52,29 @@ log = logging.getLogger("scraper.workday")
 
 _POSTED_RE = re.compile(r"(\d+)\+?\s+days?\s+ago", re.IGNORECASE)
 _MULTI_LOC_RE = re.compile(r"^\d+\s+locations$", re.IGNORECASE)
+
+
+class WorkdayJobPosting(TypedDict):
+    title: NotRequired[str]
+    postedOn: NotRequired[str]
+    locationsText: NotRequired[str]
+    externalPath: NotRequired[str]
+    bulletFields: NotRequired[list[str]]
+
+
+class WorkdayJobPostingsResponse(TypedDict):
+    total: NotRequired[int]
+    jobPostings: NotRequired[list[WorkdayJobPosting]]
+
+
+class WorkdayJobPostingInfo(TypedDict):
+    location: NotRequired[str]
+    additionalLocations: NotRequired[list[str]]
+    jobDescription: NotRequired[str]
+
+
+class WorkdayJobDetailResponse(TypedDict):
+    jobPostingInfo: NotRequired[WorkdayJobPostingInfo]
 
 
 def parse_posted_days(posted_on: str) -> int | None:
@@ -70,8 +95,9 @@ class WorkdayScraper(BaseScraper):
     source = "workday"
 
     def fetch_jobs(self) -> list[Job]:
-        url = self.company["url"]
-        careers_base = self.company.get("careers_base", "").rstrip("/")
+        company: WorkdayConfig = cast(WorkdayConfig, self.company)
+        url = company["url"]
+        careers_base = company.get("careers_base", "").rstrip("/")
         detail_base = url[: -len("/jobs")] if url.endswith("/jobs") else url
         slug = self.slug
 
@@ -94,7 +120,7 @@ class WorkdayScraper(BaseScraper):
                 timeout=TIMEOUT,
             )
             resp.raise_for_status()
-            data = resp.json()
+            data: WorkdayJobPostingsResponse = resp.json()
             if total is None:
                 # Workday only reports "total" on the first page; later pages
                 # return total=0, so never overwrite it.
@@ -175,7 +201,8 @@ class WorkdayScraper(BaseScraper):
         try:
             resp = session.get(f"{detail_base}{external_path}", timeout=TIMEOUT)
             resp.raise_for_status()
-            info = resp.json().get("jobPostingInfo", {})
+            detail: WorkdayJobDetailResponse = resp.json()
+            info = detail.get("jobPostingInfo", {})
             if _MULTI_LOC_RE.match(locations_text):
                 locations = [info.get("location", "")] + list(info.get("additionalLocations", []))
                 locations = [loc for loc in locations if loc] or fallback_locations

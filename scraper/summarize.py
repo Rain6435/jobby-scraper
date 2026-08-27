@@ -30,7 +30,9 @@ from __future__ import annotations
 import logging
 import os
 import time
+from typing import Literal, NotRequired, TypedDict
 
+import anthropic
 import requests
 
 from scraper import ollama_keys
@@ -60,10 +62,19 @@ OLLAMA_TIMEOUT = 60
 # to the next key instead (see ollama_keys.is_hourly_limit_error below).
 OLLAMA_MAX_RETRIES = 1
 
-_anthropic_client = None  # lazily constructed; False if unavailable/unset
+class OllamaMessage(TypedDict):
+    role: str
+    content: str
 
 
-def _get_anthropic_client():
+class OllamaChatResponse(TypedDict):
+    message: NotRequired[OllamaMessage]
+
+
+_anthropic_client: anthropic.Anthropic | Literal[False] | None = None  # lazily constructed; False if unavailable/unset
+
+
+def _get_anthropic_client() -> anthropic.Anthropic | None:
     """Returns an Anthropic client, or None if no credentials are configured.
 
     Cached at module level so repeated calls in one run don't reconstruct it.
@@ -74,7 +85,6 @@ def _get_anthropic_client():
     global _anthropic_client
     if _anthropic_client is not None:
         return _anthropic_client or None
-    import anthropic
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     auth_token = os.environ.get("ANTHROPIC_AUTH_TOKEN")
     if api_key:
@@ -159,7 +169,8 @@ def _call_ollama(prompt: str, label: str) -> str:
                     time.sleep(wait)
                     continue
                 resp.raise_for_status()
-                text = (resp.json().get("message") or {}).get("content", "")
+                chat_resp: OllamaChatResponse = resp.json()
+                text = chat_resp.get("message", {}).get("content", "")
                 log.debug("%s succeeded via Ollama (%d chars)", label, len(text))
                 return text.strip()
             except Exception:

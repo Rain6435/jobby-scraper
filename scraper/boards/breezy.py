@@ -11,9 +11,11 @@ locations[].name (all, for multi-location postings). Config:
 from __future__ import annotations
 
 import logging
+from typing import cast, NotRequired, TypedDict
 
 from scraper.boards.base import BaseScraper, make_session
 from scraper.boards.greenhouse import posted_days_from_iso, relative_day_text
+from scraper.config_types import BreezyConfig
 from scraper.models import Job
 
 LIST_URL = "https://{company}.breezy.hr/json"
@@ -22,18 +24,32 @@ TIMEOUT = 30
 log = logging.getLogger("scraper.breezy")
 
 
+class BreezyLocation(TypedDict):
+    name: NotRequired[str]
+
+
+class BreezyPosting(TypedDict):
+    id: str
+    name: NotRequired[str]
+    url: NotRequired[str]
+    published_date: NotRequired[str]
+    location: NotRequired[BreezyLocation]
+    locations: NotRequired[list[BreezyLocation]]
+
+
 class BreezyScraper(BaseScraper):
     source = "breezy"
 
     def fetch_jobs(self) -> list[Job]:
-        subdomain = self.company["company"]
+        company: BreezyConfig = cast(BreezyConfig, self.company)
+        subdomain = company["company"]
         session = make_session()
         session.headers.update({"User-Agent": "Mozilla/5.0", "Accept": "application/json"})
 
         log.debug("%s: fetching job list", self.name)
         resp = session.get(LIST_URL.format(company=subdomain), timeout=TIMEOUT)
         resp.raise_for_status()
-        postings = resp.json()
+        postings: list[BreezyPosting] = resp.json()
         log.debug("%s: %d postings returned", self.name, len(postings))
 
         jobs: list[Job] = []
@@ -57,7 +73,7 @@ class BreezyScraper(BaseScraper):
         return jobs
 
     @staticmethod
-    def _locations(posting: dict) -> list[str]:
+    def _locations(posting: BreezyPosting) -> list[str]:
         """Prefer the locations[] list (multi-location postings), falling back
         to the single top-level location."""
         locs = [loc.get("name") for loc in posting.get("locations") or []]

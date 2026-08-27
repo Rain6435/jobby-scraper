@@ -1,34 +1,35 @@
 import json
+from pathlib import Path
 
 from scraper.models import Job
 from scraper.storage import diff, load_snapshot, save_snapshot
 
 
-def job(jid, title="T"):
+def job(jid: str, title: str = "T") -> Job:
     return Job(
         id=jid, company="X", title=title, location="Montreal",
         url="https://example.com", posted_on="Posted Today", source="workday",
     )
 
 
-def test_load_snapshot_missing_file_is_first_run(tmp_path):
+def test_load_snapshot_missing_file_is_first_run(tmp_path: Path) -> None:
     assert load_snapshot(tmp_path / "jobs.json") == {}
 
 
-def test_load_snapshot_corrupt_file_is_first_run(tmp_path):
+def test_load_snapshot_corrupt_file_is_first_run(tmp_path: Path) -> None:
     path = tmp_path / "jobs.json"
     path.write_text("\n", encoding="utf-8")  # the exact bytes that broke CI
     assert load_snapshot(path) == {}
 
 
-def test_load_snapshot_tolerates_utf8_bom(tmp_path):
+def test_load_snapshot_tolerates_utf8_bom(tmp_path: Path) -> None:
     path = tmp_path / "jobs.json"
     payload = '{"updated_at": "x", "jobs": []}'
     path.write_bytes(b"\xef\xbb\xbf" + payload.encode("utf-8"))
     assert load_snapshot(path) == {}
 
 
-def test_diff_finds_only_new_jobs():
+def test_diff_finds_only_new_jobs() -> None:
     previous = {"x:1": job("x:1")}
     current = [job("x:1"), job("x:2")]
 
@@ -37,7 +38,7 @@ def test_diff_finds_only_new_jobs():
     assert [j.id for j in new] == ["x:2"]
 
 
-def test_save_and_reload_roundtrip(tmp_path):
+def test_save_and_reload_roundtrip(tmp_path: Path) -> None:
     path = tmp_path / "jobs.json"
     jobs = [job("x:1"), job("x:2")]
 
@@ -53,7 +54,7 @@ def test_save_and_reload_roundtrip(tmp_path):
     assert reloaded["x:1"].first_seen  # stamped on save
 
 
-def test_first_seen_preserved_on_resave(tmp_path):
+def test_first_seen_preserved_on_resave(tmp_path: Path) -> None:
     path = tmp_path / "jobs.json"
     j = job("x:1")
     j.first_seen = "2026-01-01T00:00:00+00:00"
@@ -63,7 +64,7 @@ def test_first_seen_preserved_on_resave(tmp_path):
     assert load_snapshot(path)["x:1"].first_seen == "2026-01-01T00:00:00+00:00"
 
 
-def test_description_summary_and_blurb_survive_roundtrip(tmp_path):
+def test_description_summary_and_blurb_survive_roundtrip(tmp_path: Path) -> None:
     path = tmp_path / "jobs.json"
     j = job("x:1")
     j.description = "Full posting text."

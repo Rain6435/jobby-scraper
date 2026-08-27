@@ -2,19 +2,24 @@ from datetime import datetime, timedelta, timezone
 
 import responses
 
-from scraper.boards.smartrecruiters import PAGE_LIMIT, SmartRecruitersScraper
+from scraper.boards.smartrecruiters import (
+    PAGE_LIMIT,
+    SmartRecruitersListResponse,
+    SmartRecruitersScraper,
+)
+from scraper.config_types import SmartRecruitersConfig
 from scraper.models import Job
 
-COMPANY = {"name": "Acme", "board": "smartrecruiters", "company": "acme"}
+COMPANY: SmartRecruitersConfig = {"name": "Acme", "board": "smartrecruiters", "company": "acme"}
 API = "https://api.smartrecruiters.com/v1/companies/acme/postings"
 
 
-def detail_url(posting_id):
+def detail_url(posting_id: str) -> str:
     return f"https://api.smartrecruiters.com/v1/companies/acme/postings/{posting_id}"
 
 
 @responses.activate
-def test_maps_jobs_with_dates_and_detail_fetch():
+def test_maps_jobs_with_dates_and_detail_fetch() -> None:
     released = (datetime.now(timezone.utc) - timedelta(days=2)).isoformat()
     responses.get(API, json={
         "totalFound": 1,
@@ -47,7 +52,7 @@ def test_maps_jobs_with_dates_and_detail_fetch():
 
 
 @responses.activate
-def test_falls_back_when_no_location_or_date():
+def test_falls_back_when_no_location_or_date() -> None:
     responses.get(API, json={
         "totalFound": 1,
         "content": [{"id": "x1", "name": "Dev", "releasedDate": ""}],
@@ -63,7 +68,7 @@ def test_falls_back_when_no_location_or_date():
 
 
 @responses.activate
-def test_description_and_url_empty_on_detail_failure():
+def test_description_and_url_empty_on_detail_failure() -> None:
     responses.get(API, json={
         "totalFound": 1,
         "content": [{"id": "x1", "name": "Dev", "releasedDate": ""}],
@@ -78,7 +83,7 @@ def test_description_and_url_empty_on_detail_failure():
 
 
 @responses.activate
-def test_skips_detail_fetch_for_job_already_in_previous_snapshot():
+def test_skips_detail_fetch_for_job_already_in_previous_snapshot() -> None:
     responses.get(API, json={
         "totalFound": 1,
         "content": [{"id": "x1", "name": "Dev", "releasedDate": ""}],
@@ -99,7 +104,7 @@ def test_skips_detail_fetch_for_job_already_in_previous_snapshot():
 
 
 @responses.activate
-def test_fetches_detail_for_job_not_in_previous_snapshot():
+def test_fetches_detail_for_job_not_in_previous_snapshot() -> None:
     responses.get(API, json={
         "totalFound": 1,
         "content": [{"id": "x1", "name": "Dev", "releasedDate": ""}],
@@ -116,8 +121,8 @@ def test_fetches_detail_for_job_not_in_previous_snapshot():
 
 
 @responses.activate
-def test_paginates_across_pages():
-    def page(n, count):
+def test_paginates_across_pages() -> None:
+    def page(n: int, count: int) -> SmartRecruitersListResponse:
         return {
             "totalFound": PAGE_LIMIT + 3,
             "content": [

@@ -6,10 +6,20 @@ import json
 import logging
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import NotRequired, TypedDict
 
-from scraper.models import Job
+from scraper.models import Job, JobDict
 
 log = logging.getLogger("scraper.storage")
+
+
+class SnapshotJobDict(JobDict):
+    is_new: bool
+
+
+class SnapshotFile(TypedDict):
+    updated_at: NotRequired[str]
+    jobs: NotRequired[list[JobDict]]
 
 
 def load_snapshot(path: Path) -> dict[str, Job]:
@@ -23,7 +33,7 @@ def load_snapshot(path: Path) -> dict[str, Job]:
         log.info("No snapshot at %s — treating as first run", path)
         return {}
     try:
-        data = json.loads(path.read_text(encoding="utf-8-sig"))
+        data: SnapshotFile = json.loads(path.read_text(encoding="utf-8-sig"))
         jobs = {j["id"]: Job.from_dict(j) for j in data.get("jobs", [])}
         log.debug("Loaded snapshot %s: %d jobs, updated_at=%s", path, len(jobs), data.get("updated_at"))
         return jobs
@@ -46,12 +56,11 @@ def save_snapshot(path: Path, jobs: list[Job], new_ids: set[str]) -> None:
     stamped with the current time.
     """
     now = datetime.now(timezone.utc).isoformat(timespec="seconds")
-    serialized = []
+    serialized: list[SnapshotJobDict] = []
     for job in jobs:
         if not job.first_seen:
             job.first_seen = now
-        entry = job.to_dict()
-        entry["is_new"] = job.id in new_ids
+        entry: SnapshotJobDict = {**job.to_dict(), "is_new": job.id in new_ids}
         serialized.append(entry)
 
     payload = {"updated_at": now, "jobs": serialized}

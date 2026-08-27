@@ -15,9 +15,11 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timezone
+from typing import cast, NotRequired, TypedDict
 
 from scraper.boards.base import BaseScraper, make_session
 from scraper.boards.greenhouse import relative_day_text
+from scraper.config_types import WorkableConfig
 from scraper.models import Job
 from scraper.text import html_to_text
 
@@ -25,6 +27,28 @@ API = "https://apply.workable.com/api/v1/widget/accounts/{slug}"
 TIMEOUT = 30
 
 log = logging.getLogger("scraper.workable")
+
+
+class WorkableLocation(TypedDict):
+    city: NotRequired[str]
+    region: NotRequired[str]
+    country: NotRequired[str]
+
+
+class WorkablePosting(TypedDict):
+    shortcode: str
+    title: NotRequired[str]
+    url: NotRequired[str]
+    published_on: NotRequired[str]
+    description: NotRequired[str]
+    locations: NotRequired[list[WorkableLocation]]
+    city: NotRequired[str]
+    state: NotRequired[str]
+    country: NotRequired[str]
+
+
+class WorkableAccountResponse(TypedDict):
+    jobs: NotRequired[list[WorkablePosting]]
 
 
 def posted_days_from_date_str(date_str: str | None) -> int | None:
@@ -43,7 +67,8 @@ class WorkableScraper(BaseScraper):
     source = "workable"
 
     def fetch_jobs(self) -> list[Job]:
-        slug = self.company["company"]
+        company: WorkableConfig = cast(WorkableConfig, self.company)
+        slug = company["company"]
         session = make_session()
         session.headers.update({"User-Agent": "Mozilla/5.0", "Accept": "application/json"})
 
@@ -52,7 +77,8 @@ class WorkableScraper(BaseScraper):
             API.format(slug=slug), params={"details": "true"}, timeout=TIMEOUT
         )
         resp.raise_for_status()
-        postings = resp.json().get("jobs", [])
+        body: WorkableAccountResponse = resp.json()
+        postings = body.get("jobs", [])
         log.debug("%s: %d postings returned", self.name, len(postings))
 
         jobs: list[Job] = []
@@ -77,7 +103,7 @@ class WorkableScraper(BaseScraper):
         return jobs
 
     @staticmethod
-    def _locations(posting: dict) -> list[str]:
+    def _locations(posting: WorkablePosting) -> list[str]:
         """locations[] (each city/region/country), falling back to the
         top-level city/state/country fields when locations[] is empty."""
         entries = posting.get("locations") or []
@@ -85,16 +111,15 @@ class WorkableScraper(BaseScraper):
         locs = [loc for loc in locs if loc]
         if locs:
             return locs
-        fallback = WorkableScraper._join_location(
-            {
-                "city": posting.get("city"),
-                "region": posting.get("state"),
-                "country": posting.get("country"),
-            }
-        )
+        fallback_loc: WorkableLocation = {
+            "city": posting.get("city", ""),
+            "region": posting.get("state", ""),
+            "country": posting.get("country", ""),
+        }
+        fallback = WorkableScraper._join_location(fallback_loc)
         return [fallback] if fallback else []
 
     @staticmethod
-    def _join_location(loc: dict) -> str:
+    def _join_location(loc: WorkableLocation) -> str:
         parts = [loc.get("city"), loc.get("region"), loc.get("country")]
         return ", ".join(p for p in parts if p)

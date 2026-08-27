@@ -18,11 +18,14 @@ no-external-dependency approach to HTML parsing).
 
 from __future__ import annotations
 
+from typing import cast
+
 import logging
 import xml.etree.ElementTree as ET
 
 from scraper.boards.base import BaseScraper, make_session
 from scraper.boards.greenhouse import posted_days_from_iso, relative_day_text
+from scraper.config_types import PersonioConfig
 from scraper.models import Job
 from scraper.text import html_to_text
 
@@ -37,7 +40,8 @@ class PersonioScraper(BaseScraper):
     source = "personio"
 
     def fetch_jobs(self) -> list[Job]:
-        company = self.company["company"]
+        cfg: PersonioConfig = cast(PersonioConfig, self.company)
+        company = cfg["company"]
         session = make_session()
         session.headers.update({"User-Agent": "Mozilla/5.0", "Accept": "application/xml"})
 
@@ -85,7 +89,7 @@ class PersonioScraper(BaseScraper):
     def _description(pos: ET.Element) -> str:
         """Concatenate each jobDescriptions/jobDescription's name (heading) and
         HTML value into one block, then strip to plain text."""
-        parts = []
+        parts: list[str] = []
         for section in pos.findall("jobDescriptions/jobDescription"):
             heading = (section.findtext("name") or "").strip()
             value = (section.findtext("value") or "").strip()

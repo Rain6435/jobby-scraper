@@ -13,8 +13,10 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timezone
+from typing import cast, NotRequired, TypedDict
 
 from scraper.boards.base import BaseScraper, make_session
+from scraper.config_types import GreenhouseConfig
 from scraper.models import Job
 from scraper.text import html_to_text
 
@@ -22,6 +24,29 @@ API = "https://boards-api.greenhouse.io/v1/boards/{token}/jobs"
 TIMEOUT = 30
 
 log = logging.getLogger("scraper.greenhouse")
+
+
+class GreenhouseLocationName(TypedDict):
+    name: NotRequired[str]
+
+
+class GreenhouseOffice(TypedDict):
+    name: NotRequired[str]
+    location: NotRequired[str]
+
+
+class GreenhousePosting(TypedDict):
+    id: int
+    title: NotRequired[str]
+    location: NotRequired[GreenhouseLocationName]
+    offices: NotRequired[list[GreenhouseOffice]]
+    absolute_url: NotRequired[str]
+    first_published: NotRequired[str]
+    content: NotRequired[str]
+
+
+class GreenhouseJobsResponse(TypedDict):
+    jobs: NotRequired[list[GreenhousePosting]]
 
 
 def posted_days_from_iso(iso: str) -> int | None:
@@ -52,7 +77,8 @@ class GreenhouseScraper(BaseScraper):
     source = "greenhouse"
 
     def fetch_jobs(self) -> list[Job]:
-        token = self.company["token"]
+        company: GreenhouseConfig = cast(GreenhouseConfig, self.company)
+        token = company["token"]
         session = make_session()
         session.headers.update({"User-Agent": "Mozilla/5.0", "Accept": "application/json"})
 
@@ -61,7 +87,8 @@ class GreenhouseScraper(BaseScraper):
             API.format(token=token), params={"content": "true"}, timeout=TIMEOUT
         )
         resp.raise_for_status()
-        postings = resp.json().get("jobs", [])
+        body: GreenhouseJobsResponse = resp.json()
+        postings = body.get("jobs", [])
         log.debug("%s: %d postings returned", self.name, len(postings))
 
         jobs: list[Job] = []
@@ -86,7 +113,7 @@ class GreenhouseScraper(BaseScraper):
         return jobs
 
     @staticmethod
-    def _locations(posting: dict) -> list[str]:
+    def _locations(posting: GreenhousePosting) -> list[str]:
         """Prefer offices[].location ("City, Country") for better classification,
         falling back to the free-form location.name."""
         offices = posting.get("offices") or []

@@ -11,9 +11,11 @@ Each job has id, title, location, secondaryLocations[].location, publishedAt
 from __future__ import annotations
 
 import logging
+from typing import cast, NotRequired, TypedDict
 
 from scraper.boards.base import BaseScraper, make_session
 from scraper.boards.greenhouse import posted_days_from_iso, relative_day_text
+from scraper.config_types import AshbyConfig
 from scraper.models import Job
 from scraper.text import html_to_text
 
@@ -23,11 +25,31 @@ TIMEOUT = 30
 log = logging.getLogger("scraper.ashby")
 
 
+class AshbySecondaryLocation(TypedDict):
+    location: NotRequired[str]
+
+
+class AshbyPosting(TypedDict):
+    id: str
+    title: NotRequired[str]
+    location: NotRequired[str]
+    secondaryLocations: NotRequired[list[AshbySecondaryLocation]]
+    publishedAt: NotRequired[str]
+    jobUrl: NotRequired[str]
+    descriptionPlain: NotRequired[str]
+    descriptionHtml: NotRequired[str]
+
+
+class AshbyJobBoardResponse(TypedDict):
+    jobs: NotRequired[list[AshbyPosting]]
+
+
 class AshbyScraper(BaseScraper):
     source = "ashby"
 
     def fetch_jobs(self) -> list[Job]:
-        slug = self.company["slug"]
+        company: AshbyConfig = cast(AshbyConfig, self.company)
+        slug = company["slug"]
         session = make_session()
         session.headers.update({"User-Agent": "Mozilla/5.0", "Accept": "application/json"})
 
@@ -36,7 +58,8 @@ class AshbyScraper(BaseScraper):
             API.format(slug=slug), params={"includeCompensation": "true"}, timeout=TIMEOUT
         )
         resp.raise_for_status()
-        postings = resp.json().get("jobs", [])
+        body: AshbyJobBoardResponse = resp.json()
+        postings = body.get("jobs", [])
         log.debug("%s: %d postings returned", self.name, len(postings))
 
         jobs: list[Job] = []
@@ -61,7 +84,7 @@ class AshbyScraper(BaseScraper):
         return jobs
 
     @staticmethod
-    def _description(posting: dict) -> str:
+    def _description(posting: AshbyPosting) -> str:
         """Prefer descriptionPlain (already plain text, no strip needed) over
         stripping descriptionHtml."""
         plain = (posting.get("descriptionPlain") or "").strip()
@@ -70,7 +93,7 @@ class AshbyScraper(BaseScraper):
         return html_to_text(posting.get("descriptionHtml", ""))
 
     @staticmethod
-    def _locations(posting: dict) -> list[str]:
+    def _locations(posting: AshbyPosting) -> list[str]:
         """Primary location plus any secondaryLocations, flattened to strings."""
         locs = [posting.get("location")]
         locs += [loc.get("location") for loc in posting.get("secondaryLocations") or []]

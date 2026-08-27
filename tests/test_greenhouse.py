@@ -4,11 +4,13 @@ import responses
 
 from scraper.boards.greenhouse import GreenhouseScraper, posted_days_from_iso
 
-COMPANY = {"name": "Asana", "board": "greenhouse", "token": "asana"}
+from scraper.config_types import GreenhouseConfig
+
+COMPANY: GreenhouseConfig = {"name": "Asana", "board": "greenhouse", "token": "asana"}
 API = "https://boards-api.greenhouse.io/v1/boards/asana/jobs"
 
 
-def test_posted_days_from_iso():
+def test_posted_days_from_iso() -> None:
     three_ago = (datetime.now(timezone.utc) - timedelta(days=3, hours=2)).isoformat()
     assert posted_days_from_iso(three_ago) == 3
     assert posted_days_from_iso("") is None
@@ -16,7 +18,7 @@ def test_posted_days_from_iso():
 
 
 @responses.activate
-def test_maps_jobs_with_dates_and_offices():
+def test_maps_jobs_with_dates_and_offices() -> None:
     published = (datetime.now(timezone.utc) - timedelta(days=2)).isoformat()
     responses.get(API, json={"jobs": [
         {
@@ -49,7 +51,7 @@ def test_maps_jobs_with_dates_and_offices():
 
 
 @responses.activate
-def test_falls_back_to_location_name_without_offices():
+def test_falls_back_to_location_name_without_offices() -> None:
     responses.get(API, json={"jobs": [
         {"id": 1, "title": "Dev", "location": {"name": "Warsaw"},
          "absolute_url": "u", "first_published": ""},

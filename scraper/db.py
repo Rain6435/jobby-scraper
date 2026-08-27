@@ -61,7 +61,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.engine import Connection, Engine, make_url
 
-from scraper.location_resolver import parse_location
+from scraper.location_resolver import ParsedLocation, parse_location
 from scraper.models import Job
 
 log = logging.getLogger("scraper.db")
@@ -313,8 +313,8 @@ def get_or_create_locations(conn: Connection, names: set[str]) -> dict[str, int]
     if missing_keys:
         # One raw string per missing key — the first one encountered in
         # `names` becomes that key's stored display text.
-        to_insert = {}
-        for name, parsed in parsed_by_name.items():
+        to_insert: dict[str, ParsedLocation] = {}
+        for parsed in parsed_by_name.values():
             if parsed.normalized_key in missing_keys and parsed.normalized_key not in to_insert:
                 to_insert[parsed.normalized_key] = parsed
         conn.execute(

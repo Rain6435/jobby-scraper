@@ -4,7 +4,9 @@ import responses
 
 from scraper.boards.personio import PersonioScraper
 
-COMPANY = {"name": "Ottonova", "board": "personio", "company": "ottonova"}
+from scraper.config_types import PersonioConfig
+
+COMPANY: PersonioConfig = {"name": "Ottonova", "board": "personio", "company": "ottonova"}
 API = "https://ottonova.jobs.personio.de/xml"
 
 
@@ -17,7 +19,7 @@ def xml_body(*positions: str) -> bytes:
 
 
 @responses.activate
-def test_maps_jobs_with_dates_and_additional_offices():
+def test_maps_jobs_with_dates_and_additional_offices() -> None:
     created = (datetime.now(timezone.utc) - timedelta(days=2)).isoformat()
     body = xml_body(f"""
         <position>
@@ -55,7 +57,7 @@ def test_maps_jobs_with_dates_and_additional_offices():
 
 
 @responses.activate
-def test_falls_back_when_no_additional_offices_or_date_or_description():
+def test_falls_back_when_no_additional_offices_or_date_or_description() -> None:
     body = xml_body("""
         <position>
             <id>1</id>
@@ -75,7 +77,7 @@ def test_falls_back_when_no_additional_offices_or_date_or_description():
 
 
 @responses.activate
-def test_decodes_non_ascii_correctly():
+def test_decodes_non_ascii_correctly() -> None:
     body = xml_body("""
         <position>
             <id>2</id>

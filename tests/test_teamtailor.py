@@ -4,11 +4,13 @@ import responses
 
 from scraper.boards.teamtailor import TeamtailorScraper, posted_days_from_iso
 
-COMPANY = {"name": "Sessions", "board": "teamtailor", "company": "sessions"}
+from scraper.config_types import TeamtailorConfig
+
+COMPANY: TeamtailorConfig = {"name": "Sessions", "board": "teamtailor", "company": "sessions"}
 API = "https://sessions.teamtailor.com/jobs.json"
 
 
-def test_posted_days_from_iso():
+def test_posted_days_from_iso() -> None:
     three_ago = (datetime.now(timezone.utc) - timedelta(days=3)).isoformat()
     assert posted_days_from_iso(three_ago) == 3
     assert posted_days_from_iso(None) is None
@@ -17,7 +19,7 @@ def test_posted_days_from_iso():
 
 
 @responses.activate
-def test_maps_jobs_with_dates_and_locations():
+def test_maps_jobs_with_dates_and_locations() -> None:
     published = (datetime.now(timezone.utc) - timedelta(days=2)).isoformat()
     responses.get(API, json={
         "version": "https://jsonfeed.org/version/1.1",
@@ -61,7 +63,7 @@ def test_maps_jobs_with_dates_and_locations():
 
 
 @responses.activate
-def test_missing_jobposting_falls_back_gracefully():
+def test_missing_jobposting_falls_back_gracefully() -> None:
     responses.get(API, json={
         "items": [
             {"id": "x1", "title": "Dev", "url": "u"},
@@ -78,7 +80,7 @@ def test_missing_jobposting_falls_back_gracefully():
 
 
 @responses.activate
-def test_malformed_job_location_entries_skipped():
+def test_malformed_job_location_entries_skipped() -> None:
     responses.get(API, json={
         "items": [
             {

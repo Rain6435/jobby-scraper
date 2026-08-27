@@ -4,12 +4,14 @@ import responses
 
 from scraper.boards.breezy import BreezyScraper
 
-COMPANY = {"name": "Vosyn", "board": "breezy", "company": "vosyn"}
+from scraper.config_types import BreezyConfig
+
+COMPANY: BreezyConfig = {"name": "Vosyn", "board": "breezy", "company": "vosyn"}
 API = "https://vosyn.breezy.hr/json"
 
 
 @responses.activate
-def test_maps_jobs_with_dates_and_multi_locations():
+def test_maps_jobs_with_dates_and_multi_locations() -> None:
     published = (datetime.now(timezone.utc) - timedelta(days=2)).isoformat()
     responses.get(API, json=[
         {
@@ -37,7 +39,7 @@ def test_maps_jobs_with_dates_and_multi_locations():
 
 
 @responses.activate
-def test_falls_back_to_single_location_without_locations_list():
+def test_falls_back_to_single_location_without_locations_list() -> None:
     responses.get(API, json=[
         {"id": "x1", "name": "Dev", "url": "u", "published_date": "",
          "location": {"name": "Remote"}, "locations": []},
@@ -51,7 +53,7 @@ def test_falls_back_to_single_location_without_locations_list():
 
 
 @responses.activate
-def test_description_always_empty_no_public_source():
+def test_description_always_empty_no_public_source() -> None:
     """Breezy has no public API exposing a job description (list JSON lacks
     it, and the per-job detail endpoints all return the SPA HTML shell, not
     JSON — confirmed live). This is intentional, not a gap to fill later."""

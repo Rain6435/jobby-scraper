@@ -28,6 +28,7 @@ import logging
 import os
 import time
 from pathlib import Path
+from typing import cast
 
 log = logging.getLogger("scraper.ollama_keys")
 
@@ -85,8 +86,14 @@ def _load_state() -> dict[str, float]:
     if not path.exists():
         return {}
     try:
-        data = json.loads(path.read_text(encoding="utf-8"))
-        return {k: float(v) for k, v in data.items()} if isinstance(data, dict) else {}
+        raw: object = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(raw, dict):
+            return {}
+        state: dict[str, float] = {}
+        for key, value in cast(dict[object, object], raw).items():
+            if isinstance(key, str) and isinstance(value, (int, float)):
+                state[key] = float(value)
+        return state
     except (json.JSONDecodeError, ValueError, OSError):
         log.warning("Corrupt Ollama key rotation state at %s — treating as empty", path)
         return {}

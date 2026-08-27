@@ -15,10 +15,12 @@ Each list item has id (uuid), name, url, locations[].name. Config:
 from __future__ import annotations
 
 import logging
+from typing import cast, NotRequired, TypedDict
 
 import requests
 
 from scraper.boards.base import BaseScraper, make_session
+from scraper.config_types import RipplingConfig
 from scraper.models import Job
 from scraper.text import html_to_text
 
@@ -31,11 +33,40 @@ TIMEOUT = 30
 log = logging.getLogger("scraper.rippling")
 
 
+class RipplingLocation(TypedDict):
+    name: NotRequired[str]
+    city: NotRequired[str]
+    state: NotRequired[str]
+    country: NotRequired[str]
+
+
+class RipplingItem(TypedDict):
+    id: str
+    name: NotRequired[str]
+    url: NotRequired[str]
+    locations: NotRequired[list[RipplingLocation]]
+
+
+class RipplingJobsResponse(TypedDict):
+    items: NotRequired[list[RipplingItem]]
+    totalPages: NotRequired[int]
+
+
+class RipplingDescription(TypedDict):
+    role: NotRequired[str]
+    company: NotRequired[str]
+
+
+class RipplingJobDetailResponse(TypedDict):
+    description: NotRequired[str | RipplingDescription]
+
+
 class RipplingScraper(BaseScraper):
     source = "rippling"
 
     def fetch_jobs(self) -> list[Job]:
-        board_id = self.company["board_id"]
+        company: RipplingConfig = cast(RipplingConfig, self.company)
+        board_id = company["board_id"]
         url = API.format(board_id=board_id)
         session = make_session()
         session.headers.update({"User-Agent": "Mozilla/5.0", "Accept": "application/json"})
@@ -48,10 +79,10 @@ class RipplingScraper(BaseScraper):
                 url, params={"page": page, "pageSize": PAGE_SIZE}, timeout=TIMEOUT
             )
             resp.raise_for_status()
-            data = resp.json()
+            data: RipplingJobsResponse = resp.json()
             log.debug("%s: totalPages=%d reported", self.name, data.get("totalPages", 1))
             for item in data.get("items", []):
-                locations = []
+                locations: list[str] = []
                 for loc in item.get("locations", []):
                     where = self._location_str(loc)
                     if where:
@@ -90,7 +121,8 @@ class RipplingScraper(BaseScraper):
                 DETAIL_URL.format(board_id=board_id, job_id=job_id), timeout=TIMEOUT
             )
             resp.raise_for_status()
-            description = resp.json().get("description", "")
+            detail: RipplingJobDetailResponse = resp.json()
+            description = detail.get("description", "")
             # Usually {"role": "<html>", "company": "<html>"} — "role" is the
             # actual posting text. Some boards may return a plain string instead.
             html = description.get("role", "") if isinstance(description, dict) else description
@@ -100,7 +132,7 @@ class RipplingScraper(BaseScraper):
             return ""
 
     @staticmethod
-    def _location_str(loc: dict) -> str:
+    def _location_str(loc: RipplingLocation) -> str:
         """Build "City, State, Country" from the structured fields.
 
         Avoids Rippling's raw name like "Hybrid (Montreal, QC, CA)" — its "CA"
@@ -108,6 +140,6 @@ class RipplingScraper(BaseScraper):
         classifier. Spelling out the country ("Canada") keeps Montreal jobs
         classified correctly. Falls back to the raw name if fields are absent.
         """
-        parts = [loc.get("city"), loc.get("state"), loc.get("country")]
-        parts = [p for p in parts if p]
+        raw_parts = [loc.get("city"), loc.get("state"), loc.get("country")]
+        parts = [p for p in raw_parts if p]
         return ", ".join(parts) if parts else (loc.get("name") or "")

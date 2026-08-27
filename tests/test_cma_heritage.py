@@ -2,7 +2,9 @@ import responses
 
 from scraper.boards.cma_heritage import LIST_URL, CmaHeritageScraper
 
-COMPANY = {"name": "CMA Jobs in Heritage", "board": "cma_heritage"}
+from scraper.config_types import CmaHeritageConfig
+
+COMPANY: CmaHeritageConfig = {"name": "CMA Jobs in Heritage", "board": "cma_heritage"}
 
 _LIST_HTML = """
 <div class="row p-2 careerList">
@@ -39,7 +41,7 @@ def _detail_url(company_id: str) -> str:
 
 
 @responses.activate
-def test_extracts_and_maps_postings():
+def test_extracts_and_maps_postings() -> None:
     responses.get(LIST_URL, body=_LIST_HTML)
     responses.get(_detail_url("81598"), body=_DETAIL_HTML)
     responses.get(_detail_url("81595"), body=_DETAIL_HTML)
@@ -61,7 +63,7 @@ def test_extracts_and_maps_postings():
 
 
 @responses.activate
-def test_decodes_html_entities_in_title():
+def test_decodes_html_entities_in_title() -> None:
     responses.get(LIST_URL, body=_LIST_HTML)
     responses.get(_detail_url("81598"), body=_DETAIL_HTML)
     responses.get(_detail_url("81595"), body=_DETAIL_HTML)
@@ -72,7 +74,7 @@ def test_decodes_html_entities_in_title():
 
 
 @responses.activate
-def test_detail_fetch_failure_returns_empty_description_not_a_crash():
+def test_detail_fetch_failure_returns_empty_description_not_a_crash() -> None:
     responses.get(LIST_URL, body=_LIST_HTML)
     responses.get(_detail_url("81598"), status=500)
     responses.get(_detail_url("81595"), body=_DETAIL_HTML)
@@ -83,7 +85,7 @@ def test_detail_fetch_failure_returns_empty_description_not_a_crash():
     assert jobs[0].description == ""
 
 
-def test_extract_postings_skips_rows_missing_a_company_id():
+def test_extract_postings_skips_rows_missing_a_company_id() -> None:
     html = """
     <div class="row p-2 careerList">
     <div class="col-sm-3"><a href="https://museums.ca/nope">Untitled</a></div>

@@ -4,12 +4,14 @@ import responses
 
 from scraper.boards.ashby import AshbyScraper
 
-COMPANY = {"name": "Loopio", "board": "ashby", "slug": "loopio"}
+from scraper.config_types import AshbyConfig
+
+COMPANY: AshbyConfig = {"name": "Loopio", "board": "ashby", "slug": "loopio"}
 API = "https://api.ashbyhq.com/posting-api/job-board/loopio"
 
 
 @responses.activate
-def test_maps_jobs_with_dates_and_secondary_locations():
+def test_maps_jobs_with_dates_and_secondary_locations() -> None:
     published = (datetime.now(timezone.utc) - timedelta(days=2)).isoformat()
     responses.get(API, json={"jobs": [
         {
@@ -40,7 +42,7 @@ def test_maps_jobs_with_dates_and_secondary_locations():
 
 
 @responses.activate
-def test_falls_back_to_stripped_html_without_plain_description():
+def test_falls_back_to_stripped_html_without_plain_description() -> None:
     responses.get(API, json={"jobs": [
         {"id": "x2", "title": "Dev", "location": "Remote", "jobUrl": "u",
          "publishedAt": "", "descriptionHtml": "<p>HTML only</p>"},
@@ -52,7 +54,7 @@ def test_falls_back_to_stripped_html_without_plain_description():
 
 
 @responses.activate
-def test_falls_back_when_no_secondary_locations_or_date():
+def test_falls_back_when_no_secondary_locations_or_date() -> None:
     responses.get(API, json={"jobs": [
         {"id": "x1", "title": "Dev", "location": "Remote",
          "jobUrl": "u", "publishedAt": ""},
@@ -67,7 +69,7 @@ def test_falls_back_when_no_secondary_locations_or_date():
 
 
 @responses.activate
-def test_does_not_truncate_long_plain_description():
+def test_does_not_truncate_long_plain_description() -> None:
     """descriptionPlain used to be sliced at [:1500] here, independently of
     html_to_text's cap — so removing that cap alone left Ashby truncated."""
     body = "Build great software. " * 500
