@@ -745,7 +745,13 @@
     {
       "name": "Climatebase",
       "board": "climatebase",
-      "keywords": ["environmental analyst", "environmental scientist", "environmental engineer", "sustainability", "climate"]
+      "keywords": [
+        "environmental analyst",
+        "environmental scientist",
+        "environmental engineer",
+        "sustainability",
+        "climate"
+      ]
     },
     {
       "name": "CMA Jobs in Heritage",
@@ -921,6 +927,341 @@
       "board": "workday",
       "url": "https://uwaterloo.wd3.myworkdayjobs.com/wday/cxs/uwaterloo/uw_careers/jobs",
       "careers_base": "https://uwaterloo.wd3.myworkdayjobs.com/en-US/uw_careers"
+    },
+    {
+      "name": "Samsara",
+      "board": "greenhouse",
+      "token": "samsara"
+    },
+    {
+      "name": "Gusto",
+      "board": "greenhouse",
+      "token": "gusto"
+    },
+    {
+      "name": "Lattice",
+      "board": "greenhouse",
+      "token": "lattice"
+    },
+    {
+      "name": "Datadog",
+      "board": "greenhouse",
+      "token": "datadog"
+    },
+    {
+      "name": "Elastic",
+      "board": "greenhouse",
+      "token": "elastic"
+    },
+    {
+      "name": "MongoDB",
+      "board": "greenhouse",
+      "token": "mongodb"
+    },
+    {
+      "name": "Cloudflare",
+      "board": "greenhouse",
+      "token": "cloudflare"
+    },
+    {
+      "name": "Okta",
+      "board": "greenhouse",
+      "token": "okta"
+    },
+    {
+      "name": "PagerDuty",
+      "board": "greenhouse",
+      "token": "pagerduty"
+    },
+    {
+      "name": "Dropbox",
+      "board": "greenhouse",
+      "token": "dropbox"
+    },
+    {
+      "name": "Webflow",
+      "board": "greenhouse",
+      "token": "webflow"
+    },
+    {
+      "name": "Vercel",
+      "board": "greenhouse",
+      "token": "vercel"
+    },
+    {
+      "name": "Stripe",
+      "board": "greenhouse",
+      "token": "stripe"
+    },
+    {
+      "name": "Airbnb",
+      "board": "greenhouse",
+      "token": "airbnb"
+    },
+    {
+      "name": "Coinbase",
+      "board": "greenhouse",
+      "token": "coinbase"
+    },
+    {
+      "name": "Robinhood",
+      "board": "greenhouse",
+      "token": "robinhood"
+    },
+    {
+      "name": "Instacart",
+      "board": "greenhouse",
+      "token": "instacart"
+    },
+    {
+      "name": "Figma",
+      "board": "greenhouse",
+      "token": "figma"
+    },
+    {
+      "name": "Databricks",
+      "board": "greenhouse",
+      "token": "databricks"
+    },
+    {
+      "name": "Brex",
+      "board": "greenhouse",
+      "token": "brex"
+    },
+    {
+      "name": "Discord",
+      "board": "greenhouse",
+      "token": "discord"
+    },
+    {
+      "name": "Affirm",
+      "board": "greenhouse",
+      "token": "affirm"
+    },
+    {
+      "name": "Asana",
+      "board": "greenhouse",
+      "token": "asana"
+    },
+    {
+      "name": "Squarespace",
+      "board": "greenhouse",
+      "token": "squarespace"
+    },
+    {
+      "name": "Roblox",
+      "board": "greenhouse",
+      "token": "roblox"
+    },
+    {
+      "name": "Pinterest",
+      "board": "greenhouse",
+      "token": "pinterest"
+    },
+    {
+      "name": "Reddit",
+      "board": "greenhouse",
+      "token": "reddit"
+    },
+    {
+      "name": "Twilio",
+      "board": "greenhouse",
+      "token": "twilio"
+    },
+    {
+      "name": "Replit",
+      "board": "ashby",
+      "slug": "replit"
+    },
+    {
+      "name": "Cohere",
+      "board": "ashby",
+      "slug": "cohere"
+    },
+    {
+      "name": "Cursor",
+      "board": "ashby",
+      "slug": "cursor"
+    },
+    {
+      "name": "Amplitude",
+      "board": "ashby",
+      "slug": "amplitude"
+    },
+    {
+      "name": "Hex",
+      "board": "ashby",
+      "slug": "hex"
+    },
+    {
+      "name": "Miro",
+      "board": "ashby",
+      "slug": "miro"
+    },
+    {
+      "name": "Benchling",
+      "board": "ashby",
+      "slug": "benchling"
+    },
+    {
+      "name": "Whoop",
+      "board": "ashby",
+      "slug": "whoop"
+    },
+    {
+      "name": "Ramp",
+      "board": "ashby",
+      "slug": "ramp"
+    },
+    {
+      "name": "Linear",
+      "board": "ashby",
+      "slug": "linear"
+    },
+    {
+      "name": "Notion",
+      "board": "ashby",
+      "slug": "notion"
+    },
+    {
+      "name": "OpenAI",
+      "board": "ashby",
+      "slug": "openai"
+    },
+    {
+      "name": "Substack",
+      "board": "ashby",
+      "slug": "substack"
+    },
+    {
+      "name": "PostHog",
+      "board": "ashby",
+      "slug": "posthog"
+    },
+    {
+      "name": "Toyota Research Institute",
+      "board": "lever",
+      "company": "tri"
+    },
+    {
+      "name": "Trendyol",
+      "board": "lever",
+      "company": "trendyol"
+    },
+    {
+      "name": "Veeva Systems",
+      "board": "lever",
+      "company": "veeva"
+    },
+    {
+      "name": "Polaroid",
+      "board": "personio",
+      "company": "polaroid"
+    },
+    {
+      "name": "Emma Sleep",
+      "board": "personio",
+      "company": "emma-sleep"
+    },
+    {
+      "name": "Urban Sports Club",
+      "board": "personio",
+      "company": "urbansportsclub"
+    },
+    {
+      "name": "bunq",
+      "board": "recruitee",
+      "company": "bunq"
+    },
+    {
+      "name": "Anthropic",
+      "board": "greenhouse",
+      "token": "anthropic"
+    },
+    {
+      "name": "Scale AI",
+      "board": "greenhouse",
+      "token": "scaleai"
+    },
+    {
+      "name": "Netlify",
+      "board": "greenhouse",
+      "token": "netlify"
+    },
+    {
+      "name": "Lyft",
+      "board": "greenhouse",
+      "token": "lyft"
+    },
+    {
+      "name": "Chime",
+      "board": "greenhouse",
+      "token": "chime"
+    },
+    {
+      "name": "Canonical",
+      "board": "greenhouse",
+      "token": "canonical"
+    },
+    {
+      "name": "Duolingo",
+      "board": "greenhouse",
+      "token": "duolingo"
+    },
+    {
+      "name": "xAI",
+      "board": "greenhouse",
+      "token": "xai"
+    },
+    {
+      "name": "BambooHR",
+      "board": "greenhouse",
+      "token": "bamboohr17"
+    },
+    {
+      "name": "Root Insurance",
+      "board": "rippling",
+      "board_id": "joinroot"
+    },
+    {
+      "name": "TalentNeuron",
+      "board": "rippling",
+      "board_id": "talentneuroncareers"
+    },
+    {
+      "name": "Tuesday Health",
+      "board": "rippling",
+      "board_id": "jobs-at-tuesday-health"
+    },
+    {
+      "name": "Routeware",
+      "board": "rippling",
+      "board_id": "routeware-careers"
+    },
+    {
+      "name": "Hugging Face",
+      "board": "workable",
+      "company": "huggingface"
+    },
+    {
+      "name": "Flosum",
+      "board": "workable",
+      "company": "flosum"
+    },
+    {
+      "name": "Colliers International",
+      "board": "smartrecruiters",
+      "company": "Colliers"
+    },
+    {
+      "name": "Wehkamp",
+      "board": "smartrecruiters",
+      "company": "Wehkamp"
+    },
+    {
+      "name": "Bosch Group",
+      "board": "smartrecruiters",
+      "company": "BoschGroup"
     }
   ],
   "criteria": {
