@@ -71,7 +71,7 @@ class RipplingScraper(BaseScraper):
         session = make_session()
         session.headers.update({"User-Agent": "Mozilla/5.0", "Accept": "application/json"})
 
-        jobs: list[Job] = []
+        items_by_id: dict[str, RipplingItem] = {}
         page = 0
         while page < MAX_PAGES:
             log.debug("%s: fetching page=%d", self.name, page)
@@ -80,38 +80,42 @@ class RipplingScraper(BaseScraper):
             data: RipplingJobsResponse = resp.json()
             log.debug("%s: totalPages=%d reported", self.name, data.get("totalPages", 1))
             for item in data.get("items", []):
-                locations: list[str] = []
-                for loc in item.get("locations", []):
-                    where = self._location_str(loc)
-                    if where:
-                        locations.append(where)
-                job_id = f"{self.slug}:{item['id']}"
-                (description,) = cast(
-                    "tuple[str]",
-                    self._fetch_with_cache(
-                        job_id,
-                        ("description",),
-                        lambda: (self._fetch_description(session, board_id, item["id"]),),
-                    ),
-                )
-                jobs.append(
-                    Job(
-                        id=job_id,
-                        company=self.name,
-                        title=(item.get("name") or "").strip(),
-                        location=locations[0] if locations else "",
-                        locations=locations,
-                        url=item.get("url", ""),
-                        posted_on="",  # date only in detail — skipped
-                        posted_days=None,  # age tracked via first_seen
-                        source=self.source,
-                        description=description,
-                    )
-                )
+                items_by_id[item["id"]] = item
             if page >= data.get("totalPages", 1) - 1:
                 log.debug("%s: reached last page at page=%d, stopping", self.name, page)
                 break
             page += 1
+
+        job_ids = [f"{self.slug}:{item_id}" for item_id in items_by_id]
+        details = self._fetch_details_concurrent(
+            job_ids,
+            ("description",),
+            lambda job_id: (self._fetch_description(session, board_id, job_id.split(":", 1)[1]),),
+        )
+
+        jobs: list[Job] = []
+        for item_id, item in items_by_id.items():
+            locations: list[str] = []
+            for loc in item.get("locations", []):
+                where = self._location_str(loc)
+                if where:
+                    locations.append(where)
+            job_id = f"{self.slug}:{item_id}"
+            (description,) = cast("tuple[str]", details[job_id])
+            jobs.append(
+                Job(
+                    id=job_id,
+                    company=self.name,
+                    title=(item.get("name") or "").strip(),
+                    location=locations[0] if locations else "",
+                    locations=locations,
+                    url=item.get("url", ""),
+                    posted_on="",  # date only in detail — skipped
+                    posted_days=None,  # age tracked via first_seen
+                    source=self.source,
+                    description=description,
+                )
+            )
         log.debug("%s: fetched %d jobs", self.name, len(jobs))
         return jobs
 

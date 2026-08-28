@@ -76,7 +76,7 @@ class SmartRecruitersScraper(BaseScraper):
         session = make_session()
         session.headers.update({"User-Agent": "Mozilla/5.0", "Accept": "application/json"})
 
-        jobs: list[Job] = []
+        postings_by_id: dict[str, SmartRecruitersPosting] = {}
         offset = 0
         for _page in range(MAX_PAGES):
             log.debug("%s: fetching offset=%d", self.name, offset)
@@ -91,40 +91,43 @@ class SmartRecruitersScraper(BaseScraper):
                 len(postings),
                 total_found,
             )
-
             for p in postings:
-                loc = p.get("location") or {}
-                where = loc.get("fullLocation") or ""
-                locations = [where] if where else []
-                posted_days = posted_days_from_iso(p.get("releasedDate", ""))
-                job_id = f"{self.slug}:{p['id']}"
-                description, posting_url = cast(
-                    "tuple[str, str]",
-                    self._fetch_with_cache(
-                        job_id,
-                        ("description", "url"),
-                        lambda: self._fetch_detail(session, company, p["id"]),
-                    ),
-                )
-                jobs.append(
-                    Job(
-                        id=job_id,
-                        company=self.name,
-                        title=(p.get("name") or "").strip(),
-                        location=where,
-                        locations=locations,
-                        url=posting_url,
-                        posted_on=relative_day_text(posted_days),
-                        posted_days=posted_days,
-                        source=self.source,
-                        description=description,
-                    )
-                )
+                postings_by_id[p["id"]] = p
 
             offset += len(postings)
             if not postings or offset >= total_found:
                 log.debug("%s: reached last page, stopping", self.name)
                 break
+
+        job_ids = [f"{self.slug}:{posting_id}" for posting_id in postings_by_id]
+        details = self._fetch_details_concurrent(
+            job_ids,
+            ("description", "url"),
+            lambda job_id: self._fetch_detail(session, company, job_id.split(":", 1)[1]),
+        )
+
+        jobs: list[Job] = []
+        for posting_id, p in postings_by_id.items():
+            loc = p.get("location") or {}
+            where = loc.get("fullLocation") or ""
+            locations = [where] if where else []
+            posted_days = posted_days_from_iso(p.get("releasedDate", ""))
+            job_id = f"{self.slug}:{posting_id}"
+            description, posting_url = cast("tuple[str, str]", details[job_id])
+            jobs.append(
+                Job(
+                    id=job_id,
+                    company=self.name,
+                    title=(p.get("name") or "").strip(),
+                    location=where,
+                    locations=locations,
+                    url=posting_url,
+                    posted_on=relative_day_text(posted_days),
+                    posted_days=posted_days,
+                    source=self.source,
+                    description=description,
+                )
+            )
         log.debug("%s: fetched %d jobs", self.name, len(jobs))
         return jobs
 

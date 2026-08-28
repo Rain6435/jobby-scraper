@@ -112,13 +112,13 @@ class WorkdayScraper(BaseScraper):
         detail_base = url[: -len("/jobs")] if url.endswith("/jobs") else url
         slug = self.slug
 
-        jobs: list[Job] = []
+        postings: list[WorkdayJobPosting] = []
         offset = 0
         total = None
         session = make_session()
         session.headers.update({"Accept": "application/json"})
 
-        while total is None or (offset < total and len(jobs) < MAX_JOBS):
+        while total is None or (offset < total and len(postings) < MAX_JOBS):
             log.debug("%s: fetching offset=%d", self.name, offset)
             resp = session.post(
                 url,
@@ -137,78 +137,75 @@ class WorkdayScraper(BaseScraper):
                 # return total=0, so never overwrite it.
                 total = data.get("total", 0)
                 log.debug("%s: total=%d postings reported", self.name, total)
-            postings = data.get("jobPostings", [])
-            if not postings:
+            page_postings = data.get("jobPostings", [])
+            if not page_postings:
                 log.debug("%s: empty page at offset=%d, stopping", self.name, offset)
                 break
-
-            for posting in postings:
-                title = posting.get("title", "").strip()
-                if not title:
-                    # Some tenants' search index carries dangling entries —
-                    # confirmed on Airbus's: a real, searchable-by-id
-                    # requisition (bulletFields present) whose OWN detail
-                    # endpoint 404s with "not found: Job_Posting_Anchor_ID=…",
-                    # i.e. the list/search index and the actual posting store
-                    # have drifted apart tenant-side. There is no valid detail
-                    # to fetch for these — skip before wasting a doomed
-                    # detail GET (and the resulting misleading "Detail fetch
-                    # failed" warning) on a posting with nothing to show.
-                    log.debug(
-                        "%s: skipping posting with no title (bulletFields=%s)",
-                        self.name,
-                        posting.get("bulletFields"),
-                    )
-                    continue
-
-                posted_on = posting.get("postedOn", "").strip()
-
-                external_path = posting.get("externalPath", "")
-                bullet_fields = posting.get("bulletFields") or []
-                external_id = bullet_fields[0] if bullet_fields else external_path
-                job_id = f"{slug}:{external_id}"
-
-                locations, description, detail_posted_on = cast(
-                    "tuple[list[str], str, str]",
-                    self._fetch_with_cache(
-                        job_id,
-                        ("locations", "description", "posted_on"),
-                        lambda: self._fetch_detail(
-                            session,
-                            detail_base,
-                            external_path,
-                            posting.get("locationsText", "").strip(),
-                        ),
-                    ),
-                )
-                # Some tenants (confirmed on Parsons, 2026-08) omit postedOn
-                # from the list response entirely even though it's present
-                # on the job's own detail page — only fall back there when
-                # the list gave us nothing, since the list value is cheaper
-                # and (when present) exactly as reliable.
-                if not posted_on:
-                    posted_on = detail_posted_on
-                posted_days = parse_posted_days(posted_on)
-
-                jobs.append(
-                    Job(
-                        id=job_id,
-                        company=self.name,
-                        title=title,
-                        location=locations[0] if locations else "",
-                        locations=locations,
-                        url=f"{careers_base}{external_path}" if careers_base else external_path,
-                        posted_on=posted_on,
-                        posted_days=posted_days,
-                        source=self.source,
-                        description=description,
-                    )
-                )
-
+            postings.extend(page_postings)
             offset += PAGE_SIZE
+
+        # Some tenants' search index carries dangling entries — confirmed on
+        # Airbus's: a real, searchable-by-id requisition (bulletFields
+        # present) whose OWN detail endpoint 404s with "not found:
+        # Job_Posting_Anchor_ID=…", i.e. the list/search index and the
+        # actual posting store have drifted apart tenant-side. There is no
+        # valid detail to fetch for these — skip before wasting a doomed
+        # detail GET (and the resulting misleading "Detail fetch failed"
+        # warning) on a posting with nothing to show.
+        postings = [p for p in postings if p.get("title", "").strip()]
+
+        postings_by_job_id = {f"{slug}:{self._external_id(p)}": p for p in postings}
+        details = self._fetch_details_concurrent(
+            list(postings_by_job_id),
+            ("locations", "description", "posted_on"),
+            lambda job_id: self._fetch_detail(
+                session,
+                detail_base,
+                postings_by_job_id[job_id].get("externalPath", ""),
+                (postings_by_job_id[job_id].get("locationsText") or "").strip(),
+            ),
+        )
+
+        jobs: list[Job] = []
+        for job_id, posting in postings_by_job_id.items():
+            title = posting.get("title", "").strip()
+            posted_on = posting.get("postedOn", "").strip()
+            external_path = posting.get("externalPath", "")
+
+            locations, description, detail_posted_on = cast(
+                "tuple[list[str], str, str]", details[job_id]
+            )
+            # Some tenants (confirmed on Parsons, 2026-08) omit postedOn
+            # from the list response entirely even though it's present
+            # on the job's own detail page — only fall back there when
+            # the list gave us nothing, since the list value is cheaper
+            # and (when present) exactly as reliable.
+            if not posted_on:
+                posted_on = detail_posted_on
+            posted_days = parse_posted_days(posted_on)
+
+            jobs.append(
+                Job(
+                    id=job_id,
+                    company=self.name,
+                    title=title,
+                    location=locations[0] if locations else "",
+                    locations=locations,
+                    url=f"{careers_base}{external_path}" if careers_base else external_path,
+                    posted_on=posted_on,
+                    posted_days=posted_days,
+                    source=self.source,
+                    description=description,
+                )
+            )
 
         log.debug("%s: fetched %d jobs", self.name, len(jobs))
         return jobs
+
+    @staticmethod
+    def _external_id(posting: WorkdayJobPosting) -> str:
+        bullet_fields = posting.get("bulletFields") or []
+        return bullet_fields[0] if bullet_fields else posting.get("externalPath", "")
 
     def _fetch_detail(
         self,

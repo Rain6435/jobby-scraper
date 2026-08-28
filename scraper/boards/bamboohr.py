@@ -73,20 +73,20 @@ class BambooHRScraper(BaseScraper):
         results = body.get("result", [])
         log.debug("%s: %d listings returned", self.name, len(results))
 
+        job_ids = [f"{self.slug}:{r['id']}" for r in results]
+        details = self._fetch_details_concurrent(
+            job_ids,
+            ("description",),
+            lambda job_id: (self._fetch_description(session, subdomain, job_id.split(":", 1)[1]),),
+        )
+
         jobs: list[Job] = []
         for r in results:
             loc = r.get("location") or {}
             where = ", ".join(part for part in (loc.get("city"), loc.get("state")) if part)
             locations = [where] if where else []
             job_id = f"{self.slug}:{r['id']}"
-            (description,) = cast(
-                "tuple[str]",
-                self._fetch_with_cache(
-                    job_id,
-                    ("description",),
-                    lambda: (self._fetch_description(session, subdomain, r["id"]),),
-                ),
-            )
+            (description,) = cast("tuple[str]", details[job_id])
             jobs.append(
                 Job(
                     id=job_id,
