@@ -1,0 +1,43 @@
+name: Deploy
+
+# This repo has no live service of its own on prod — it's plain source code
+# invoked on demand by job_pipeline's daemon (jobs/scraper_runner.py spawns
+# `python -m scraper.main` from inside this checkout). A push here previously
+# only reached prod as an incidental side effect of job_pipeline's own
+# deploy.sh (which does `cd JobScraper && git pull origin main` as one step
+# of ITS deploy) — meaning a jobby-scraper-only change could sit unpulled
+# until the next unrelated job_pipeline push. This workflow closes that gap
+# by pulling immediately on push to main, instead of waiting.
+#
+# Deliberately just `git pull` — no dependency install, no service restart,
+# no health check. This repo's runtime deps (requests, anthropic,
+# sqlalchemy, python-dotenv) are already satisfied by job_pipeline's own
+# shared venv on prod, and nothing here runs continuously between scrapes —
+# the fresh commit simply takes effect on the next invocation (the daemon's
+# next hourly jobscraper_pipeline cycle, or a manual run).
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch: {}
+
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Pull latest into prod's JobScraper checkout
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: SSH and git pull
+        uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2  # v1.2.5
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: cd /opt/job_pipeline/JobScraper && git pull origin main && git log --oneline -1
