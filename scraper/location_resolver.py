@@ -571,27 +571,49 @@ def parse_location(raw: str) -> ParsedLocation:
         if not is_recognized_non_city:
             city = first
 
-    if len(tokens) == 2:
-        # A bare "City, ST" shape ("Washington, DC", "Toronto, ON") — the
-        # region is the trailing token itself, tokens[-1]. The >= 3 branch
-        # below instead looks at tokens[-2] for a "City, Region, Country"
-        # shape, and reusing that same index here would silently read the
-        # *city* token back as its own region for any 2-token string (since
-        # tokens[-2] == tokens[0] when there are only two elements) — this
-        # is exactly the shape that most needs region populated, since it's
-        # often the only disambiguating signal available for an otherwise
-        # ambiguous city name (e.g. three US towns are named "Washington";
-        # without "DC" from this branch, town_resolver.py can't tell them
-        # apart and must refuse to guess).
-        last = tokens[-1].strip()
-        last_lower = last.lower()
-        if last_lower in US_STATE_TOKENS or last_lower in CA_PROVINCE_TOKENS:
-            region = last
-    elif len(tokens) >= 3:
-        second_to_last = tokens[-2].strip()
-        second_to_last_lower = second_to_last.lower()
-        if second_to_last_lower in US_STATE_TOKENS or second_to_last_lower in CA_PROVINCE_TOKENS:
-            region = second_to_last
+    # Many US-state/CA-province 2-letter tokens are themselves valid ISO
+    # country codes for a different country ("DE" Delaware/Germany, "IN"
+    # Indiana/India, "CA" California/Canada — 26 US + 5 CA collisions in
+    # total). resolve_country_from_location() already has to make a call on
+    # this ambiguity (it prioritizes the state/province reading over the ISO
+    # country reading — a deliberate, pre-existing trade-off, not something
+    # this function should relitigate). Gating region extraction on
+    # country_code actually having resolved to US/CA keeps region
+    # consistent with whatever call country resolution already made: a
+    # token this function would extract as `region` is never one that
+    # country resolution itself treated as signaling a non-US/CA country.
+    # It does NOT independently correct a case where country_code itself is
+    # wrong (e.g. "Berlin, DE" still resolves country_code to "US", so
+    # region="DE" is still set) — that's resolve_country_from_location's
+    # trade-off to own, not a new problem region extraction introduces on
+    # top of it. What this guard does prevent: region_country_matches being
+    # False (country_code resolved to neither "US" nor "CA" — e.g. a fuller
+    # signal elsewhere in the string won a higher-priority match) never gets
+    # silently overridden by a lower-confidence trailing 2-letter token.
+    region_country_matches = country_code in ("US", "CA")
+    if region_country_matches:
+        if len(tokens) == 2:
+            # A bare "City, ST" shape ("Washington, DC", "Toronto, ON") —
+            # the region is the trailing token itself, tokens[-1]. The >= 3
+            # branch below instead looks at tokens[-2] for a "City, Region,
+            # Country" shape, and reusing that same index here would
+            # silently read the *city* token back as its own region for any
+            # 2-token string (since tokens[-2] == tokens[0] when there are
+            # only two elements) — this is exactly the shape that most needs
+            # region populated, since it's often the only disambiguating
+            # signal available for an otherwise ambiguous city name (e.g.
+            # three US towns are named "Washington"; without "DC" from this
+            # branch, town_resolver.py can't tell them apart and must
+            # refuse to guess).
+            last = tokens[-1].strip()
+            last_lower = last.lower()
+            if last_lower in US_STATE_TOKENS or last_lower in CA_PROVINCE_TOKENS:
+                region = last
+        elif len(tokens) >= 3:
+            second_to_last = tokens[-2].strip()
+            second_to_last_lower = second_to_last.lower()
+            if second_to_last_lower in US_STATE_TOKENS or second_to_last_lower in CA_PROVINCE_TOKENS:
+                region = second_to_last
 
     return ParsedLocation(
         raw=raw,

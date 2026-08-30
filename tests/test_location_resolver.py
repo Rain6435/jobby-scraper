@@ -98,6 +98,33 @@ def test_parse_location_region_not_the_city_token_itself():
     assert parsed.region != "Berlin"
 
 
+def test_parse_location_region_suppressed_when_country_resolves_elsewhere():
+    # "NSW" isn't a US/CA state/province token, so this mainly documents the
+    # general contract: region extraction only fires when country_code
+    # actually resolved to US or CA — a location whose country resolves
+    # elsewhere (here, via the full "Australia" name, a higher-priority
+    # match than any trailing-token heuristic) never gets a region guessed
+    # from US/CA tables.
+    parsed = parse_location("Sydney, NSW, Australia")
+    assert parsed.country_code == "AU"
+    assert parsed.region is None
+
+
+def test_parse_location_region_consistent_with_resolved_country():
+    # Many US-state/CA-province 2-letter tokens double as real ISO country
+    # codes ("DE" Delaware/Germany, "IN" Indiana/India) — resolve_country_
+    # from_location() already has to pick a reading for these (it
+    # prioritizes the US/CA state reading, a separate pre-existing trade-off
+    # this test isn't about). What this test guards: region extraction must
+    # never disagree with that call — it either agrees (both say US/CA) or
+    # region stays None, never a scoping value for a country other than
+    # whatever country_code itself already settled on.
+    for raw in ("Berlin, DE", "Bangalore, IN"):
+        parsed = parse_location(raw)
+        if parsed.region is not None:
+            assert parsed.country_code in ("US", "CA")
+
+
 def test_parse_location_city_extracted_despite_state_name_collision():
     # "New York" is both a real city and a full US state name. A distinct
     # state abbreviation elsewhere in the string ("NY") disambiguates it as
