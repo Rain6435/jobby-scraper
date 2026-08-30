@@ -549,10 +549,45 @@ def parse_location(raw: str) -> ParsedLocation:
             or first_lower in _ISO_NAME_TO_CODE
             or first_lower == "remote"
         )
+        # A handful of real city names are also full US-state/CA-province
+        # names ("New York", "Washington") — the checks above alone would
+        # always read these as "not a city." When a *different* token
+        # elsewhere in the string is itself a distinct, valid state/province
+        # token, that's independent confirmation the first token is being
+        # used as a place name rather than as the jurisdiction itself (a
+        # region can't sensibly equal itself twice in one location string),
+        # so the first-token-as-city reading wins instead. This only fires
+        # for the specific name-collision case — it does not affect any
+        # other US_STATE_TOKENS/CA_PROVINCE_TOKENS first-token match, e.g.
+        # "California, USA" still correctly yields city=None.
+        if is_recognized_non_city and (first_lower in US_STATE_TOKENS or first_lower in CA_PROVINCE_TOKENS):
+            other_tokens_lower = {t.strip().lower() for t in tokens[1:]}
+            has_distinct_state_or_province_token = any(
+                (t in US_STATE_TOKENS or t in CA_PROVINCE_TOKENS) and t != first_lower
+                for t in other_tokens_lower
+            )
+            if has_distinct_state_or_province_token:
+                is_recognized_non_city = False
         if not is_recognized_non_city:
             city = first
 
-    if len(tokens) >= 2:
+    if len(tokens) == 2:
+        # A bare "City, ST" shape ("Washington, DC", "Toronto, ON") — the
+        # region is the trailing token itself, tokens[-1]. The >= 3 branch
+        # below instead looks at tokens[-2] for a "City, Region, Country"
+        # shape, and reusing that same index here would silently read the
+        # *city* token back as its own region for any 2-token string (since
+        # tokens[-2] == tokens[0] when there are only two elements) — this
+        # is exactly the shape that most needs region populated, since it's
+        # often the only disambiguating signal available for an otherwise
+        # ambiguous city name (e.g. three US towns are named "Washington";
+        # without "DC" from this branch, town_resolver.py can't tell them
+        # apart and must refuse to guess).
+        last = tokens[-1].strip()
+        last_lower = last.lower()
+        if last_lower in US_STATE_TOKENS or last_lower in CA_PROVINCE_TOKENS:
+            region = last
+    elif len(tokens) >= 3:
         second_to_last = tokens[-2].strip()
         second_to_last_lower = second_to_last.lower()
         if second_to_last_lower in US_STATE_TOKENS or second_to_last_lower in CA_PROVINCE_TOKENS:

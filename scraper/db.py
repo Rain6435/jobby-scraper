@@ -49,6 +49,7 @@ from datetime import datetime, timedelta
 from sqlalchemy import (
     Boolean,
     Column,
+    Float,
     ForeignKey,
     Integer,
     MetaData,
@@ -106,6 +107,40 @@ jobs_table = Table(
     Column("is_new", Boolean, nullable=False),
 )
 
+# Canonical geographic identity for job locations, distinct from
+# `locations` on purpose: `locations` identity is *scraped-string* identity
+# (normalized_key only folds whitespace/casing — genuinely different
+# spellings/formats of the same real place are deliberately never merged,
+# see get_or_create_locations' docstring). `towns` identity is *geographic*
+# identity, sourced from an external authority (GeoNames, see
+# scraper/gazetteer.py) via its own stable geoname_id. Collapsing these two
+# into one table would force a choice neither side wants: either give up
+# locations' "never guess, never merge" contract, or make every gazetteer
+# refresh touch scraped rows. Keeping them separate means "San Francisco",
+# "San Francisco, CA", and "San Francisco, California, United States" stay
+# three distinct `locations` rows (as they must) while all three can point
+# at the *same* `towns` row via `locations.town_id` below — which is
+# exactly the canonical identity that filtering/recommendations need and
+# `locations` alone can't provide.
+towns_table = Table(
+    "towns",
+    metadata,
+    Column("id", Integer, primary_key=True, autoincrement=True),
+    # GeoNames' own id — lets a gazetteer refresh update a town's data in
+    # place (name/lat/lon/population can all change between GeoNames
+    # releases) without duplicating rows or breaking existing
+    # locations.town_id references (see gazetteer.load_towns).
+    Column("geoname_id", Integer, nullable=False, unique=True),
+    Column("name", String, nullable=False, index=True),
+    Column("ascii_name", String, nullable=False, index=True),  # match target: scraped strings are always ASCII/Latin, GeoNames' `name` sometimes isn't
+    Column("alternate_names", Text, nullable=True),  # comma-joined short ASCII aliases only, e.g. "NYC" — see gazetteer.py's filtering
+    Column("country_code", String, nullable=False, index=True),
+    Column("admin1_code", String, nullable=True, index=True),  # region/state/province code; only unique *within* a country, always paired with country_code when matching
+    Column("lat", Float(), nullable=False),
+    Column("lon", Float(), nullable=False),
+    Column("population", Integer, nullable=False, server_default="0"),
+)
+
 locations_table = Table(
     "locations",
     metadata,
@@ -121,6 +156,17 @@ locations_table = Table(
     Column("region", String, nullable=True),
     Column("country_code", String, nullable=True, index=True),
     Column("is_remote", Boolean, nullable=False, server_default="0"),
+    # Resolved via scraper.town_resolver.resolve_town() at insert time only
+    # (never recomputed on a normalized_key cache hit, same treatment as
+    # city/region/country_code above). NULL means "unmatched" — a venue
+    # name, ALL-CAPS tenant code, or genuinely ambiguous fragment (e.g.
+    # "Ontario" with no country to disambiguate province vs. city) — and is
+    # a permanent, correct answer for those, not a "try harder later"
+    # placeholder. Callers must treat NULL as a pass-through for town-based
+    # filtering, falling back to country_code, exactly like NULL
+    # country_code itself already must be treated as a pass-through
+    # upstream in job_pipeline's score_pool_for_user().
+    Column("town_id", Integer, ForeignKey("towns.id"), nullable=True, index=True),
 )
 
 # One row per location a job lists (locations[0] is still the "primary" one,
@@ -279,13 +325,17 @@ def get_or_create_locations(conn: Connection, names: set[str]) -> dict[str, int]
     Canada" resolve to the same row instead of creating a duplicate.
 
     A match reuses the existing row's id as-is: its stored `name` (display
-    casing) and structured columns (city/region/country_code/is_remote) are
-    NOT overwritten, so re-scraping never churns already-parsed data even if
-    location_resolver.py's parsing logic improves later — that's a separate,
-    explicit backfill (scripts/normalize_existing_locations.py), not an
-    implicit side effect of every write. A new raw string (no normalized_key
-    match) inserts a new row with `name` plus its freshly parsed structured
-    columns.
+    casing) and structured columns (city/region/country_code/is_remote/
+    town_id) are NOT overwritten, so re-scraping never churns already-parsed
+    data even if location_resolver.py's parsing logic improves later —
+    that's a separate, explicit backfill (scripts/normalize_existing_locations.py
+    for city/region/country_code/is_remote, backfill_town_ids.py for
+    town_id), not an implicit side effect of every write. A new raw string
+    (no normalized_key match) inserts a new row with `name` plus its freshly
+    parsed structured columns, town_id included — resolved the same way the
+    one-off backfill resolves it for existing rows (see
+    scraper.town_resolver.resolve_town), just for this one new row instead
+    of the whole table.
 
     Returns {raw_name: id} for every input name, keyed by the exact raw
     string passed in (mirrors _get_or_create_ids' return shape) — so callers
@@ -310,6 +360,11 @@ def get_or_create_locations(conn: Connection, names: set[str]) -> dict[str, int]
 
     missing_keys = keys - existing_by_key.keys()
     if missing_keys:
+        # Local import to avoid a circular import at module load time:
+        # town_resolver.py itself imports towns_table from this module, so
+        # importing resolve_town back at db.py's module scope would cycle.
+        from scraper.town_resolver import resolve_town
+
         # One raw string per missing key — the first one encountered in
         # `names` becomes that key's stored display text.
         to_insert: dict[str, ParsedLocation] = {}
@@ -326,6 +381,9 @@ def get_or_create_locations(conn: Connection, names: set[str]) -> dict[str, int]
                     "region": p.region,
                     "country_code": p.country_code,
                     "is_remote": p.is_remote,
+                    "town_id": resolve_town(
+                        conn, city=p.city, region=p.region, country_code=p.country_code
+                    ),
                 }
                 for p in to_insert.values()
             ],
