@@ -5,13 +5,17 @@ from sqlalchemy.engine import Connection
 
 from scraper.db import (
     companies_table,
+    get_or_create_locations,
     job_locations_table,
     jobs_table,
     load_previous,
     locations_table,
+    metadata,
     sources_table,
+    towns_table,
     write_jobs,
 )
+from scraper.gazetteer import load_towns
 from scraper.models import Job
 
 
@@ -266,3 +270,56 @@ def test_write_jobs_prefers_live_scrape_date_over_carried_one(tmp_path: Path) ->
     with engine.connect() as conn:
         row = conn.execute(select(jobs_table)).one()
     assert row.posted_date == "2026-07-27"
+
+
+def test_get_or_create_locations_resolves_town_id_for_new_row() -> None:
+    engine = create_engine("sqlite:///:memory:")
+    metadata.create_all(engine)
+    with engine.begin() as conn:
+        load_towns(conn)
+        ids = get_or_create_locations(conn, {"San Francisco, California, United States"})
+        loc_id = ids["San Francisco, California, United States"]
+        town_id = conn.execute(
+            select(locations_table.c.town_id).where(locations_table.c.id == loc_id)
+        ).scalar_one()
+        town_name = conn.execute(
+            select(towns_table.c.ascii_name).where(towns_table.c.id == town_id)
+        ).scalar_one()
+    assert town_name == "San Francisco"
+
+
+def test_get_or_create_locations_never_overwrites_town_id_on_cache_hit() -> None:
+    """A normalized_key cache hit must not recompute town_id — matching the
+    same "never touch already-parsed data" contract already documented for
+    city/region/country_code (see get_or_create_locations' docstring)."""
+    engine = create_engine("sqlite:///:memory:")
+    metadata.create_all(engine)
+    with engine.begin() as conn:
+        load_towns(conn)
+        first = get_or_create_locations(conn, {"San Francisco, CA"})
+        loc_id = first["San Francisco, CA"]
+        conn.execute(
+            locations_table.update().where(locations_table.c.id == loc_id).values(town_id=None)
+        )
+
+        # Same normalized_key (just different casing/whitespace) — must hit
+        # the existing row, not recompute and repopulate town_id.
+        second = get_or_create_locations(conn, {"san francisco, ca "})
+        assert second["san francisco, ca "] == loc_id
+        town_id = conn.execute(
+            select(locations_table.c.town_id).where(locations_table.c.id == loc_id)
+        ).scalar_one()
+    assert town_id is None
+
+
+def test_get_or_create_locations_town_id_none_for_unmatched_location() -> None:
+    engine = create_engine("sqlite:///:memory:")
+    metadata.create_all(engine)
+    with engine.begin() as conn:
+        load_towns(conn)
+        ids = get_or_create_locations(conn, {"ProspectLand"})
+        loc_id = ids["ProspectLand"]
+        town_id = conn.execute(
+            select(locations_table.c.town_id).where(locations_table.c.id == loc_id)
+        ).scalar_one()
+    assert town_id is None
