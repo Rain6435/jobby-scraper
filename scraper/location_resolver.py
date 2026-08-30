@@ -560,7 +560,9 @@ def parse_location(raw: str) -> ParsedLocation:
         # for the specific name-collision case — it does not affect any
         # other US_STATE_TOKENS/CA_PROVINCE_TOKENS first-token match, e.g.
         # "California, USA" still correctly yields city=None.
-        if is_recognized_non_city and (first_lower in US_STATE_TOKENS or first_lower in CA_PROVINCE_TOKENS):
+        if is_recognized_non_city and (
+            first_lower in US_STATE_TOKENS or first_lower in CA_PROVINCE_TOKENS
+        ):
             other_tokens_lower = {t.strip().lower() for t in tokens[1:]}
             has_distinct_state_or_province_token = any(
                 (t in US_STATE_TOKENS or t in CA_PROVINCE_TOKENS) and t != first_lower
@@ -612,7 +614,10 @@ def parse_location(raw: str) -> ParsedLocation:
         elif len(tokens) >= 3:
             second_to_last = tokens[-2].strip()
             second_to_last_lower = second_to_last.lower()
-            if second_to_last_lower in US_STATE_TOKENS or second_to_last_lower in CA_PROVINCE_TOKENS:
+            if (
+                second_to_last_lower in US_STATE_TOKENS
+                or second_to_last_lower in CA_PROVINCE_TOKENS
+            ):
                 region = second_to_last
 
     return ParsedLocation(

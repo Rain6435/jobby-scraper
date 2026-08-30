@@ -16,7 +16,9 @@ def _conn_with_gazetteer() -> Connection:
     return conn
 
 
-def _town_id(conn: Connection, ascii_name: str, country_code: str, admin1_code: str | None = None) -> int:
+def _town_id(
+    conn: Connection, ascii_name: str, country_code: str, admin1_code: str | None = None
+) -> int:
     query = select(towns_table.c.id).where(
         towns_table.c.ascii_name == ascii_name, towns_table.c.country_code == country_code
     )

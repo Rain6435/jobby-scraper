@@ -31,7 +31,9 @@ from sqlalchemy.engine import Connection
 
 from scraper.db import towns_table
 
-GAZETTEER_PATH = Path(__file__).resolve().parent.parent / "data" / "gazetteer" / "cities15000.txt.gz"
+GAZETTEER_PATH = (
+    Path(__file__).resolve().parent.parent / "data" / "gazetteer" / "cities15000.txt.gz"
+)
 
 # GeoNames' alternatenames column is a single comma-joined field mixing
 # short common aliases ("NYC", "SF") with long descriptive names in dozens
@@ -124,10 +126,7 @@ def load_towns(conn: Connection, path: Path = GAZETTEER_PATH) -> int:
     if not gazetteer_rows:
         return 0
 
-    existing_ids = {
-        row.geoname_id
-        for row in conn.execute(select(towns_table.c.geoname_id))
-    }
+    existing_ids = {row.geoname_id for row in conn.execute(select(towns_table.c.geoname_id))}
 
     to_insert = [r for r in gazetteer_rows if r.geoname_id not in existing_ids]
     to_update = [r for r in gazetteer_rows if r.geoname_id in existing_ids]

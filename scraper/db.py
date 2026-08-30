@@ -132,10 +132,16 @@ towns_table = Table(
     # locations.town_id references (see gazetteer.load_towns).
     Column("geoname_id", Integer, nullable=False, unique=True),
     Column("name", String, nullable=False, index=True),
-    Column("ascii_name", String, nullable=False, index=True),  # match target: scraped strings are always ASCII/Latin, GeoNames' `name` sometimes isn't
-    Column("alternate_names", Text, nullable=True),  # comma-joined short ASCII aliases only, e.g. "NYC" — see gazetteer.py's filtering
+    Column(
+        "ascii_name", String, nullable=False, index=True
+    ),  # match target: scraped strings are always ASCII/Latin, GeoNames' `name` sometimes isn't
+    Column(
+        "alternate_names", Text, nullable=True
+    ),  # comma-joined short ASCII aliases only, e.g. "NYC" — see gazetteer.py's filtering
     Column("country_code", String, nullable=False, index=True),
-    Column("admin1_code", String, nullable=True, index=True),  # region/state/province code; only unique *within* a country, always paired with country_code when matching
+    Column(
+        "admin1_code", String, nullable=True, index=True
+    ),  # region/state/province code; only unique *within* a country, always paired with country_code when matching
     Column("lat", Float(), nullable=False),
     Column("lon", Float(), nullable=False),
     Column("population", Integer, nullable=False, server_default="0"),
