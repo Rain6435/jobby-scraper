@@ -40,4 +40,4 @@ jobs:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
-          script: cd /opt/job_pipeline/JobScraper && git pull origin main && git log --oneline -1
+          script: cd /opt/job_pipeline/jobby-scraper && git pull origin main && git log --oneline -1
