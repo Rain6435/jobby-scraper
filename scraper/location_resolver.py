@@ -18,6 +18,7 @@ place" (see get_or_create_locations in db.py).
 from __future__ import annotations
 
 import re
+import unicodedata
 from dataclasses import dataclass
 
 # Mirrors jobby/shared/countryResolver.ts's COUNTRY_NAMES (alpha-2 -> display
@@ -270,6 +271,70 @@ COUNTRY_NAMES: dict[str, str] = {
 }
 _ISO_NAME_TO_CODE: dict[str, str] = {name.lower(): code for code, name in COUNTRY_NAMES.items()}
 
+# ISO 3166-1 alpha-3 -> alpha-2, restricted to codes COUNTRY_NAMES actually
+# has a name for (generated from i18n-iso-countries' getAlpha3Codes(), the
+# same package jobby/utils/pipeline/countryResolver.ts already depends on,
+# filtered to this file's own alpha-2 set — not hand-typed, to avoid a typo
+# silently mismapping a country). Several ATS vendors' location feeds lead
+# with an alpha-3 code instead of alpha-2 (see _LEADING_COUNTRY_CODE_RE
+# below) — e.g. "BRA - Sao Paulo - Sao Paulo (Torre Z)" or
+# "CAN-ON-Kitchener" — which nothing else in this file recognizes.
+_ALPHA3_TO_ALPHA2: dict[str, str] = {
+    "ABW": "AW", "AFG": "AF", "AGO": "AO", "AIA": "AI", "ALA": "AX",
+    "ALB": "AL", "AND": "AD", "ARE": "AE", "ARG": "AR", "ARM": "AM",
+    "ASM": "AS", "ATG": "AG", "AUS": "AU", "AUT": "AT", "AZE": "AZ",
+    "BDI": "BI", "BEL": "BE", "BEN": "BJ", "BES": "BQ", "BFA": "BF",
+    "BGD": "BD", "BGR": "BG", "BHR": "BH", "BHS": "BS", "BIH": "BA",
+    "BLM": "BL", "BLR": "BY", "BLZ": "BZ", "BMU": "BM", "BOL": "BO",
+    "BRA": "BR", "BRB": "BB", "BRN": "BN", "BTN": "BT", "BWA": "BW",
+    "CAF": "CF", "CAN": "CA", "CCK": "CC", "CHE": "CH", "CHL": "CL",
+    "CHN": "CN", "CIV": "CI", "CMR": "CM", "COD": "CD", "COG": "CG",
+    "COK": "CK", "COL": "CO", "COM": "KM", "CPV": "CV", "CRI": "CR",
+    "CUB": "CU", "CUW": "CW", "CXR": "CX", "CYM": "KY", "CYP": "CY",
+    "CZE": "CZ", "DEU": "DE", "DJI": "DJ", "DMA": "DM", "DNK": "DK",
+    "DOM": "DO", "DZA": "DZ", "ECU": "EC", "EGY": "EG", "ERI": "ER",
+    "ESH": "EH", "ESP": "ES", "EST": "EE", "ETH": "ET", "FIN": "FI",
+    "FJI": "FJ", "FLK": "FK", "FRA": "FR", "FRO": "FO", "FSM": "FM",
+    "GAB": "GA", "GBR": "GB", "GEO": "GE", "GGY": "GG", "GHA": "GH",
+    "GIB": "GI", "GIN": "GN", "GLP": "GP", "GMB": "GM", "GNB": "GW",
+    "GNQ": "GQ", "GRC": "GR", "GRD": "GD", "GRL": "GL", "GTM": "GT",
+    "GUF": "GF", "GUM": "GU", "GUY": "GY", "HKG": "HK", "HND": "HN",
+    "HRV": "HR", "HTI": "HT", "HUN": "HU", "IDN": "ID", "IMN": "IM",
+    "IND": "IN", "IOT": "IO", "IRL": "IE", "IRN": "IR", "IRQ": "IQ",
+    "ISL": "IS", "ISR": "IL", "ITA": "IT", "JAM": "JM", "JEY": "JE",
+    "JOR": "JO", "JPN": "JP", "KAZ": "KZ", "KEN": "KE", "KGZ": "KG",
+    "KHM": "KH", "KIR": "KI", "KNA": "KN", "KOR": "KR", "KWT": "KW",
+    "LAO": "LA", "LBN": "LB", "LBR": "LR", "LBY": "LY", "LCA": "LC",
+    "LIE": "LI", "LKA": "LK", "LSO": "LS", "LTU": "LT", "LUX": "LU",
+    "LVA": "LV", "MAC": "MO", "MAF": "MF", "MAR": "MA", "MCO": "MC",
+    "MDA": "MD", "MDG": "MG", "MDV": "MV", "MEX": "MX", "MHL": "MH",
+    "MKD": "MK", "MLI": "ML", "MLT": "MT", "MMR": "MM", "MNE": "ME",
+    "MNG": "MN", "MNP": "MP", "MOZ": "MZ", "MRT": "MR", "MSR": "MS",
+    "MTQ": "MQ", "MUS": "MU", "MWI": "MW", "MYS": "MY", "MYT": "YT",
+    "NAM": "NA", "NCL": "NC", "NER": "NE", "NFK": "NF", "NGA": "NG",
+    "NIC": "NI", "NIU": "NU", "NLD": "NL", "NOR": "NO", "NPL": "NP",
+    "NRU": "NR", "NZL": "NZ", "OMN": "OM", "PAK": "PK", "PAN": "PA",
+    "PER": "PE", "PHL": "PH", "PLW": "PW", "PNG": "PG", "POL": "PL",
+    "PRI": "PR", "PRK": "KP", "PRT": "PT", "PRY": "PY", "PSE": "PS",
+    "PYF": "PF", "QAT": "QA", "REU": "RE", "ROU": "RO", "RUS": "RU",
+    "RWA": "RW", "SAU": "SA", "SDN": "SD", "SEN": "SN", "SGP": "SG",
+    "SHN": "SH", "SJM": "SJ", "SLB": "SB", "SLE": "SL", "SLV": "SV",
+    "SMR": "SM", "SOM": "SO", "SPM": "PM", "SRB": "RS", "SSD": "SS",
+    "STP": "ST", "SUR": "SR", "SVK": "SK", "SVN": "SI", "SWE": "SE",
+    "SWZ": "SZ", "SXM": "SX", "SYC": "SC", "SYR": "SY", "TCA": "TC",
+    "TCD": "TD", "TGO": "TG", "THA": "TH", "TJK": "TJ", "TKL": "TK",
+    "TKM": "TM", "TLS": "TL", "TON": "TO", "TTO": "TT", "TUN": "TN",
+    "TUR": "TR", "TUV": "TV", "TWN": "TW", "TZA": "TZ", "UGA": "UG",
+    "UKR": "UA", "URY": "UY", "USA": "US", "UZB": "UZ", "VAT": "VA",
+    "VCT": "VC", "VEN": "VE", "VGB": "VG", "VIR": "VI", "VNM": "VN",
+    "VUT": "VU", "WLF": "WF", "WSM": "WS", "XKK": "XK", "YEM": "YE",
+    "ZAF": "ZA", "ZMB": "ZM", "ZWE": "ZW",
+    # Informal/non-ISO 3-letter codes observed in real ATS feeds, not part
+    # of the generated table above — added by hand because they're
+    # unambiguous in context, same precedent as LOCATION_ALIASES' "uk"/"usa".
+    "ROM": "RO",  # Romania — real ISO alpha-3 is ROU, but "ROM-Bucharest, PO" is observed vendor usage
+}
+
 # Mirrors countryResolver.ts's LOCATION_ALIASES exactly.
 LOCATION_ALIASES: dict[str, str] = {
     "usa": "US",
@@ -440,26 +505,55 @@ CA_PROVINCE_TOKENS: set[str] = {
 }
 
 _PAREN_RE = re.compile(r"\(([^)]*)\)")
-_TRAILING_STATE_RE = re.compile(r"[,-]\s*([a-z]{2})\s*$")
+_TRAILING_STATE_RE = re.compile(r"[,-]\s*([a-z]{2})\.?\s*$")
+# Trailing "<City>, <ISO3>" shape ("Bengaluru, IND", "London, GBR",
+# "Tokyo, JPN") — the existing comma-tokenizer below only checks each token
+# against alias/name tables, and a bare 3-letter code matches neither.
+_TRAILING_ALPHA3_RE = re.compile(r"[,/]\s*([a-z]{3})\.?\s*$")
+
 # Some ATS vendors (confirmed on AtkinsRéalis's SmartRecruiters feed) format
 # location as a dot-delimited "<ISO2>.<City>.<Address>" path instead of the
 # comma-separated shape every other pass in this file assumes — e.g.
 # "GB.Glasgow.2 Atlantic Square York Street" or "CA.QC.Montréal.455 boul.".
-# Splitting on "," (the tokenizer above) never separates that leading code
-# from the rest of the string, so it silently fell through to None even
-# though the signal is unambiguous.
+# Other vendors use the same idea with "-" instead of "." and/or an alpha-3
+# code instead of alpha-2 ("CAN-ON-Kitchener", "JPN-Tokyo-OVOL",
+# "BRA - Sao Paulo - Sao Paulo (Torre Z)" — the last with spaces around each
+# dash). Splitting on ","/"-" (the tokenizer below, and _TRAILING_STATE_RE)
+# never separates a leading code glued directly to the next segment by "."
+# or "-" with no comma, so it silently fell through to None even though the
+# signal is unambiguous.
 #
-# Requiring NO space after the dot ("gb.glasgow", not "gb. glasgow") is what
-# keeps this from firing on an ordinary sentence-abbreviation prefix like
-# "St. Louis, MO" or "Mt. Pleasant" — both "st"/"mt" happen to also be valid
-# ISO codes (São Tomé, n/a) but are always followed by ". " (abbreviation +
-# space), never the compact ". " -less vendor shape. This does mean a
-# same-vendor location that happens to put a space after its leading code
-# ("PE. Lima. Calle...", observed once) still falls through to None rather
-# than resolving to PE — an accepted miss (None is this file's existing
-# "can't confidently tell" contract) in exchange for never guessing wrong on
-# the far more common "St./Mt./Dr." English-abbreviation shape.
-_LEADING_ISO_DOT_RE = re.compile(r"^([a-z]{2})\.(?=\S)")
+# Requiring NO space after the delimiter for the alpha-2 "." shape
+# ("gb.glasgow", not "gb. glasgow") is what keeps that one from firing on an
+# ordinary sentence-abbreviation prefix like "St. Louis, MO" or "Mt.
+# Pleasant" — both "st"/"mt" happen to also be valid ISO codes (São Tomé,
+# n/a) but are always followed by ". " (abbreviation + space), never the
+# compact space-less vendor shape. This does mean a same-vendor location
+# that happens to put a space after its leading code ("PE. Lima. Calle...",
+# observed once) still falls through to None rather than resolving to PE —
+# an accepted miss (None is this file's existing "can't confidently tell"
+# contract) in exchange for never guessing wrong on the far more common
+# "St./Mt./Dr." English-abbreviation shape. The alpha-3 "-" shapes don't
+# have this collision risk (no common English word is "bra-", "can-",
+# "jpn-", etc.), so those allow an optional space around the dash.
+_LEADING_ISO2_DOT_RE = re.compile(r"^([a-z]{2})\.(?=\S)")
+_LEADING_ISO3_DASH_RE = re.compile(r"^([a-z]{3})\s*-\s*(?=\S)")
+
+# "<ISO2>-<region>-<City>-..." (e.g. "CA-QC-LONGUEUIL-J01", "AU-NSW-
+# WILLIAMTOWN-001") is a *different* vendor shape from the two above: no
+# space around either dash, and the region segment can be 2-3 letters or
+# digits. This one is checked against the ORIGINAL (non-lowercased) string
+# and requires the code and region to be ALL UPPERCASE specifically because
+# a same-shaped US-domestic vendor feed also exists ("CA-Fresno-cCARE
+# Clinic", "OR-Oregon-FIELD", "TX-Austin-Nucl Pharm #56") where the city
+# segment is mixed/lower case — that's California/Oregon/Texas, not
+# Canada/Oman/... — and merging the two would misresolve those to the wrong
+# country. Requiring the region segment to be all-caps is what tells the
+# two vendors apart; it is deliberately not validated as a real
+# region/province code beyond that, matching this function's existing
+# "structural shape is confidence enough" precedent for the alpha-2/alpha-3
+# dot/dash shapes above.
+_LEADING_ISO2_REGION_DASH_RE = re.compile(r"^([A-Z]{2})-[A-Z0-9]{2,3}-")
 
 
 def _matches_word(normalized: str, phrase: str) -> bool:
@@ -478,11 +572,37 @@ def resolve_country_from_location(location: str | None) -> str | None:
     if not location or not location.strip():
         return None
 
-    normalized = location.lower()
+    # "<ISO2>-<REGION>-<City>-..." vendor shape (e.g. "CA-QC-LONGUEUIL-J01")
+    # is the one check that needs the ORIGINAL case (see
+    # _LEADING_ISO2_REGION_DASH_RE's comment on why all-caps is what
+    # distinguishes it from a same-shaped US-domestic feed) — must run
+    # before the string is lowercased below.
+    leading_region = _LEADING_ISO2_REGION_DASH_RE.match(location)
+    if leading_region and leading_region.group(1) in COUNTRY_NAMES:
+        return leading_region.group(1)
 
-    leading_iso = _LEADING_ISO_DOT_RE.match(normalized)
-    if leading_iso and leading_iso.group(1).upper() in COUNTRY_NAMES:
-        return leading_iso.group(1).upper()
+    # NFD-decompose then drop combining marks: folds "québec"/"montréal"/
+    # "münchen" to their unaccented ASCII form so they match
+    # CA_PROVINCE_TOKENS/_ISO_NAME_TO_CODE/LOCATION_ALIASES, whose keys are
+    # all plain ASCII. Safe here specifically because this function only
+    # extracts a country *signal* from the string — unlike parse_location's
+    # normalized_key (identity/dedup), folding accents can never merge two
+    # genuinely different places into the same resolved country by mistake,
+    # it only lets an accented spelling reach a table that was already
+    # reachable via its unaccented spelling.
+    folded = unicodedata.normalize("NFD", location)
+    folded = "".join(ch for ch in folded if unicodedata.category(ch) != "Mn")
+    normalized = folded.lower()
+
+    leading_iso2 = _LEADING_ISO2_DOT_RE.match(normalized)
+    if leading_iso2 and leading_iso2.group(1).upper() in COUNTRY_NAMES:
+        return leading_iso2.group(1).upper()
+
+    leading_iso3 = _LEADING_ISO3_DASH_RE.match(normalized)
+    if leading_iso3:
+        code = _ALPHA3_TO_ALPHA2.get(leading_iso3.group(1).upper())
+        if code:
+            return code
 
     paren_tokens = [m.group(1).strip() for m in _PAREN_RE.finditer(normalized)]
     without_parens = _PAREN_RE.sub(" ", normalized)
@@ -518,6 +638,15 @@ def resolve_country_from_location(location: str | None) -> str | None:
             return "US"
         if candidate in CA_PROVINCE_TOKENS:
             return "CA"
+
+    # Trailing "<City>, <ISO3>" shape ("Bengaluru, IND", "Tokyo, JPN") — the
+    # comma-tokenizer above only checks tokens against alias/name tables, so
+    # a bare 3-letter code never matched anything until now.
+    trailing_alpha3 = _TRAILING_ALPHA3_RE.search(without_parens.strip())
+    if trailing_alpha3:
+        code = _ALPHA3_TO_ALPHA2.get(trailing_alpha3.group(1).upper())
+        if code:
+            return code
 
     return None
 

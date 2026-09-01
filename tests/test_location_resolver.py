@@ -61,6 +61,84 @@ def test_resolve_country_leading_iso_dot_does_not_shadow_english_abbreviations()
     assert resolve_country_from_location("Mt. Pleasant, SC") == "US"
 
 
+def test_resolve_country_leading_iso3_dash_shape():
+    # A second ATS vendor family: alpha-3 code + "-" instead of alpha-2 + ".",
+    # both glued directly ("CAN-ON-Kitchener") and space-padded
+    # ("BRA - Sao Paulo - Sao Paulo (Torre Z)").
+    assert resolve_country_from_location("CAN-ON-Kitchener") == "CA"
+    assert resolve_country_from_location("JPN-Tokyo-OVOL") == "JP"
+    assert (
+        resolve_country_from_location("BRA - Sao Paulo - Sao Paulo (Torre Z)") == "BR"
+    )
+    assert resolve_country_from_location("DEU - Berlin - Berlin") == "DE"
+    assert resolve_country_from_location("VNM - Hanoi, Viet Nam") == "VN"
+    # ROM is not the real ISO alpha-3 for Romania (ROU is) but is observed
+    # vendor usage and unambiguous in context.
+    assert resolve_country_from_location("ROM-Bucharest, PO") == "RO"
+
+
+def test_resolve_country_leading_iso3_dash_rejects_non_codes():
+    # "JGH"/"CPO" are 3 letters + dash but not real country codes — must
+    # fall through to None, not guess.
+    assert resolve_country_from_location("JGH - Jewish General Hosp.") is None
+    assert resolve_country_from_location("CPO - Copenhagen Office") is None
+
+
+def test_resolve_country_leading_iso2_region_dash_shape():
+    # A third vendor family: "<ISO2>-<REGION>-<City>-..." with no spaces,
+    # both segments ALL UPPERCASE (e.g. "CA-QC-LONGUEUIL-J01").
+    assert (
+        resolve_country_from_location(
+            "CA-QC-LONGUEUIL-J01 ~ 1000 Blvd Marie-Victorin ~ J01 BLDG"
+        )
+        == "CA"
+    )
+    assert (
+        resolve_country_from_location(
+            "AU-NSW-WILLIAMTOWN-001 ~ 1 Technology Pl ~ BLDG C, Unit 201"
+        )
+        == "AU"
+    )
+    # Numeric region segment is also valid for this shape.
+    assert (
+        resolve_country_from_location("PL-12-NIEPOLOMICE-004 ~ Grabska 4 ~ GRABSKA")
+        == "PL"
+    )
+
+
+def test_resolve_country_leading_iso2_region_dash_rejects_us_domestic_shape():
+    # A same-shaped US-domestic vendor feed exists where the city segment is
+    # mixed/lower case — that's California/Oregon/Texas, not
+    # Canada/Oman/Thailand. All-caps-region is what distinguishes the two;
+    # this must never resolve to the wrong country.
+    assert resolve_country_from_location("CA-Fresno-cCARE Clinic") is None
+    assert resolve_country_from_location("OR-Oregon-FIELD") is None
+    assert resolve_country_from_location("TX-Austin-Nucl Pharm #56") is None
+
+
+def test_resolve_country_trailing_alpha3_shape():
+    # "<City>, <ISO3>" — a bare 3-letter code the comma-tokenizer's
+    # alias/name-table checks never matched before.
+    assert resolve_country_from_location("Bengaluru, IND") == "IN"
+    assert resolve_country_from_location("London, GBR") == "GB"
+    assert resolve_country_from_location("Tokyo, JPN") == "JP"
+    # Not a real code — must not guess.
+    assert resolve_country_from_location("Stuttgart, GER") is None
+
+
+def test_resolve_country_accented_province_name():
+    # "québec" (accented) previously never matched CA_PROVINCE_TOKENS'
+    # unaccented "quebec" entry.
+    assert resolve_country_from_location("Montréal, Québec") == "CA"
+    assert resolve_country_from_location("Sherbrooke, Québec") == "CA"
+
+
+def test_resolve_country_trailing_state_with_period():
+    # "Vancouver, BC." — a trailing period after the 2-letter province/state
+    # token previously broke the trailing-state regex's end anchor.
+    assert resolve_country_from_location("Vancouver, BC.") == "CA"
+
+
 def test_parse_location_normalized_key_folds_case_and_whitespace():
     a = parse_location("Toronto, Ontario, Canada")
     b = parse_location("TORONTO, Ontario, Canada")
