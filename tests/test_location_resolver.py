@@ -245,3 +245,32 @@ def test_parse_location_ambiguous_repeated_state_name_stays_unresolved():
     # Both tokens are literally the same state name — no distinct second
     # token exists to disambiguate, so city correctly stays unset.
     assert parse_location("New York, New York").city is None
+
+
+def test_resolve_country_bare_city_name():
+    # A location with no country/province/ISO signal at all — resolved via
+    # _BARE_CITY_NAME_TO_COUNTRY, the gazetteer-derived lowest-priority
+    # fallback tier.
+    assert resolve_country_from_location("Montreal") == "CA"
+    assert resolve_country_from_location("Toronto") == "CA"
+    assert resolve_country_from_location("Mumbai") == "IN"
+    assert resolve_country_from_location("Shanghai") == "CN"
+    # Case-insensitive, matching the function's overall lowercasing.
+    assert resolve_country_from_location("MONTREAL") == "CA"
+
+
+def test_resolve_country_bare_city_name_excludes_known_false_positives():
+    # "apac"/"federal" each have exactly one gazetteer match (a real but
+    # obscure town) but were deliberately excluded as unsafe to trust bare —
+    # confirms they were left out on purpose, not missed.
+    assert resolve_country_from_location("APAC") is None
+    assert resolve_country_from_location("Federal") is None
+
+
+def test_resolve_country_bare_city_name_is_whole_string_only():
+    # Must not fire on a city name embedded in a longer string — that's a
+    # different signal (or lack thereof), not the bare-name fallback's job.
+    assert resolve_country_from_location("Montreal Office") is None
+    # Already resolves via the name-matching tier before ever reaching the
+    # bare-city fallback.
+    assert resolve_country_from_location("Montreal, Canada") == "CA"

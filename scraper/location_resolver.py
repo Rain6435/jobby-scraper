@@ -555,6 +555,61 @@ _LEADING_ISO3_DASH_RE = re.compile(r"^([a-z]{3})\s*-\s*(?=\S)")
 # dot/dash shapes above.
 _LEADING_ISO2_REGION_DASH_RE = re.compile(r"^([A-Z]{2})-[A-Z0-9]{2,3}-")
 
+# Lowest-priority fallback: a location that is nothing but a bare city name
+# ("Montreal", "Toronto", "Mumbai") with no country/province/ISO signal at
+# all in the string — every other tier above legitimately returns None for
+# these, since there's nothing to parse, only a name to look up.
+#
+# Generated from GeoNames' cities15000 dump (scraper/gazetteer.py's bundled
+# data/gazetteer/cities15000.txt.gz — the same dataset scraper/
+# town_resolver.py's DB-backed matching uses for a different purpose:
+# resolving a specific town given an ALREADY-KNOWN country). Built by
+# grouping every gazetteer row by lowercased ascii_name and keeping only
+# names that map to EXACTLY ONE country_code across the full ~34k-row
+# worldwide dataset — no population-based tie-breaking, which a spot check
+# showed gets real cases wrong even for "obviously safe" names (e.g.
+# "Richmond" resolves to a US town over Richmond, BC by a slim population
+# margin; "Georgetown" resolves to Guyana over the common Ontario usage).
+# Ties are excluded entirely rather than guessed, preserving this
+# function's "never guess" contract. Further filtered to city names
+# actually observed in scraped job locations, then hand-reviewed to drop
+# two false positives that technically have a single-country gazetteer
+# match but are unsafe to trust bare: "apac" (a real Ugandan town, but in
+# job postings this string is virtually always the Asia-Pacific acronym)
+# and "federal" (a real Argentine town, too generic/administrative a word
+# to trust without other context).
+#
+# To add more entries later, re-run the same derivation against newly
+# observed unresolved locations rather than hand-typing a new city —
+# hand-typing skips the single-country-match safety check this table's
+# entries all passed.
+_BARE_CITY_NAME_TO_COUNTRY: dict[str, str] = {
+    'abbotsford': 'CA', 'atlanta': 'US', 'backnang': 'DE', 'baesweiler': 'DE',
+    'baltimore': 'US', 'barrie': 'CA', 'basel': 'CH', 'beijing': 'CN',
+    'brampton': 'CA', 'bremen': 'DE', 'brownsville': 'US', 'bucharest': 'RO',
+    'budapest': 'HU', 'calgary': 'CA', 'cape town': 'ZA', 'cardiff': 'GB',
+    'carlsbad': 'US', 'chengdu': 'CN', 'chennai': 'IN', 'copenhagen': 'DK',
+    'dallas': 'US', 'dothan': 'US', 'dubai': 'AE', 'fuzhou': 'CN',
+    'getafe': 'ES', 'gondia': 'IN', 'greenwood': 'US', 'guangzhou': 'CN',
+    'gurugram': 'IN', 'hebron': 'PS', 'indianapolis': 'US', 'jacksonville': 'US',
+    'jakarta': 'ID', 'jena': 'DE', 'jiaxing': 'CN', 'kamloops': 'CA',
+    'kelowna': 'CA', 'krakow': 'PL', 'lafayette': 'US', 'lake country': 'CA',
+    'ljubljana': 'SI', 'luzhou': 'CN', 'macclesfield': 'GB', 'makati city': 'PH',
+    'mannheim': 'DE', 'markham': 'CA', 'miami': 'US', 'milan': 'IT',
+    'montpellier': 'FR', 'montreal': 'CA', 'mumbai': 'IN', 'new delhi': 'IN',
+    'niagara-on-the-lake': 'CA', 'noida': 'IN', 'oshawa': 'CA', 'pasig city': 'PH',
+    'pattaya': 'TH', 'penzberg': 'DE', 'petaling jaya': 'MY', 'petaluma': 'US',
+    'phnom penh': 'KH', 'pittsburgh': 'US', 'pleasanton': 'US', 'pune': 'IN',
+    'quezon city': 'PH', 'raleigh': 'US', 'red deer': 'CA', 'riga': 'LV',
+    'riyadh': 'SA', 'saint-georges': 'CA', 'salmon arm': 'CA', 'sao paulo': 'BR',
+    'sarnia': 'CA', 'saskatoon': 'CA', 'sault ste. marie': 'CA', 'seattle': 'US',
+    'seoul': 'KR', 'sepang': 'MY', 'shanghai': 'CN', 'sidney': 'US',
+    'stolberg': 'DE', 'strathroy': 'CA', 'suzhou': 'CN', 'taipei': 'TW',
+    'taiyuan': 'CN', 'tampa': 'US', 'tokyo': 'JP', 'toronto': 'CA',
+    'tucson': 'US', 'turku': 'FI', 'ulm': 'DE', 'vaughan': 'CA',
+    'waltham': 'US', 'warsaw': 'PL', 'winnipeg': 'CA', 'yokohama': 'JP',
+}
+
 
 def _matches_word(normalized: str, phrase: str) -> bool:
     escaped = re.escape(phrase)
@@ -647,6 +702,16 @@ def resolve_country_from_location(location: str | None) -> str | None:
         code = _ALPHA3_TO_ALPHA2.get(trailing_alpha3.group(1).upper())
         if code:
             return code
+
+    # Lowest-priority fallback: the whole string, once stripped, is nothing
+    # but a bare city name with no country/province/ISO signal at all (e.g.
+    # "Montreal", "Toronto"). Whole-string match only — not a token/substring
+    # scan — so this never fires on a city name embedded in a longer string
+    # ("Montreal Office" stays None; "Montreal, Canada" already resolved via
+    # the name-matching tier above, long before reaching here).
+    bare_city_code = _BARE_CITY_NAME_TO_COUNTRY.get(normalized.strip())
+    if bare_city_code:
+        return bare_city_code
 
     return None
 
