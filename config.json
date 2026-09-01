@@ -2655,6 +2655,648 @@
       "name": "Alo Yoga",
       "board": "greenhouse",
       "token": "aloyoga"
+    },
+    {
+      "name": "Algonquin College",
+      "board": "workday",
+      "url": "https://algonquincollege.wd3.myworkdayjobs.com/wday/cxs/algonquincollege/CareerOpportunities/jobs",
+      "careers_base": "https://algonquincollege.wd3.myworkdayjobs.com/en-US/CareerOpportunities"
+    },
+    {
+      "name": "CHEO",
+      "board": "workday",
+      "url": "https://cheo.wd10.myworkdayjobs.com/wday/cxs/cheo/External_Site/jobs",
+      "careers_base": "https://cheo.wd10.myworkdayjobs.com/en-US/External_Site"
+    },
+    {
+      "name": "Hydro Ottawa",
+      "board": "workday",
+      "url": "https://hydroottawa.wd3.myworkdayjobs.com/wday/cxs/hydroottawa/hydro_ottawa_careersite/jobs",
+      "careers_base": "https://hydroottawa.wd3.myworkdayjobs.com/en-US/hydro_ottawa_careersite"
+    },
+    {
+      "name": "BlackBerry",
+      "board": "workday",
+      "url": "https://bb.wd3.myworkdayjobs.com/wday/cxs/bb/BlackBerry/jobs",
+      "careers_base": "https://bb.wd3.myworkdayjobs.com/en-US/BlackBerry"
+    },
+    {
+      "name": "Entrust",
+      "board": "workday",
+      "url": "https://entrust.wd1.myworkdayjobs.com/wday/cxs/entrust/EntrustCareers/jobs",
+      "careers_base": "https://entrust.wd1.myworkdayjobs.com/en-US/EntrustCareers"
+    },
+    {
+      "name": "Lumentum",
+      "board": "workday",
+      "url": "https://lumentum.wd5.myworkdayjobs.com/wday/cxs/lumentum/LITE/jobs",
+      "careers_base": "https://lumentum.wd5.myworkdayjobs.com/en-US/LITE"
+    },
+    {
+      "name": "EllisDon",
+      "board": "workday",
+      "url": "https://ellisdon.wd3.myworkdayjobs.com/wday/cxs/ellisdon/Ellis-Don/jobs",
+      "careers_base": "https://ellisdon.wd3.myworkdayjobs.com/en-US/Ellis-Don"
+    },
+    {
+      "name": "Broadcom",
+      "board": "workday",
+      "url": "https://broadcom.wd1.myworkdayjobs.com/wday/cxs/broadcom/External_Career/jobs",
+      "careers_base": "https://broadcom.wd1.myworkdayjobs.com/en-US/External_Career"
+    },
+    {
+      "name": "NXP Semiconductors",
+      "board": "workday",
+      "url": "https://nxp.wd3.myworkdayjobs.com/wday/cxs/nxp/careers/jobs",
+      "careers_base": "https://nxp.wd3.myworkdayjobs.com/en-US/careers"
+    },
+    {
+      "name": "Solink",
+      "board": "ashby",
+      "slug": "solink"
+    },
+    {
+      "name": "Noibu",
+      "board": "ashby",
+      "slug": "noibu"
+    },
+    {
+      "name": "Rewind",
+      "board": "ashby",
+      "slug": "rewind"
+    },
+    {
+      "name": "Assent",
+      "board": "smartrecruiters",
+      "company": "assent"
+    },
+    {
+      "name": "General Dynamics Mission Systems-Canada",
+      "board": "smartrecruiters",
+      "company": "GDMSI"
+    },
+    {
+      "name": "ADGA Group",
+      "board": "smartrecruiters",
+      "company": "ADGAGroupConsultantsInc1"
+    },
+    {
+      "name": "Leonardo DRS",
+      "board": "smartrecruiters",
+      "company": "leonardodrs"
+    },
+    {
+      "name": "Lemay",
+      "board": "smartrecruiters",
+      "company": "lemay"
+    },
+    {
+      "name": "Syntronic",
+      "board": "lever",
+      "company": "syntronic"
+    },
+    {
+      "name": "Magnet Forensics",
+      "board": "lever",
+      "company": "magnetforensics"
+    },
+    {
+      "name": "CaseWare",
+      "board": "lever",
+      "company": "caseware"
+    },
+    {
+      "name": "Solace",
+      "board": "bamboohr",
+      "company": "solace"
+    },
+    {
+      "name": "Ranovus",
+      "board": "bamboohr",
+      "company": "ranovus"
+    },
+    {
+      "name": "Giatec Scientific",
+      "board": "bamboohr",
+      "company": "giatecscientific"
+    },
+    {
+      "name": "Martello Technologies",
+      "board": "bamboohr",
+      "company": "martello"
+    },
+    {
+      "name": "Welch LLP",
+      "board": "bamboohr",
+      "company": "welchllp"
+    },
+    {
+      "name": "Wicket",
+      "board": "bamboohr",
+      "company": "wicket"
+    },
+    {
+      "name": "DashQ",
+      "board": "bamboohr",
+      "company": "dashq"
+    },
+    {
+      "name": "SensorUp",
+      "board": "bamboohr",
+      "company": "sensorup"
+    },
+    {
+      "name": "Vendasta",
+      "board": "bamboohr",
+      "company": "vendasta"
+    },
+    {
+      "name": "Baker Tilly",
+      "board": "bamboohr",
+      "company": "bakertilly"
+    },
+    {
+      "name": "Versaterm",
+      "board": "greenhouse",
+      "token": "versaterm"
+    },
+    {
+      "name": "Tiree",
+      "board": "greenhouse",
+      "token": "tiree"
+    },
+    {
+      "name": "7shifts",
+      "board": "greenhouse",
+      "token": "7shifts"
+    },
+    {
+      "name": "FundMore AI",
+      "board": "recruitee",
+      "company": "fundmoreai"
+    },
+    {
+      "name": "Plusgrade",
+      "board": "workday",
+      "url": "https://plusgrade.wd10.myworkdayjobs.com/wday/cxs/plusgrade/Plusgrade_External_Site/jobs",
+      "careers_base": "https://plusgrade.wd10.myworkdayjobs.com/en-US/Plusgrade_External_Site"
+    },
+    {
+      "name": "Workleap",
+      "board": "greenhouse",
+      "token": "workleap"
+    },
+    {
+      "name": "ShareGate",
+      "board": "greenhouse",
+      "token": "sharegate"
+    },
+    {
+      "name": "Broadsign",
+      "board": "greenhouse",
+      "token": "broadsign"
+    },
+    {
+      "name": "TrackTik",
+      "board": "lever",
+      "company": "tracktik"
+    },
+    {
+      "name": "Mirego",
+      "board": "lever",
+      "company": "mirego"
+    },
+    {
+      "name": "Aylo",
+      "board": "greenhouse",
+      "token": "aylo"
+    },
+    {
+      "name": "LANDR Audio",
+      "board": "bamboohr",
+      "company": "landr"
+    },
+    {
+      "name": "Nexapp",
+      "board": "bamboohr",
+      "company": "nexapp"
+    },
+    {
+      "name": "AppDirect",
+      "board": "greenhouse",
+      "token": "appdirect"
+    },
+    {
+      "name": "Novisto",
+      "board": "greenhouse",
+      "token": "novistofr"
+    },
+    {
+      "name": "Cirque du Soleil",
+      "board": "lever",
+      "company": "cirquedusoleil"
+    },
+    {
+      "name": "Rodeo FX",
+      "board": "smartrecruiters",
+      "company": "rodeofx"
+    },
+    {
+      "name": "Cinesite Montreal",
+      "board": "bamboohr",
+      "company": "cinesitemontreal"
+    },
+    {
+      "name": "Ludia",
+      "board": "bamboohr",
+      "company": "ludia"
+    },
+    {
+      "name": "Quantic Dream Montreal",
+      "board": "bamboohr",
+      "company": "quanticdream"
+    },
+    {
+      "name": "Red Barrels",
+      "board": "bamboohr",
+      "company": "redbarrels"
+    },
+    {
+      "name": "Larian Studios",
+      "board": "lever",
+      "company": "larian"
+    },
+    {
+      "name": "Vidéotron",
+      "board": "smartrecruiters",
+      "company": "videotron"
+    },
+    {
+      "name": "Fiera Capital",
+      "board": "workday",
+      "url": "https://fieracapital.wd3.myworkdayjobs.com/wday/cxs/fieracapital/career/jobs",
+      "careers_base": "https://fieracapital.wd3.myworkdayjobs.com/en-US/career"
+    },
+    {
+      "name": "Intact Financial Corporation",
+      "board": "workday",
+      "url": "https://intactfc.wd3.myworkdayjobs.com/wday/cxs/intactfc/intactfc/jobs",
+      "careers_base": "https://intactfc.wd3.myworkdayjobs.com/en-US/intactfc"
+    },
+    {
+      "name": "CDPQ Infra",
+      "board": "workday",
+      "url": "https://cdpqfiliales.wd10.myworkdayjobs.com/wday/cxs/cdpqfiliales/CDPQ-Infra/jobs",
+      "careers_base": "https://cdpqfiliales.wd10.myworkdayjobs.com/en-US/CDPQ-Infra"
+    },
+    {
+      "name": "Couche-Tard",
+      "board": "workday",
+      "url": "https://circlek.wd3.myworkdayjobs.com/wday/cxs/circlek/CircleKStoreJobs/jobs",
+      "careers_base": "https://circlek.wd3.myworkdayjobs.com/en-US/CircleKStoreJobs"
+    },
+    {
+      "name": "Groupe Canam",
+      "board": "smartrecruiters",
+      "company": "groupecanam"
+    },
+    {
+      "name": "LG2",
+      "board": "recruitee",
+      "company": "lg2"
+    },
+    {
+      "name": "Sid Lee",
+      "board": "greenhouse",
+      "token": "sidlee"
+    },
+    {
+      "name": "Coveo (FR)",
+      "board": "greenhouse",
+      "token": "coveofr"
+    },
+    {
+      "name": "Waabi",
+      "board": "lever",
+      "company": "waabi"
+    },
+    {
+      "name": "Deep Genomics",
+      "board": "lever",
+      "company": "deepgenomics"
+    },
+    {
+      "name": "Geotab",
+      "board": "greenhouse",
+      "token": "geotab"
+    },
+    {
+      "name": "EQ Bank",
+      "board": "lever",
+      "company": "eqbank"
+    },
+    {
+      "name": "Shakepay",
+      "board": "greenhouse",
+      "token": "shakepay"
+    },
+    {
+      "name": "Wattpad",
+      "board": "lever",
+      "company": "wattpad"
+    },
+    {
+      "name": "Flipp",
+      "board": "greenhouse",
+      "token": "flipp"
+    },
+    {
+      "name": "Achievers",
+      "board": "lever",
+      "company": "achievers"
+    },
+    {
+      "name": "Ritual",
+      "board": "greenhouse",
+      "token": "ritual"
+    },
+    {
+      "name": "Tulip Retail",
+      "board": "bamboohr",
+      "company": "tulip"
+    },
+    {
+      "name": "League",
+      "board": "greenhouse",
+      "token": "leagueinc"
+    },
+    {
+      "name": "Maple",
+      "board": "lever",
+      "company": "getmaple"
+    },
+    {
+      "name": "University Health Network (UHN)",
+      "board": "smartrecruiters",
+      "company": "universityhealthnetwork"
+    },
+    {
+      "name": "Digital Extremes",
+      "board": "greenhouse",
+      "token": "digitalextremes"
+    },
+    {
+      "name": "Torn Banner Studios",
+      "board": "bamboohr",
+      "company": "tornbanner"
+    },
+    {
+      "name": "Guru Studio",
+      "board": "bamboohr",
+      "company": "gurustudio"
+    },
+    {
+      "name": "Spin Master",
+      "board": "workday",
+      "url": "https://spinmaster.wd3.myworkdayjobs.com/wday/cxs/spinmaster/SpinMaster_Careers/jobs",
+      "careers_base": "https://spinmaster.wd3.myworkdayjobs.com/en-US/SpinMaster_Careers"
+    },
+    {
+      "name": "Maple Leaf Sports & Entertainment (MLSE)",
+      "board": "workday",
+      "url": "https://mlse.wd3.myworkdayjobs.com/wday/cxs/mlse/MLSE/jobs",
+      "careers_base": "https://mlse.wd3.myworkdayjobs.com/en-US/MLSE"
+    },
+    {
+      "name": "Torstar",
+      "board": "smartrecruiters",
+      "company": "torstar"
+    },
+    {
+      "name": "Enwave Energy",
+      "board": "bamboohr",
+      "company": "enwave"
+    },
+    {
+      "name": "CoLab Software",
+      "board": "greenhouse",
+      "token": "colabsoftware"
+    },
+    {
+      "name": "Introhive",
+      "board": "bamboohr",
+      "company": "introhive"
+    },
+    {
+      "name": "Sonrai Security",
+      "board": "lever",
+      "company": "sonrai-security"
+    },
+    {
+      "name": "Beneva",
+      "board": "workday",
+      "url": "https://beneva.wd10.myworkdayjobs.com/wday/cxs/beneva/benevasite_carriere/jobs",
+      "careers_base": "https://beneva.wd10.myworkdayjobs.com/en-US/benevasite_carriere"
+    },
+    {
+      "name": "Frima Studio",
+      "board": "smartrecruiters",
+      "company": "frimastudio"
+    },
+    {
+      "name": "Gentec-EO",
+      "board": "bamboohr",
+      "company": "gentec"
+    },
+    {
+      "name": "Gearbox Studio Quebec",
+      "board": "greenhouse",
+      "token": "gearboxquebec"
+    },
+    {
+      "name": "Neo Financial",
+      "board": "ashby",
+      "slug": "neofinancial"
+    },
+    {
+      "name": "Benevity",
+      "board": "ashby",
+      "slug": "benevity"
+    },
+    {
+      "name": "Showbie",
+      "board": "bamboohr",
+      "company": "showbie"
+    },
+    {
+      "name": "Blackbird Interactive",
+      "board": "lever",
+      "company": "blackbirdinteractive"
+    },
+    {
+      "name": "Relic Entertainment",
+      "board": "bamboohr",
+      "company": "relicentertainment"
+    },
+    {
+      "name": "Bold Commerce",
+      "board": "bamboohr",
+      "company": "boldcommerce"
+    },
+    {
+      "name": "Betterment",
+      "board": "greenhouse",
+      "token": "betterment"
+    },
+    {
+      "name": "Flatiron Health",
+      "board": "greenhouse",
+      "token": "flatironhealth"
+    },
+    {
+      "name": "Zocdoc",
+      "board": "greenhouse",
+      "token": "zocdoc"
+    },
+    {
+      "name": "YipitData",
+      "board": "greenhouse",
+      "token": "yipitdata"
+    },
+    {
+      "name": "SeatGeek",
+      "board": "greenhouse",
+      "token": "seatgeek"
+    },
+    {
+      "name": "Peloton",
+      "board": "greenhouse",
+      "token": "peloton"
+    },
+    {
+      "name": "Taboola",
+      "board": "greenhouse",
+      "token": "taboola"
+    },
+    {
+      "name": "Riskified",
+      "board": "greenhouse",
+      "token": "riskified"
+    },
+    {
+      "name": "Ro",
+      "board": "lever",
+      "company": "ro"
+    },
+    {
+      "name": "Greenhouse Software",
+      "board": "greenhouse",
+      "token": "greenhouse"
+    },
+    {
+      "name": "CB Insights",
+      "board": "greenhouse",
+      "token": "cbinsights"
+    },
+    {
+      "name": "Formlabs",
+      "board": "greenhouse",
+      "token": "formlabs"
+    },
+    {
+      "name": "CarGurus",
+      "board": "greenhouse",
+      "token": "cargurus"
+    },
+    {
+      "name": "Recorded Future",
+      "board": "greenhouse",
+      "token": "recordedfuture"
+    },
+    {
+      "name": "SmartBear",
+      "board": "greenhouse",
+      "token": "smartbear"
+    },
+    {
+      "name": "Acquia",
+      "board": "greenhouse",
+      "token": "acquia"
+    },
+    {
+      "name": "Markforged",
+      "board": "greenhouse",
+      "token": "markforged"
+    },
+    {
+      "name": "Appian",
+      "board": "greenhouse",
+      "token": "appian"
+    },
+    {
+      "name": "Alarm.com",
+      "board": "greenhouse",
+      "token": "alarmcom"
+    },
+    {
+      "name": "Dragos",
+      "board": "greenhouse",
+      "token": "dragos"
+    },
+    {
+      "name": "Sonatype",
+      "board": "lever",
+      "company": "sonatype"
+    },
+    {
+      "name": "HawkEye 360",
+      "board": "greenhouse",
+      "token": "hawkeye360"
+    },
+    {
+      "name": "FiscalNote",
+      "board": "lever",
+      "company": "fiscalnote"
+    },
+    {
+      "name": "Shift5",
+      "board": "greenhouse",
+      "token": "shift5"
+    },
+    {
+      "name": "Gopuff",
+      "board": "lever",
+      "company": "gopuff"
+    },
+    {
+      "name": "Bandwidth",
+      "board": "greenhouse",
+      "token": "bandwidth"
+    },
+    {
+      "name": "Pendo",
+      "board": "greenhouse",
+      "token": "pendo"
+    },
+    {
+      "name": "LendingTree",
+      "board": "greenhouse",
+      "token": "lendingtree"
+    },
+    {
+      "name": "OneTrust",
+      "board": "greenhouse",
+      "token": "onetrust"
+    },
+    {
+      "name": "Salesloft",
+      "board": "greenhouse",
+      "token": "salesloft"
+    },
+    {
+      "name": "Calendly",
+      "board": "greenhouse",
+      "token": "calendly"
     }
   ],
   "criteria": {
