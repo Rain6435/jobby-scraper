@@ -441,6 +441,25 @@ CA_PROVINCE_TOKENS: set[str] = {
 
 _PAREN_RE = re.compile(r"\(([^)]*)\)")
 _TRAILING_STATE_RE = re.compile(r"[,-]\s*([a-z]{2})\s*$")
+# Some ATS vendors (confirmed on AtkinsRéalis's SmartRecruiters feed) format
+# location as a dot-delimited "<ISO2>.<City>.<Address>" path instead of the
+# comma-separated shape every other pass in this file assumes — e.g.
+# "GB.Glasgow.2 Atlantic Square York Street" or "CA.QC.Montréal.455 boul.".
+# Splitting on "," (the tokenizer above) never separates that leading code
+# from the rest of the string, so it silently fell through to None even
+# though the signal is unambiguous.
+#
+# Requiring NO space after the dot ("gb.glasgow", not "gb. glasgow") is what
+# keeps this from firing on an ordinary sentence-abbreviation prefix like
+# "St. Louis, MO" or "Mt. Pleasant" — both "st"/"mt" happen to also be valid
+# ISO codes (São Tomé, n/a) but are always followed by ". " (abbreviation +
+# space), never the compact ". " -less vendor shape. This does mean a
+# same-vendor location that happens to put a space after its leading code
+# ("PE. Lima. Calle...", observed once) still falls through to None rather
+# than resolving to PE — an accepted miss (None is this file's existing
+# "can't confidently tell" contract) in exchange for never guessing wrong on
+# the far more common "St./Mt./Dr." English-abbreviation shape.
+_LEADING_ISO_DOT_RE = re.compile(r"^([a-z]{2})\.(?=\S)")
 
 
 def _matches_word(normalized: str, phrase: str) -> bool:
@@ -460,6 +479,11 @@ def resolve_country_from_location(location: str | None) -> str | None:
         return None
 
     normalized = location.lower()
+
+    leading_iso = _LEADING_ISO_DOT_RE.match(normalized)
+    if leading_iso and leading_iso.group(1).upper() in COUNTRY_NAMES:
+        return leading_iso.group(1).upper()
+
     paren_tokens = [m.group(1).strip() for m in _PAREN_RE.finditer(normalized)]
     without_parens = _PAREN_RE.sub(" ", normalized)
     tokens = [t.strip() for t in re.split(r"[,/|]", without_parens) if t.strip()]

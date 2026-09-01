@@ -39,6 +39,28 @@ def test_resolve_country_never_false_positives_on_substring():
     assert resolve_country_from_location("Sydney, Australia") == "AU"
 
 
+def test_resolve_country_leading_iso_dot_shape():
+    # Confirmed on AtkinsRéalis's SmartRecruiters feed: a dot-delimited
+    # "<ISO2>.<City>.<Address>" path with no space after the leading code.
+    assert resolve_country_from_location("HK.Harbour City.Gateway") == "HK"
+    assert resolve_country_from_location("IN.Noida BPTP Capital City") == "IN"
+    assert (
+        resolve_country_from_location("GB.Glasgow.2 Atlantic Square York Street")
+        == "GB"
+    )
+    assert resolve_country_from_location("CA.QC.Montréal.455 boul. René-Lévesque Ouest") == "CA"
+    assert resolve_country_from_location("AU.South Australia") == "AU"
+
+
+def test_resolve_country_leading_iso_dot_does_not_shadow_english_abbreviations():
+    # "st"/"mt" are also valid ISO codes (São Tomé; n/a) but "St. "/"Mt. "
+    # (abbreviation + space) must never be read as the dot-shape above —
+    # only a same-vendor case with a space after its leading code
+    # ("PE. Lima...") is an accepted miss, not one of these two.
+    assert resolve_country_from_location("St. Louis, MO") == "US"
+    assert resolve_country_from_location("Mt. Pleasant, SC") == "US"
+
+
 def test_parse_location_normalized_key_folds_case_and_whitespace():
     a = parse_location("Toronto, Ontario, Canada")
     b = parse_location("TORONTO, Ontario, Canada")
