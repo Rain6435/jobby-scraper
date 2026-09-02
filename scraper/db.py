@@ -44,6 +44,7 @@ are additive metadata, not part of row identity.
 from __future__ import annotations
 
 import logging
+import time
 from datetime import datetime, timedelta
 
 from sqlalchemy import (
@@ -429,6 +430,7 @@ def write_jobs(database_url: str, jobs: list[Job], new_ids: set[str]) -> bool:
     same as `jobs` dict-keyed by id would behave, rather than letting the
     table's primary key reject the whole batch.
     """
+    start = time.monotonic()
     try:
         engine = get_engine(database_url)
         by_id = {job.id: job for job in jobs}
@@ -491,10 +493,19 @@ def write_jobs(database_url: str, jobs: list[Job], new_ids: set[str]) -> bool:
                 if location_rows:
                     conn.execute(job_locations_table.insert(), location_rows)
 
-        log.info("Wrote %d jobs to %s", len(unique_jobs), _redacted(database_url))
+        elapsed = time.monotonic() - start
+        log.info(
+            "Wrote %d jobs to %s in %.2fs",
+            len(unique_jobs),
+            _redacted(database_url),
+            elapsed,
+        )
         return True
     except Exception:
-        log.exception("Database write failed for %s", _redacted(database_url))
+        elapsed = time.monotonic() - start
+        log.exception(
+            "Database write failed for %s after %.2fs", _redacted(database_url), elapsed
+        )
         return False
 
 

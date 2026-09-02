@@ -73,6 +73,19 @@ class CountingWriteJobsStub:
         return self.success
 
 
+class FlakyWriteJobsStub:
+    """A write_jobs-shaped stub that fails its first `fail_times` calls, then
+    succeeds — simulates a transient SQLITE_BUSY that clears up on retry."""
+
+    def __init__(self, fail_times: int) -> None:
+        self.fail_times = fail_times
+        self.calls = 0
+
+    def __call__(self, database: str, jobs: list[Job], new_ids: set[str]) -> bool:
+        self.calls += 1
+        return self.calls > self.fail_times
+
+
 def setup_run(
     tmp_path: Path,
     companies: list[CompanyConfig],
@@ -231,12 +244,18 @@ def test_database_write_skipped_when_limit_set(tmp_path: Path) -> None:
     assert not db_path.exists()
 
 
-def test_write_failure_fails_the_run(tmp_path: Path) -> None:
+def test_write_failure_fails_the_run(tmp_path: Path, monkeypatch) -> None:
     """write_jobs() now reports success/failure explicitly instead of
     swallowing every exception — confirmed in practice 2026-08-14 that a
     silently-swallowed write failure let --jobscraper-pipeline see exit 0
     and proceed against unchanged data. run() must propagate a real failure
-    into a non-zero exit code."""
+    into a non-zero exit code.
+
+    A persistent (non-transient) failure exhausts run()'s own retry loop
+    (see GitHub issue #38 — a purely transient SQLITE_BUSY shouldn't discard
+    a whole run's results) before giving up, so write_jobs is called
+    multiple times, not just once."""
+    monkeypatch.setattr(main_module.time, "sleep", lambda _seconds: None)
     db_url, deps = setup_run(
         tmp_path,
         companies=[{"name": "Acme", "board": "stub"}],
@@ -247,8 +266,27 @@ def test_write_failure_fails_the_run(tmp_path: Path) -> None:
 
     result = main_module.run(database=db_url, deps=deps)
 
-    assert write_calls.calls == 1
+    assert write_calls.calls == 3
     assert result == 1
+
+
+def test_write_failure_retries_and_recovers(tmp_path: Path, monkeypatch) -> None:
+    """A transient write failure (e.g. SQLITE_BUSY from a concurrent Node
+    write against the shared data/app.db, see GitHub issue #38) should not
+    discard the run's results if a later retry succeeds."""
+    monkeypatch.setattr(main_module.time, "sleep", lambda _seconds: None)
+    db_url, deps = setup_run(
+        tmp_path,
+        companies=[{"name": "Acme", "board": "stub"}],
+        jobs_by_company={"Acme": [job("Acme", "acme:1")]},
+    )
+    write_calls = FlakyWriteJobsStub(fail_times=2)
+    deps.write_jobs = write_calls
+
+    result = main_module.run(database=db_url, deps=deps)
+
+    assert write_calls.calls == 3
+    assert result == 0
 
 
 def test_interrupted_run_saves_completed_companies_and_keeps_others_unchanged(

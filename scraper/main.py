@@ -358,8 +358,29 @@ def run(
     # main.py's --jobscraper-pipeline sees exit 0 and proceeds to
     # ingest/parse against unchanged data (confirmed happening in practice
     # 2026-08-14 before this check existed).
+    #
+    # Retried here (not inside write_jobs() itself, to keep its own
+    # transaction/atomicity semantics unchanged): the scraper can itself be
+    # the one starved by a concurrent Node/daemon write against the shared
+    # data/app.db file, in which case a purely transient SQLITE_BUSY
+    # shouldn't discard an entire run's results — see GitHub issue #38.
     assert database is not None  # guaranteed by the --database-required check above
-    if not deps.write_jobs(database, full_current, {j.id for j in new_jobs}):
+    write_succeeded = False
+    write_attempts = 3
+    for attempt in range(1, write_attempts + 1):
+        write_succeeded = deps.write_jobs(database, full_current, {j.id for j in new_jobs})
+        if write_succeeded:
+            break
+        if attempt < write_attempts:
+            backoff = 2 * attempt
+            log.warning(
+                "Database write attempt %d/%d failed — retrying in %ds",
+                attempt,
+                write_attempts,
+                backoff,
+            )
+            time.sleep(backoff)
+    if not write_succeeded:
         log.error("Database write failed — run's results were NOT persisted")
         return 1
 
