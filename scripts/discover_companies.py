@@ -84,7 +84,7 @@ def probe_greenhouse(slug: str, timeout: float = 3.0) -> dict[str, Any] | None:
 
 def probe_ashby(slug: str, timeout: float = 3.0) -> dict[str, Any] | None:
     try:
-        r = requests.post(f"https://api.ashbyhq.com/posting-api/job-board/{slug}", json={}, headers=HEADERS, timeout=timeout)
+        r = requests.get(f"https://api.ashbyhq.com/posting-api/job-board/{slug}", params={"includeCompensation": "true"}, headers=HEADERS, timeout=timeout)
         if r.status_code == 200:
             data = r.json()
             jobs = data.get("jobs", [])
@@ -209,6 +209,36 @@ def probe_breezy(slug: str, timeout: float = 3.0) -> dict[str, Any] | None:
     return None
 
 
+def probe_personio(slug: str, timeout: float = 3.0) -> dict[str, Any] | None:
+    try:
+        r = requests.get(f"https://{slug}.jobs.personio.de/xml", headers=HEADERS, timeout=timeout)
+        if r.status_code == 200:
+            import xml.etree.ElementTree as ET
+            root = ET.fromstring(r.content)
+            positions = root.findall("position")
+            if positions:
+                sample = positions[0].findtext("name", "")
+                loc = positions[0].findtext("office", "")
+                return {"board": "personio", "company": slug, "count": len(positions), "sample": sample, "location": loc}
+    except Exception:
+        pass
+    return None
+
+
+def probe_teamtailor(slug: str, timeout: float = 3.0) -> dict[str, Any] | None:
+    try:
+        r = requests.get(f"https://{slug}.teamtailor.com/jobs.json", headers=HEADERS, timeout=timeout)
+        if r.status_code == 200:
+            data = r.json()
+            items = data.get("items", [])
+            if items:
+                sample = items[0].get("title", "")
+                return {"board": "teamtailor", "company": slug, "count": len(items), "sample": sample, "location": ""}
+    except Exception:
+        pass
+    return None
+
+
 PROBERS = {
     "greenhouse": probe_greenhouse,
     "ashby": probe_ashby,
@@ -219,6 +249,8 @@ PROBERS = {
     "recruitee": probe_recruitee,
     "workable": probe_workable,
     "breezy": probe_breezy,
+    "personio": probe_personio,
+    "teamtailor": probe_teamtailor,
 }
 
 
@@ -391,7 +423,7 @@ def main():
                 added = append_to_config([cfg])
                 print(f"Added {added} company to config.json")
                 if args.test:
-                    subprocess.run(["pytest", "tests/test_workday.py"], check=True)
+                    subprocess.run([sys.executable, "-m", "pytest", "tests/test_workday.py"], check=True)
             return
         else:
             print(f"FAILED WORKDAY: {name} -> {sample}", file=sys.stderr)
@@ -466,7 +498,7 @@ def main():
         print(f"\nSuccessfully added {added} new companies to {CONFIG_PATH.name}!")
         if args.test:
             print("Running test suite...")
-            subprocess.run(["pytest", "tests/test_workday.py", "tests/test_greenhouse.py", "tests/test_lever.py", "tests/test_ashby.py", "tests/test_bamboohr.py"], check=True)
+            subprocess.run([sys.executable, "-m", "pytest", "tests/test_workday.py", "tests/test_greenhouse.py", "tests/test_lever.py", "tests/test_ashby.py", "tests/test_bamboohr.py"], check=True)
     elif verified_list and not args.apply:
         print(f"\nTip: Run with '--apply' to append these {len(verified_list)} verified companies into config.json.")
 
