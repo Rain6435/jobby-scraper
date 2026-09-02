@@ -91,11 +91,31 @@ For institutions with custom domains or enterprise portals:
    ```bash
    PYTHONPATH=. /usr/bin/python3 -m scraper.main --company "<Employer Name>" --limit 1 --verbose
    ```
-3. **Test Suite**: Run the pytest suite to verify all board parsers and configurations pass:
-   ```bash
-   PYTHONPATH=. ../venv/bin/pytest tests/test_*.py
-   ```
 
-### Step 5: Presentation & Version Control
+### Step 5: Mandatory Pre-Commit & Pre-Push CI Verification
+**CRITICAL**: Every agent MUST run and verify the full local CI pipeline before creating any git commit or pushing to remote. Never push without passing CI checks locally.
+
+Execute the CI runner:
+```bash
+./scripts/ci.sh
+```
+
+Or execute each check individually (all must pass with exit code `0`):
+1. **Test Suite**: `python -m pytest -q` (all 230+ tests must pass)
+2. **Type Checking**: `python -m pyright` (strict mode, 0 errors, 0 warnings)
+3. **Strict Type Audit**:
+   ```bash
+   if grep -rn '\bAny\b' scraper tests; then echo "Found 'Any'" && exit 1; fi
+   if grep -rn 'type: ignore\|pyright: ignore' scraper tests; then echo "Found suppression comment" && exit 1; fi
+   ```
+4. **Code Formatting & Linting**:
+   ```bash
+   python -m ruff format --check .
+   python -m ruff check .
+   ```
+   *If formatting or linting errors are found, run `python -m ruff format .` and `python -m ruff check --fix .`, re-verify with `./scripts/ci.sh`, and only then proceed.*
+
+### Step 6: Presentation & Version Control
 1. Present the discovered companies cleanly grouped by their specific **industry sector** with active job counts and ATS engine.
-2. Commit and push changes to `config.json` when requested.
+2. Commit and push changes only after the local CI verification has passed 100%.
+
