@@ -29,10 +29,19 @@ Two independent passes, each opt-in via its own flag:
     same location string — never invents a value from nothing (that's
     --backfill-null's job).
 
-Both passes only touch jobscraper_pool.country_code — never `locations`
-itself, never any other column, never a re-parse/re-score of anything
-downstream. Safe to re-run: each pass is idempotent (a already-correct row
-simply doesn't match either pass's WHERE clause on a second run).
+--sync-town-id
+    Copy jobscraper_pool.town_id from the canonical `locations` table
+    wherever jobscraper_pool's copy is still NULL and locations has a real
+    value (locations.town_id is only ever populated by the separate
+    scripts/backfill_town_ids.py run, never re-derived here). Same
+    denormalized-copy relationship as country_code, and the same reason it
+    goes stale: jobscraper_pool.town_id is set once at ingest time from
+    whatever locations.town_id held then, and never revisited.
+
+None of these passes touch `locations` itself, any other jobscraper_pool
+column, or re-parse/re-score anything downstream. Safe to re-run: each pass
+is idempotent (an already-correct row simply doesn't match its WHERE clause
+on a second run).
 """
 
 from __future__ import annotations
@@ -48,8 +57,16 @@ from scraper.location_resolver import resolve_country_from_location
 
 
 def backfill_null(conn: sqlite3.Connection) -> int:
+    # Deliberately NOT scoped to parse_status = 'parsed' — country_code is a
+    # location-resolution concern, set at ingest time, entirely independent
+    # of whether a row has been through the separate LLM job-requirements
+    # parse (parse_status). Restricting to 'parsed' here silently skipped
+    # every 'pending'/'parse_failed' row — the majority of NULL rows in
+    # practice — even though resolve_country_from_location() only needs
+    # `location`, which every ingested row already has regardless of
+    # parse_status.
     rows = conn.execute(
-        "SELECT id, location FROM jobscraper_pool WHERE country_code IS NULL AND parse_status = 'parsed'"
+        "SELECT id, location FROM jobscraper_pool WHERE country_code IS NULL"
     ).fetchall()
 
     updated = 0
@@ -78,6 +95,20 @@ def fix_mismatches(conn: sqlite3.Connection) -> int:
     ).rowcount
 
 
+def sync_town_id(conn: sqlite3.Connection) -> int:
+    return conn.execute(
+        """UPDATE jobscraper_pool
+           SET town_id = (
+               SELECT l.town_id FROM locations l WHERE l.name = jobscraper_pool.location
+           )
+           WHERE id IN (
+               SELECT p.id FROM jobscraper_pool p
+               JOIN locations l ON l.name = p.location
+               WHERE p.town_id IS NULL AND l.town_id IS NOT NULL
+           )"""
+    ).rowcount
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
@@ -93,11 +124,16 @@ def main() -> None:
         action="store_true",
         help="Correct country_code where it disagrees with the canonical locations table",
     )
+    parser.add_argument(
+        "--sync-town-id",
+        action="store_true",
+        help="Fill town_id from the canonical locations table where jobscraper_pool's copy is NULL",
+    )
     parser.add_argument("--dry-run", action="store_true", help="Report counts without writing")
     args = parser.parse_args()
 
-    if not args.backfill_null and not args.fix_mismatches:
-        parser.error("pass at least one of --backfill-null / --fix-mismatches")
+    if not args.backfill_null and not args.fix_mismatches and not args.sync_town_id:
+        parser.error("pass at least one of --backfill-null / --fix-mismatches / --sync-town-id")
 
     db_path = Path(args.database)
     if not db_path.exists():
@@ -108,7 +144,7 @@ def main() -> None:
         if args.backfill_null:
             if args.dry_run:
                 n = conn.execute(
-                    "SELECT COUNT(*) FROM jobscraper_pool WHERE country_code IS NULL AND parse_status = 'parsed'"
+                    "SELECT COUNT(*) FROM jobscraper_pool WHERE country_code IS NULL"
                 ).fetchone()[0]
                 print(f"[dry-run] --backfill-null would check {n} NULL rows")
             else:
@@ -128,6 +164,19 @@ def main() -> None:
                 corrected = fix_mismatches(conn)
                 conn.commit()
                 print(f"--fix-mismatches: corrected {corrected} rows")
+
+        if args.sync_town_id:
+            if args.dry_run:
+                n = conn.execute(
+                    """SELECT COUNT(*) FROM jobscraper_pool p
+                       JOIN locations l ON l.name = p.location
+                       WHERE p.town_id IS NULL AND l.town_id IS NOT NULL"""
+                ).fetchone()[0]
+                print(f"[dry-run] --sync-town-id would fill {n} rows")
+            else:
+                synced = sync_town_id(conn)
+                conn.commit()
+                print(f"--sync-town-id: filled town_id on {synced} rows")
     finally:
         conn.close()
 
