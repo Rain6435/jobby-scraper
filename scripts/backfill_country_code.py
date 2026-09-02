@@ -79,10 +79,20 @@ def fix_mismatches(conn: sqlite3.Connection) -> int:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--database", required=True, help="Path to the shared SQLite database (e.g. ../data/app.db)")
-    parser.add_argument("--backfill-null", action="store_true", help="Fill country_code where it's currently NULL")
-    parser.add_argument("--fix-mismatches", action="store_true", help="Correct country_code where it disagrees with the canonical locations table")
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    parser.add_argument(
+        "--database", required=True, help="Path to the shared SQLite database (e.g. ../data/app.db)"
+    )
+    parser.add_argument(
+        "--backfill-null", action="store_true", help="Fill country_code where it's currently NULL"
+    )
+    parser.add_argument(
+        "--fix-mismatches",
+        action="store_true",
+        help="Correct country_code where it disagrees with the canonical locations table",
+    )
     parser.add_argument("--dry-run", action="store_true", help="Report counts without writing")
     args = parser.parse_args()
 

@@ -44,10 +44,7 @@ def test_resolve_country_leading_iso_dot_shape():
     # "<ISO2>.<City>.<Address>" path with no space after the leading code.
     assert resolve_country_from_location("HK.Harbour City.Gateway") == "HK"
     assert resolve_country_from_location("IN.Noida BPTP Capital City") == "IN"
-    assert (
-        resolve_country_from_location("GB.Glasgow.2 Atlantic Square York Street")
-        == "GB"
-    )
+    assert resolve_country_from_location("GB.Glasgow.2 Atlantic Square York Street") == "GB"
     assert resolve_country_from_location("CA.QC.Montréal.455 boul. René-Lévesque Ouest") == "CA"
     assert resolve_country_from_location("AU.South Australia") == "AU"
 
@@ -67,9 +64,7 @@ def test_resolve_country_leading_iso3_dash_shape():
     # ("BRA - Sao Paulo - Sao Paulo (Torre Z)").
     assert resolve_country_from_location("CAN-ON-Kitchener") == "CA"
     assert resolve_country_from_location("JPN-Tokyo-OVOL") == "JP"
-    assert (
-        resolve_country_from_location("BRA - Sao Paulo - Sao Paulo (Torre Z)") == "BR"
-    )
+    assert resolve_country_from_location("BRA - Sao Paulo - Sao Paulo (Torre Z)") == "BR"
     assert resolve_country_from_location("DEU - Berlin - Berlin") == "DE"
     assert resolve_country_from_location("VNM - Hanoi, Viet Nam") == "VN"
     # ROM is not the real ISO alpha-3 for Romania (ROU is) but is observed
@@ -88,22 +83,15 @@ def test_resolve_country_leading_iso2_region_dash_shape():
     # A third vendor family: "<ISO2>-<REGION>-<City>-..." with no spaces,
     # both segments ALL UPPERCASE (e.g. "CA-QC-LONGUEUIL-J01").
     assert (
-        resolve_country_from_location(
-            "CA-QC-LONGUEUIL-J01 ~ 1000 Blvd Marie-Victorin ~ J01 BLDG"
-        )
+        resolve_country_from_location("CA-QC-LONGUEUIL-J01 ~ 1000 Blvd Marie-Victorin ~ J01 BLDG")
         == "CA"
     )
     assert (
-        resolve_country_from_location(
-            "AU-NSW-WILLIAMTOWN-001 ~ 1 Technology Pl ~ BLDG C, Unit 201"
-        )
+        resolve_country_from_location("AU-NSW-WILLIAMTOWN-001 ~ 1 Technology Pl ~ BLDG C, Unit 201")
         == "AU"
     )
     # Numeric region segment is also valid for this shape.
-    assert (
-        resolve_country_from_location("PL-12-NIEPOLOMICE-004 ~ Grabska 4 ~ GRABSKA")
-        == "PL"
-    )
+    assert resolve_country_from_location("PL-12-NIEPOLOMICE-004 ~ Grabska 4 ~ GRABSKA") == "PL"
 
 
 def test_resolve_country_leading_iso2_region_dash_rejects_us_domestic_shape():
