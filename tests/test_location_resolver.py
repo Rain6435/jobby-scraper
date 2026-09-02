@@ -262,3 +262,24 @@ def test_resolve_country_bare_city_name_is_whole_string_only():
     # Already resolves via the name-matching tier before ever reaching the
     # bare-city fallback.
     assert resolve_country_from_location("Montreal, Canada") == "CA"
+
+
+def test_resolve_country_bare_city_name_second_expansion():
+    # Re-derived against prod's actual unresolved-location strings (2026-09)
+    # — same single-country-match method as the original table, just a
+    # second pass against fresh data.
+    assert resolve_country_from_location("Chicago") == "US"
+    assert resolve_country_from_location("Berlin") == "DE"
+    assert resolve_country_from_location("Prague") == "CZ"
+    assert resolve_country_from_location("Kyiv") == "UA"
+    assert resolve_country_from_location("South San Francisco") == "US"
+
+
+def test_resolve_country_bare_city_name_excludes_genuine_ambiguity():
+    # These have more than one country match in the gazetteer (confirmed via
+    # the same derivation script) — must stay None rather than guess, even
+    # though they're common, well-known city names.
+    assert resolve_country_from_location("San Francisco") is None  # US/AR/PH/CR/SV
+    assert resolve_country_from_location("Ottawa") is None  # CA/US
+    assert resolve_country_from_location("Hyderabad") is None  # IN/PK
+    assert resolve_country_from_location("London") is None  # CA/GB
