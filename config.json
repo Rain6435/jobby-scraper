@@ -1706,7 +1706,7 @@
     {
       "name": "Lightspeed Commerce",
       "board": "ashby",
-      "slug": "lightspeed"
+      "slug": "lightspeedhq"
     },
     {
       "name": "Top Hat",
@@ -4279,6 +4279,73 @@
       "name": "Ottawa Tourism",
       "board": "bamboohr",
       "company": "ottawatourism"
+    },
+    {
+      "name": "Altasciences",
+      "board": "workday",
+      "url": "https://altasciences.wd1.myworkdayjobs.com/wday/cxs/altasciences/Careers/jobs",
+      "careers_base": "https://altasciences.wd1.myworkdayjobs.com/en-US/Careers"
+    },
+    {
+      "name": "Saputo",
+      "board": "workday",
+      "url": "https://saputo.wd5.myworkdayjobs.com/wday/cxs/saputo/Saputo_External_Careers/jobs",
+      "careers_base": "https://saputo.wd5.myworkdayjobs.com/en-US/Saputo_External_Careers"
+    },
+    {
+      "name": "Devimco Immobilier",
+      "board": "bamboohr",
+      "company": "devimco"
+    },
+    {
+      "name": "Foodtastic",
+      "board": "bamboohr",
+      "company": "foodtastic"
+    },
+    {
+      "name": "Deep Sky",
+      "board": "lever",
+      "company": "deepsky"
+    },
+    {
+      "name": "Allied Properties REIT",
+      "board": "lever",
+      "company": "alliedreit"
+    },
+    {
+      "name": "Browns Shoes",
+      "board": "teamtailor",
+      "company": "brownsshoes"
+    },
+    {
+      "name": "Norda Stelo",
+      "board": "teamtailor",
+      "company": "nordastelo"
+    },
+    {
+      "name": "Atomic Cartoons",
+      "board": "greenhouse",
+      "token": "atomiccartoons"
+    },
+    {
+      "name": "Ubisoft",
+      "board": "smartrecruiters",
+      "company": "Ubisoft2"
+    },
+    {
+      "name": "Groupe Montoni",
+      "board": "smartrecruiters",
+      "company": "groupemontoni"
+    },
+    {
+      "name": "Outpost VFX",
+      "board": "smartrecruiters",
+      "company": "outpostvfx"
+    },
+    {
+      "name": "Flare Systems",
+      "board": "smartrecruiters",
+      "company": "flaresystems"
     }
   ],
   "criteria": {
