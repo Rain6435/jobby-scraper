@@ -34,6 +34,14 @@ def test_resolve_town_exact_city_region_country():
     assert town_id == _town_id(conn, "San Francisco", "US", "CA")
 
 
+def test_resolve_town_folds_accents_to_match_ascii_name():
+    conn = _conn_with_gazetteer()
+    p = parse_location("Montréal, Quebec, Canada")
+    assert p.city == "Montréal"
+    town_id = resolve_town(conn, city=p.city, region=p.region, country_code=p.country_code)
+    assert town_id == _town_id(conn, "Montreal", "CA", "10")
+
+
 def test_resolve_town_two_token_city_state_shape():
     conn = _conn_with_gazetteer()
     p = parse_location("New York, NY")

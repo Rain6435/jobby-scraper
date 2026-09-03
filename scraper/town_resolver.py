@@ -45,11 +45,25 @@ rather than changing the return type.
 
 from __future__ import annotations
 
+import unicodedata
+
 from sqlalchemy import ColumnElement, func, or_, select
 from sqlalchemy.engine import Connection
 
 from scraper.db import towns_table
 from scraper.location_resolver import CA_PROVINCE_TOKENS, US_STATE_TOKENS
+
+
+def _fold_accents(value: str) -> str:
+    """Strip combining diacritics (e.g. "Montréal" -> "Montreal") so input
+    city text matches gazetteer ascii_name/alternate_names, which are
+    already accent-free by construction (see gazetteer.py). Mirrors the
+    identical NFD-decompose-and-drop-Mn pattern in location_resolver.py's
+    own normalization step.
+    """
+    decomposed = unicodedata.normalize("NFD", value)
+    return "".join(ch for ch in decomposed if unicodedata.category(ch) != "Mn")
+
 
 # location_resolver.py's region field holds free text ("California", "CA",
 # "Ontario", "ON") already confirmed to be a recognized US state or CA
@@ -218,7 +232,7 @@ def resolve_town(
     if not city or not country_code:
         return None
 
-    city_casefold = city.strip().casefold()
+    city_casefold = _fold_accents(city.strip()).casefold()
     admin1_code = _resolve_admin1_code(region, country_code) if region else None
 
     # Tier 1: exact ascii_name + country + region, when region resolved.
