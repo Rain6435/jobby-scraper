@@ -503,9 +503,7 @@ def write_jobs(database_url: str, jobs: list[Job], new_ids: set[str]) -> bool:
         return True
     except Exception:
         elapsed = time.monotonic() - start
-        log.exception(
-            "Database write failed for %s after %.2fs", _redacted(database_url), elapsed
-        )
+        log.exception("Database write failed for %s after %.2fs", _redacted(database_url), elapsed)
         return False
 
 

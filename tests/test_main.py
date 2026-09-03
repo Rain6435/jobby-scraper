@@ -244,7 +244,11 @@ def test_database_write_skipped_when_limit_set(tmp_path: Path) -> None:
     assert not db_path.exists()
 
 
-def test_write_failure_fails_the_run(tmp_path: Path, monkeypatch) -> None:
+def _noop_sleep(_seconds: float) -> None:
+    pass
+
+
+def test_write_failure_fails_the_run(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """write_jobs() now reports success/failure explicitly instead of
     swallowing every exception — confirmed in practice 2026-08-14 that a
     silently-swallowed write failure let --jobscraper-pipeline see exit 0
@@ -255,7 +259,7 @@ def test_write_failure_fails_the_run(tmp_path: Path, monkeypatch) -> None:
     (see GitHub issue #38 — a purely transient SQLITE_BUSY shouldn't discard
     a whole run's results) before giving up, so write_jobs is called
     multiple times, not just once."""
-    monkeypatch.setattr(main_module.time, "sleep", lambda _seconds: None)
+    monkeypatch.setattr(main_module.time, "sleep", _noop_sleep)
     db_url, deps = setup_run(
         tmp_path,
         companies=[{"name": "Acme", "board": "stub"}],
@@ -270,11 +274,13 @@ def test_write_failure_fails_the_run(tmp_path: Path, monkeypatch) -> None:
     assert result == 1
 
 
-def test_write_failure_retries_and_recovers(tmp_path: Path, monkeypatch) -> None:
+def test_write_failure_retries_and_recovers(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """A transient write failure (e.g. SQLITE_BUSY from a concurrent Node
     write against the shared data/app.db, see GitHub issue #38) should not
     discard the run's results if a later retry succeeds."""
-    monkeypatch.setattr(main_module.time, "sleep", lambda _seconds: None)
+    monkeypatch.setattr(main_module.time, "sleep", _noop_sleep)
     db_url, deps = setup_run(
         tmp_path,
         companies=[{"name": "Acme", "board": "stub"}],

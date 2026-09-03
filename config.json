@@ -4216,6 +4216,69 @@
       "name": "Wynn Resorts",
       "board": "smartrecruiters",
       "company": "wynnresorts"
+    },
+    {
+      "name": "Somerset West Community Health Centre",
+      "board": "bamboohr",
+      "company": "swchc"
+    },
+    {
+      "name": "South-East Ottawa Community Health Centre",
+      "board": "bamboohr",
+      "company": "seochc"
+    },
+    {
+      "name": "Federation of Canadian Municipalities",
+      "board": "workday",
+      "url": "https://fcm.wd10.myworkdayjobs.com/wday/cxs/fcm/FCM/jobs",
+      "careers_base": "https://fcm.wd10.myworkdayjobs.com/en-US/FCM"
+    },
+    {
+      "name": "Public Service Alliance of Canada",
+      "board": "workday",
+      "url": "https://psacunion.wd10.myworkdayjobs.com/wday/cxs/psacunion/psac/jobs",
+      "careers_base": "https://psacunion.wd10.myworkdayjobs.com/en-US/psac"
+    },
+    {
+      "name": "Invest Ottawa",
+      "board": "bamboohr",
+      "company": "investottawabayviewyards"
+    },
+    {
+      "name": "Mitacs",
+      "board": "bamboohr",
+      "company": "mitacs"
+    },
+    {
+      "name": "Clearford Water Systems",
+      "board": "smartrecruiters",
+      "company": "clearfordwatersystems"
+    },
+    {
+      "name": "Canadian Bank Note Company",
+      "board": "smartrecruiters",
+      "company": "canadianbanknotecompany"
+    },
+    {
+      "name": "Pleora Technologies",
+      "board": "bamboohr",
+      "company": "pleora"
+    },
+    {
+      "name": "Fuel Industries",
+      "board": "smartrecruiters",
+      "company": "fuelindustries"
+    },
+    {
+      "name": "LCBO",
+      "board": "workday",
+      "url": "https://lcbo.wd3.myworkdayjobs.com/wday/cxs/lcbo/LCBOCareerSite/jobs",
+      "careers_base": "https://lcbo.wd3.myworkdayjobs.com/en-US/LCBOCareerSite"
+    },
+    {
+      "name": "Ottawa Tourism",
+      "board": "bamboohr",
+      "company": "ottawatourism"
     }
   ],
   "criteria": {
