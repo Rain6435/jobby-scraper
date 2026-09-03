@@ -29,6 +29,23 @@ def test_resolve_country_none_when_ambiguous():
     assert resolve_country_from_location("Remote") is None
 
 
+def test_resolve_country_city_name_collides_with_other_country_state_token():
+    # "Ontario" is a CA province token but also a real US city (in
+    # California); "Yukon" is a CA province token but also a real US city
+    # (in Oklahoma). The trailing token is the true jurisdiction in both —
+    # must not misclassify these as CA just because a CA province token
+    # appears earlier in the string as a city name.
+    assert resolve_country_from_location("Ontario, California") == "US"
+    assert resolve_country_from_location("Yukon, Oklahoma") == "US"
+
+
+def test_resolve_country_still_correct_without_collision():
+    # No competing token from the other country — first/only match still
+    # wins, same as before this collision guard existed.
+    assert resolve_country_from_location("Toronto, Ontario, Canada") == "CA"
+    assert resolve_country_from_location("Ontario, Canada") == "CA"
+
+
 def test_resolve_country_none_when_empty():
     assert resolve_country_from_location("") is None
     assert resolve_country_from_location(None) is None

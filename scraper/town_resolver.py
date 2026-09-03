@@ -45,6 +45,7 @@ rather than changing the return type.
 
 from __future__ import annotations
 
+import re
 import unicodedata
 
 from sqlalchemy import ColumnElement, func, or_, select
@@ -63,6 +64,25 @@ def _fold_accents(value: str) -> str:
     """
     decomposed = unicodedata.normalize("NFD", value)
     return "".join(ch for ch in decomposed if unicodedata.category(ch) != "Mn")
+
+
+_ST_ABBREVIATION_RE = re.compile(r"(^|-)st(-|\s)", re.IGNORECASE)
+
+
+def _expand_saint_abbreviation(value: str) -> str | None:
+    """Expand a leading/embedded "St-"/"St " abbreviation to "Saint-"/"Saint
+    " (e.g. "St-Hyacinthe" -> "Saint-Hyacinthe"), matching how GeoNames
+    spells these out in full for every Quebec/Canadian town it carries (19
+    "Saint-*" entries confirmed in the bundled gazetteer, none abbreviated).
+    Returns None when the input has no such abbreviation to expand, so
+    callers can tell "nothing to try" apart from "expanded, still no match."
+    Not a fuzzy match: this recognizes one specific, unambiguous textual
+    abbreviation convention, the same spirit as _fold_accents above — it
+    never merges two different place names.
+    """
+    if not _ST_ABBREVIATION_RE.search(value):
+        return None
+    return _ST_ABBREVIATION_RE.sub(lambda m: f"{m.group(1)}saint{m.group(2)}", value)
 
 
 # location_resolver.py's region field holds free text ("California", "CA",
@@ -283,5 +303,17 @@ def resolve_town(
     rows = conn.execute(query).fetchall()
     if len(rows) == 1:
         return rows[0].id
+
+    # Tier 4: retry tiers 1-3 with "St-"/"St " expanded to "Saint-"/"Saint "
+    # — every Quebec/Canadian "Saint-*" town in the bundled gazetteer is
+    # spelled out in full (see _expand_saint_abbreviation), so a scraped
+    # "St-Hyacinthe" never matches tiers 1-3 on its own. Only attempted once
+    # scoped, ambiguity-refusing matching on the original spelling has
+    # already failed, and only when there was actually an abbreviation to
+    # expand (returns None input unchanged otherwise, so this can't recurse
+    # forever or fire on cities that already spell "Saint" in full).
+    expanded_city = _expand_saint_abbreviation(city.strip())
+    if expanded_city is not None:
+        return resolve_town(conn, city=expanded_city, region=region, country_code=country_code)
 
     return None

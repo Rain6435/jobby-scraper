@@ -999,11 +999,28 @@ def resolve_country_from_location(location: str | None) -> str | None:
         code = LOCATION_ALIASES.get(token)
         if code:
             return code
-    for token in tokens:
+    # A handful of CA province names / US state names are also real city
+    # names in the *other* country ("Ontario, California", "Yukon,
+    # Oklahoma") — scanning left-to-right and returning on the first hit
+    # would read the city-name token as the jurisdiction and misclassify
+    # the whole location. Collect every US/CA hit first; when tokens from
+    # only one side matched, behave exactly as before (the overwhelming
+    # common case — no ambiguity to resolve). When both sides matched,
+    # that's the collision case: the true region token is the trailing one
+    # (the "City, Region" / "City, Region, Country" convention this same
+    # function already trusts elsewhere, e.g. _TRAILING_STATE_RE and
+    # parse_location's tokens[-2] region extraction below), so prefer
+    # whichever hit appears last in the string. Mirrors the equivalent
+    # first-token-vs-distinct-token collision guard parse_location already
+    # applies to city extraction, just applied here to country resolution.
+    last_us_index = last_ca_index = -1
+    for index, token in enumerate(tokens):
         if token in US_STATE_TOKENS:
-            return "US"
+            last_us_index = index
         if token in CA_PROVINCE_TOKENS:
-            return "CA"
+            last_ca_index = index
+    if last_us_index != -1 or last_ca_index != -1:
+        return "US" if last_us_index > last_ca_index else "CA"
 
     for token in tokens:
         code = _ISO_NAME_TO_CODE.get(token)

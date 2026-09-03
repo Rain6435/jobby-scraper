@@ -42,6 +42,14 @@ def test_resolve_town_folds_accents_to_match_ascii_name():
     assert town_id == _town_id(conn, "Montreal", "CA", "10")
 
 
+def test_resolve_town_expands_st_abbreviation_to_saint():
+    conn = _conn_with_gazetteer()
+    p = parse_location("St-Hyacinthe, Quebec, Canada")
+    assert p.city == "St-Hyacinthe"
+    town_id = resolve_town(conn, city=p.city, region=p.region, country_code=p.country_code)
+    assert town_id == _town_id(conn, "Saint-Hyacinthe", "CA", "10")
+
+
 def test_resolve_town_two_token_city_state_shape():
     conn = _conn_with_gazetteer()
     p = parse_location("New York, NY")
