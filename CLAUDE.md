@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## What This Project Is
 
 A job pool generator, meant to be consumed by other apps:
-- A **Python scraper** ([scraper/](scraper/)) polls company career pages (Workday, Greenhouse, Rippling, BambooHR, Ashby, Breezy, Lever, SmartRecruiters, Recruitee, Personio, USAJobs, Workable, Teamtailor)
+- A **Python scraper** ([scraper/](scraper/)) polls company career pages (Workday, Greenhouse, Rippling, BambooHR, Ashby, Breezy, Lever, SmartRecruiters, Recruitee, Personio, USAJobs, Workable, Teamtailor, Pinpoint, Jobvite, JazzHR, GovernmentJobs, ReliefWeb)
 - Every currently-listed posting is stored **unfiltered** in `--database` — no keyword/title/location/age curation. Consumer apps are expected to filter/match for their own use case downstream; `config.json`'s `criteria` (`keywords`/`blacklist_keywords`) is kept only as a reference keyword bank for those consumers, not applied by the pipeline itself. A job leaves the pool only once a fresh scrape's listing no longer includes it — `--database` is a full-replace write of exactly the current run's results, not an accumulating log
 - `python -m scraper.main --company "Acme"` scrapes and merges just one company's fresh listings into the pool on demand, without waiting for the next scheduled run
 
@@ -61,11 +61,24 @@ Pipeline in [scraper/main.py](scraper/main.py): load config → run each company
 - `smartrecruiters` — `company` (identifier); real posting date from `releasedDate`, but **one detail GET per job** (like `bamboohr`/`rippling`) since the list endpoint doesn't expose a description or posting URL
 - `recruitee` — `company` (subdomain); list-only, real posting date from `published_at`
 - `personio` — `company` (subdomain); list-only, **XML feed** (not JSON), real posting date from `createdAt`
-- `usajobs` — no config beyond `board`+`name`; needs `USAJOBS_API_KEY`/`USAJOBS_USER_AGENT` env vars (free self-service key from developer.usajobs.gov — the only board that requires credentials); list-only, real posting date from `PublicationStartDate`. **The one nationwide, not per-employer, board**: `Job.company` is set per-job from the API's own `OrganizationName` (the hiring agency), not from the config entry's `name`. Missing credentials are treated like any other board-scrape failure — logs a warning and returns no jobs, never fatal to the run.
 - `workable` — `company` (account slug); list-only, real posting date from `published_on`
 - `teamtailor` — `company` (subdomain slug); list-only, real posting date from `date_published`
+- `pinpoint` — `company` (subdomain); list-only, real posting date from `created_at`/`updated_at`
+- `jobvite` — `company_id` (companyEId); list-only XML feed, real posting date from `date`
+- `jazzhr` — `company` (subdomain); list-only XML feed, **date-less** (`posted_days=None`)
+- `governmentjobs` — `agency` (agency slug); list-only RSS feed, real posting date from `pubDate`
+- `reliefweb` — no config beyond `board`+`name`; list-only open REST API (`api.reliefweb.int`), real posting date from `date.created`. Aggregator board where `Job.company` comes from the API's own `source` organization.
+- `oraclecloud` — `tenant` (subdomain or full host) + optional `site_number` (default `"CX"`); keyless Candidate Experience REST API (`recruitingCEJobRequisitions`), real posting date from `PostedDate`
+- `successfactors` — `company` (company slug) + optional `domain` (default `jobs.<company>.com`); list-only Career Site Builder RSS feed, real posting date from `pubDate`
+- `adp` — `cid` (Client ID) + optional `cc_id` (Career Center ID, default `"19000101_000001"`); static requisition JSON API (`mascsr/default/careercenter/public/static/v1/reqs`), real posting date from `postDate`
+- `paylocity` — `guid` (integration GUID); public Job Feed V2 JSON API (`/recruiting/v2/api/feed/jobs/<guid>`), real posting date from `postedDate`
+- `icims` — `tenant` (subdomain) + optional `domain`; streaming HTML candidate portal search (`/jobs/search?pr=<page>&in_iframe=1`), real posting date from `Posted Date`
+- `atlassian` — list-only single unauthenticated listings JSON (`https://www.atlassian.com/endpoint/careers/listings`), real posting date from `updatedDate`
+- `shopify` — fast HTMLParser for `shopify.com/careers` plus React Router `.data` detail routes for real posting date and full descriptions
+- `phenom` — `url` (portal search base); enterprise TXP platform (`phApp.ddo` SSR JSON payload), real posting date from `postedDate`, used by OpenText, Bell Canada, Air Canada
 
-All boards store every listing they fetch — there is no keyword, title, location, or age filtering in the pipeline. `greenhouse`/`rippling`/`bamboohr`/`ashby`/`breezy`/`lever`/`recruitee`/`personio`/`usajobs`/`workable`/`teamtailor` use list endpoints only (no per-job detail) to stay cheap; `smartrecruiters` is the exception, needing a detail call for description/URL. This is a cost control, unrelated to filtering.
+All boards store every listing they fetch — there is no keyword, title, location, or age filtering in the pipeline. `greenhouse`/`rippling`/`bamboohr`/`ashby`/`breezy`/`lever`/`recruitee`/`personio`/`usajobs`/`workable`/`teamtailor`/`pinpoint`/`jobvite`/`jazzhr`/`governmentjobs`/`reliefweb`/`oraclecloud`/`successfactors`/`adp`/`paylocity`/`icims`/`atlassian`/`phenom` use list endpoints only (no per-job detail) to stay cheap; `smartrecruiters` is the exception, needing a detail call for description/URL. This is a cost control, unrelated to filtering.
+
 
 **Dates**: Workday/Greenhouse/Ashby/Breezy (and most other boards) provide a posting date → `posted_days`, parsed at scrape time (used to derive `posted_date`, not to filter). Rippling/BambooHR don't expose a date cheaply → `posted_days=None`; consumers fall back to `first_seen` for age in that case (the now-stale dashboard's own convention was hiding date-less jobs >6 days after first seen — see [docs/app.js](docs/app.js) `effectiveAge` — but that's a display concern, separate from the pipeline's own storage, which applies no cutoff). Some individual Workday tenants omit `postedOn` from the list response even though they're not otherwise a date-less board (confirmed on Parsons, 2026-08) — `scraper/boards/workday.py`'s `fetch_jobs()` falls back to the same field on the job's detail page when that happens, but only for newly-discovered jobs (see `_posted_date()` in `scraper/db.py`, which preserves a job's first-derived `posted_date` forever once set).
 

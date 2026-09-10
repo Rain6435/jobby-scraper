@@ -7,10 +7,242 @@
       "careers_base": "https://cae.wd3.myworkdayjobs.com/en-US/career"
     },
     {
+      "name": "IBM",
+      "board": "ibm",
+      "blurb": "Multinational technology corporation specializing in cloud, AI, and consulting."
+    },
+    {
+      "name": "Amazon",
+      "board": "amazon",
+      "blurb": "Multinational technology company focused on e-commerce, cloud computing (AWS), digital streaming, and artificial intelligence."
+    },
+    {
+      "name": "Microsoft",
+      "board": "microsoft",
+      "blurb": "Multinational technology corporation producing computer software, consumer electronics, personal computers, and cloud services (Azure)."
+    },
+    {
+      "name": "Apple",
+      "board": "apple",
+      "blurb": "Multinational technology company creating personal computers, smartphones, consumer electronics, operating systems, and online services."
+    },
+    {
+      "name": "Valve",
+      "board": "valve",
+      "blurb": "Video game developer, publisher, and digital distribution company known for Steam, Half-Life, Portal, and the Steam Deck hardware platform."
+    },
+    {
+      "name": "TikTok",
+      "board": "tiktok",
+      "blurb": "Leading short-form video platform and technology company (ByteDance) inspiring creativity and bringing joy to over a billion global users."
+    },
+    {
+      "name": "Netflix",
+      "board": "netflix",
+      "blurb": "World's leading streaming entertainment service offering TV series, documentaries, feature films, and games across various genres and languages."
+    },
+    {
+      "name": "Google",
+      "board": "google",
+      "blurb": "Multinational technology leader specializing in search engine technology, cloud computing (GCP), online advertising, computer software, and artificial intelligence."
+    },
+    {
+      "name": "Google DeepMind",
+      "board": "google",
+      "company_name": "DeepMind",
+      "blurb": "World-leading artificial intelligence research laboratory committed to solving intelligence to advance science and benefit humanity."
+    },
+    {
+      "name": "Electronic Arts",
+      "board": "ea",
+      "blurb": "Global leader in digital interactive entertainment developing and delivering games, content, and online services including EA SPORTS, Apex Legends, and The Sims."
+    },
+    {
+      "name": "Atlassian",
+      "board": "atlassian",
+      "blurb": "Global team collaboration software maker behind Jira, Confluence, Trello, and Bitbucket, helping teams organize, discuss, and complete shared work."
+    },
+    {
+      "name": "Shopify",
+      "board": "shopify",
+      "blurb": "Leading global commerce company providing trusted tools to start, grow, market, and manage retail businesses across Canada and worldwide."
+    },
+    {
+      "name": "OpenText",
+      "board": "phenom",
+      "url": "https://careers.opentext.com/us/en",
+      "blurb": "Waterloo-headquartered global leader in enterprise information management and cloud software solutions."
+    },
+    {
+      "name": "Bell Canada",
+      "board": "phenom",
+      "url": "https://jobs.bell.ca/ca/en",
+      "blurb": "Canada's largest telecommunications provider delivering advanced mobile, broadband, TV, and media services across Canada."
+    },
+    {
+      "name": "Air Canada",
+      "board": "phenom",
+      "url": "https://careers.aircanada.com/ca/en",
+      "blurb": "Canada's largest airline and flag carrier operating domestic, cross-border, and international flight operations."
+    },
+    {
+      "name": "Hydro-Québec",
+      "board": "successfactors",
+      "company": "hydroquebec",
+      "domain": "emploi.hydroquebec.com",
+      "blurb": "Major public utility managing the generation, transmission, and distribution of clean electricity across Quebec."
+    },
+    {
+      "name": "Bombardier",
+      "board": "successfactors",
+      "company": "bombardier",
+      "domain": "jobs.bombardier.com",
+      "blurb": "Montreal-headquartered global aviation leader designing, manufacturing, and servicing high-performance business jets."
+    },
+    {
+      "name": "BRP",
+      "board": "phenom",
+      "url": "https://careers.brp.com/global/en",
+      "blurb": "Quebec global manufacturer of powersports vehicles and propulsion systems including Ski-Doo, Sea-Doo, and Can-Am."
+    },
+    {
+      "name": "Alimentation Couche-Tard",
+      "board": "phenom",
+      "url": "https://workwithus.circlek.com/ca/en",
+      "blurb": "Laval-headquartered global convenience store and mobility retail leader operating Couche-Tard and Circle K."
+    },
+    {
+      "name": "Air Transat",
+      "board": "smartrecruiters",
+      "company": "TransatAT1",
+      "blurb": "Montreal-based leading holiday travel airline offering scheduled and charter flights worldwide."
+    },
+    {
+      "name": "iA Financial Group",
+      "board": "workday",
+      "url": "https://ia.wd3.myworkdayjobs.com/wday/cxs/ia/Professional/jobs",
+      "careers_base": "https://ia.wd3.myworkdayjobs.com/en-US/Professional",
+      "blurb": "Quebec City-headquartered major Canadian insurance and wealth management financial services group."
+    },
+    {
       "name": "TD Bank",
       "board": "workday",
       "url": "https://td.wd3.myworkdayjobs.com/wday/cxs/td/TD_Bank_Careers/jobs",
       "careers_base": "https://td.wd3.myworkdayjobs.com/en-US/TD_Bank_Careers"
+    },
+    {
+      "name": "Scotiabank",
+      "board": "successfactors",
+      "company": "scotiabank",
+      "domain": "jobs.scotiabank.com",
+      "blurb": "Toronto-headquartered multinational banking and financial services leader, one of Canada's Big Five banks."
+    },
+    {
+      "name": "Magna International",
+      "board": "workday",
+      "url": "https://magna.wd3.myworkdayjobs.com/wday/cxs/magna/Magna/jobs",
+      "careers_base": "https://magna.wd3.myworkdayjobs.com/en-US/Magna",
+      "blurb": "Aurora-headquartered global automotive technology and manufacturing giant operating across Ontario and worldwide."
+    },
+    {
+      "name": "Ontario Teachers' Pension Plan",
+      "board": "workday",
+      "url": "https://otppb.wd3.myworkdayjobs.com/wday/cxs/otppb/OntarioTeachers_Careers/jobs",
+      "careers_base": "https://otppb.wd3.myworkdayjobs.com/en-US/OntarioTeachers_Careers",
+      "blurb": "Toronto-headquartered global institutional investor managing pensions for Ontario's school teachers."
+    },
+    {
+      "name": "Metrolinx",
+      "board": "oraclecloud",
+      "tenant": "ehtc.fa.ca2.oraclecloud.com",
+      "site_number": "CX_1",
+      "blurb": "Crown agency managing and integrating public road and rail transit across the Greater Toronto and Hamilton Area, including GO Transit, UP Express, and PRESTO."
+    },
+    {
+      "name": "Dollarama",
+      "board": "successfactors",
+      "company": "dollarama",
+      "domain": "jobs.dollarama.com",
+      "blurb": "Canada's leading value retailer operating over 1,500 dollar stores nationwide offering everyday consumer items and seasonal goods."
+    },
+    {
+      "name": "Indigo Books & Music",
+      "board": "smartrecruiters",
+      "company": "IndigoBooksMusic",
+      "blurb": "Canada's largest book and lifestyle retailer operating Indigo, Chapters, and Coles bookstores across Canada."
+    },
+    {
+      "name": "The Kroger Co.",
+      "board": "oraclecloud",
+      "tenant": "eluq.fa.us2.oraclecloud.com",
+      "site_number": "CX_2001",
+      "blurb": "Largest supermarket operator in the United States, operating supermarkets and multi-department stores across dozens of regional banners."
+    },
+    {
+      "name": "The Home Depot (US)",
+      "board": "workday",
+      "url": "https://homedepot.wd5.myworkdayjobs.com/wday/cxs/homedepot/CareerDepot/jobs",
+      "careers_base": "https://homedepot.wd5.myworkdayjobs.com/en-US/CareerDepot",
+      "blurb": "World's largest home improvement specialty retailer supplying tools, construction products, and services across the United States."
+    },
+    {
+      "name": "Lowe's",
+      "board": "phenom",
+      "url": "https://talent.lowes.com/us/en",
+      "blurb": "Major American home improvement retailer operating thousands of retail stores and fulfillment centers."
+    },
+    {
+      "name": "CVS Health",
+      "board": "phenom",
+      "url": "https://jobs.cvshealth.com/us/en",
+      "blurb": "Leading diversified healthcare and retail pharmacy chain operating thousands of CVS Pharmacy and MinuteClinic locations."
+    },
+    {
+      "name": "Dollar Tree",
+      "board": "phenom",
+      "url": "https://careers.dollartree.com/us/en",
+      "blurb": "Major North American discount variety store chain operating Dollar Tree and Family Dollar retail locations."
+    },
+    {
+      "name": "O'Reilly Auto Parts",
+      "board": "phenom",
+      "url": "https://careers.oreillyauto.com/us/en",
+      "blurb": "Leading automotive aftermarket retailer providing parts, tools, and maintenance accessories to DIY and professional customers."
+    },
+    {
+      "name": "AutoZone",
+      "board": "oraclecloud",
+      "tenant": "egud.fa.us2.oraclecloud.com",
+      "site_number": "CX_1",
+      "blurb": "America's leading retailer and distributor of automotive replacement parts and accessories."
+    },
+    {
+      "name": "Wegmans Food Markets",
+      "board": "workday",
+      "url": "https://wegmans.wd1.myworkdayjobs.com/wday/cxs/wegmans/Wegmans/jobs",
+      "careers_base": "https://wegmans.wd1.myworkdayjobs.com/en-US/Wegmans",
+      "blurb": "Celebrated regional supermarket chain renowned for extensive fresh produce, bakeries, and gourmet grocery selections across the Eastern US."
+    },
+    {
+      "name": "Nordstrom",
+      "board": "workday",
+      "url": "https://nordstrom.wd501.myworkdayjobs.com/wday/cxs/nordstrom/nordstrom_careers/jobs",
+      "careers_base": "https://nordstrom.wd501.myworkdayjobs.com/en-US/nordstrom_careers",
+      "blurb": "Premier luxury department store chain and off-price retail leader operating Nordstrom and Nordstrom Rack stores."
+    },
+    {
+      "name": "Dick's Sporting Goods",
+      "board": "workday",
+      "url": "https://dickssportinggoods.wd1.myworkdayjobs.com/wday/cxs/dickssportinggoods/dsg/jobs",
+      "careers_base": "https://dickssportinggoods.wd1.myworkdayjobs.com/en-US/dsg",
+      "blurb": "Largest omni-channel sporting goods retailer in the United States, offering athletic equipment, apparel, footwear, and outdoor gear."
+    },
+    {
+      "name": "Sephora",
+      "board": "successfactors",
+      "company": "sephora",
+      "domain": "jobs.sephora.com",
+      "blurb": "Global prestige beauty retailer offering thousands of cosmetic, skincare, fragrance, and haircare products across North America and worldwide."
     },
     {
       "name": "Autodesk",
@@ -395,8 +627,8 @@
     {
       "name": "Desjardins",
       "board": "workday",
-      "url": "https://desjardins.wd10.myworkdayjobs.com/wday/cxs/desjardins/Desjardinscachee/jobs",
-      "careers_base": "https://desjardins.wd10.myworkdayjobs.com/en-US/Desjardinscachee"
+      "url": "https://desjardins.wd10.myworkdayjobs.com/wday/cxs/desjardins/Desjardins/jobs",
+      "careers_base": "https://desjardins.wd10.myworkdayjobs.com/en-US/Desjardins"
     },
     {
       "name": "Teledyne FLIR",
@@ -456,7 +688,8 @@
       "name": "OMERS",
       "board": "workday",
       "url": "https://omers.wd3.myworkdayjobs.com/wday/cxs/omers/OMERS_External/jobs",
-      "careers_base": "https://omers.wd3.myworkdayjobs.com/en-US/OMERS_External"
+      "careers_base": "https://omers.wd3.myworkdayjobs.com/en-US/OMERS_External",
+      "blurb": "Toronto-headquartered defined benefit pension plan managing investments and pensions for Ontario municipal workers."
     },
     {
       "name": "Parsons",
@@ -4346,6 +4579,1123 @@
       "name": "Flare Systems",
       "board": "smartrecruiters",
       "company": "flaresystems"
+    },
+    {
+      "name": "Pacific Seafood",
+      "board": "pinpoint",
+      "company": "pacificseafood",
+      "blurb": "Pacific Seafood is a leading North American seafood processing, harvesting, and distribution company headquartered in Clackamas, Oregon."
+    },
+    {
+      "name": "BigHat Biosciences",
+      "board": "pinpoint",
+      "company": "bighatbiosciences",
+      "blurb": "BigHat Biosciences is a clinical-stage biotechnology company using machine learning and synthetic biology to design safer and more effective antibody therapeutics."
+    },
+    {
+      "name": "Article",
+      "board": "pinpoint",
+      "company": "article",
+      "blurb": "Article is a direct-to-consumer modern furniture and home decor brand focused on high-quality design and fast delivery."
+    },
+    {
+      "name": "Cazoo",
+      "board": "pinpoint",
+      "company": "cazoo",
+      "blurb": "Cazoo is a European online automotive marketplace providing streamlined vehicle sales and delivery services."
+    },
+    {
+      "name": "Labster",
+      "board": "pinpoint",
+      "company": "labster",
+      "blurb": "Labster develops interactive STEM virtual laboratory simulations for universities and high schools worldwide."
+    },
+    {
+      "name": "Nutanix",
+      "board": "jobvite",
+      "company_id": "qKr9VfwZ",
+      "blurb": "Nutanix is a global leader in hybrid multicloud computing, hyperconverged infrastructure (HCI), and enterprise virtualization software."
+    },
+    {
+      "name": "Monarch House",
+      "board": "jazzhr",
+      "company": "monarchhouse",
+      "blurb": "Monarch House is a Canadian interdisciplinary pediatric health network providing specialized autism, speech, and behavioral therapy services."
+    },
+    {
+      "name": "Carbon Engineering",
+      "board": "jazzhr",
+      "company": "carbonengineering",
+      "blurb": "Carbon Engineering is a leading direct air capture clean energy company developing commercial-scale technology to remove carbon dioxide directly from the atmosphere."
+    },
+    {
+      "name": "City of Lloydminster",
+      "board": "jazzhr",
+      "company": "lloydminster",
+      "blurb": "The City of Lloydminster is a unique bi-provincial Canadian municipality serving communities across the Alberta-Saskatchewan border."
+    },
+    {
+      "name": "Parkland County",
+      "board": "jazzhr",
+      "company": "parklandcounty",
+      "blurb": "Parkland County is a municipal district in central Alberta, Canada, managing public works, utilities, parks, and regional development."
+    },
+    {
+      "name": "King County",
+      "board": "governmentjobs",
+      "agency": "kingcounty",
+      "blurb": "King County is the most populous county in Washington State, encompassing Seattle, Bellevue, public transit networks, and regional services."
+    },
+    {
+      "name": "City of Seattle",
+      "board": "governmentjobs",
+      "agency": "seattle",
+      "blurb": "The City of Seattle municipal government oversees city administration, civil infrastructure, utilities, parks, public health, and city services."
+    },
+    {
+      "name": "SAP",
+      "board": "successfactors",
+      "company": "sap",
+      "domain": "jobs.sap.com",
+      "blurb": "Global enterprise software leader specializing in enterprise resource planning (ERP), cloud applications, and business AI solutions."
+    },
+    {
+      "name": "Nestlé",
+      "board": "successfactors",
+      "company": "nestle",
+      "domain": "jobdetails.nestle.com",
+      "blurb": "World's largest food and beverage company producing nutrition, health, and wellness consumer brands globally."
+    },
+    {
+      "name": "BASF",
+      "board": "successfactors",
+      "company": "basf",
+      "domain": "basf.jobs",
+      "blurb": "Global chemical manufacturing enterprise producing industrial materials, agricultural solutions, and specialized performance chemicals."
+    },
+    {
+      "name": "Colgate-Palmolive",
+      "board": "successfactors",
+      "company": "colgate",
+      "domain": "jobs.colgate.com",
+      "blurb": "Global consumer products leader manufacturing oral care, personal care, home care, and pet nutrition products."
+    },
+    {
+      "name": "Bayer",
+      "board": "successfactors",
+      "company": "bayer",
+      "domain": "jobs.bayer.com",
+      "blurb": "Global life sciences enterprise specializing in healthcare, pharmaceuticals, consumer health, and agricultural crop science."
+    },
+    {
+      "name": "Boehringer Ingelheim",
+      "board": "successfactors",
+      "company": "boehringer",
+      "domain": "jobs.boehringer-ingelheim.com",
+      "blurb": "Research-driven global biopharmaceutical company developing therapies for human cardiovascular, metabolic, and respiratory health."
+    },
+    {
+      "name": "City of Bellevue",
+      "board": "governmentjobs",
+      "agency": "bellevuewa",
+      "blurb": "Municipal government administering public safety, utilities, civic planning, and community infrastructure in Bellevue, Washington."
+    },
+    {
+      "name": "City of Redmond",
+      "board": "governmentjobs",
+      "agency": "redmondwa",
+      "blurb": "Municipal administration managing public works, parks, community development, and civic operations in Redmond, Washington."
+    },
+    {
+      "name": "City of Renton",
+      "board": "governmentjobs",
+      "agency": "rentonwa",
+      "blurb": "Local city government overseeing municipal services, economic development, and civic infrastructure in Renton, Washington."
+    },
+    {
+      "name": "City of Kirkland",
+      "board": "governmentjobs",
+      "agency": "kirklandwa",
+      "blurb": "Municipal agency managing city governance, planning, public works, and community programs for Kirkland, Washington."
+    },
+    {
+      "name": "City of Everett",
+      "board": "governmentjobs",
+      "agency": "everettwa",
+      "blurb": "City government organization managing civic infrastructure, public safety, transit, and municipal services in Everett, Washington."
+    },
+    {
+      "name": "City of Tacoma",
+      "board": "governmentjobs",
+      "agency": "tacoma",
+      "blurb": "Municipal government for Tacoma, Washington, operating public utilities, environmental services, and civic administration."
+    },
+    {
+      "name": "Snohomish County",
+      "board": "governmentjobs",
+      "agency": "snohomish",
+      "blurb": "County government agency providing regional services, public health, judicial courts, and parks across Snohomish County, WA."
+    },
+    {
+      "name": "Pierce County",
+      "board": "governmentjobs",
+      "agency": "piercecountywa",
+      "blurb": "Regional county administration managing public works, human services, emergency management, and parks in Pierce County, WA."
+    },
+    {
+      "name": "Kitsap County",
+      "board": "governmentjobs",
+      "agency": "kitsap",
+      "blurb": "County government agency delivering civic infrastructure, public safety, and judicial administration across Kitsap County, WA."
+    },
+    {
+      "name": "Port of Tacoma",
+      "board": "governmentjobs",
+      "agency": "portoftacoma",
+      "blurb": "Major Pacific Northwest seaport authority managing international marine terminals and intermodal freight logistics in Washington state."
+    },
+    {
+      "name": "City of Portland",
+      "board": "governmentjobs",
+      "agency": "portlandor",
+      "blurb": "Municipal government providing civic services, urban planning, environmental services, and transportation for Portland, Oregon."
+    },
+    {
+      "name": "City of Houston",
+      "board": "governmentjobs",
+      "agency": "houston",
+      "blurb": "Municipal government for the fourth-largest US city, managing aviation, health services, public safety, and civic infrastructure."
+    },
+    {
+      "name": "LA Metro",
+      "board": "governmentjobs",
+      "agency": "lametro",
+      "blurb": "Public transportation agency planning, operating, and constructing bus and rail transit systems across Los Angeles County."
+    },
+    {
+      "name": "TriMet",
+      "board": "governmentjobs",
+      "agency": "trimet",
+      "blurb": "Public transit agency providing bus, MAX light rail, and commuter rail service across the Portland metropolitan region."
+    },
+    {
+      "name": "Valley Metro",
+      "board": "governmentjobs",
+      "agency": "valleymetro",
+      "blurb": "Regional public transit authority operating bus and light rail networks across metropolitan Phoenix, Arizona."
+    },
+    {
+      "name": "City of Oakland",
+      "board": "governmentjobs",
+      "agency": "oaklandca",
+      "blurb": "Municipal government overseeing public services, housing, economic development, and cultural programs for Oakland, California."
+    },
+    {
+      "name": "City of San Jose",
+      "board": "governmentjobs",
+      "agency": "sanjoseca",
+      "blurb": "City government for the capital of Silicon Valley, managing airport operations, environmental services, and civic infrastructure."
+    },
+    {
+      "name": "City of Sacramento",
+      "board": "governmentjobs",
+      "agency": "sacramento",
+      "blurb": "California state capital municipal administration operating public utilities, community development, and public safety."
+    },
+    {
+      "name": "Sensat",
+      "board": "pinpoint",
+      "company": "sensat",
+      "blurb": "Spatial intelligence platform creating digital twin visualizations for civil infrastructure and construction engineering projects."
+    },
+    {
+      "name": "Impulse Space",
+      "board": "pinpoint",
+      "company": "impulsespace",
+      "blurb": "In-space transportation pioneer developing orbital maneuver vehicles and propulsion systems for satellite payload delivery."
+    },
+    {
+      "name": "Fervo Energy",
+      "board": "pinpoint",
+      "company": "fervoenergy",
+      "blurb": "Next-generation geothermal energy company using horizontal drilling to deliver 24/7 carbon-free baseload electricity."
+    },
+    {
+      "name": "Valneva",
+      "board": "pinpoint",
+      "company": "valneva",
+      "blurb": "Specialty vaccine developer focused on the prevention of infectious diseases with high unmet medical needs."
+    },
+    {
+      "name": "Northvolt",
+      "board": "pinpoint",
+      "company": "northvolt",
+      "blurb": "European battery manufacturer developing sustainable, high-performance lithium-ion cells for electric mobility and energy storage."
+    },
+    {
+      "name": "ZGF Architects",
+      "board": "jazzhr",
+      "company": "zgfarchitects",
+      "blurb": "Acclaimed architecture, interior design, and urban planning practice with studios across North America."
+    },
+    {
+      "name": "Olson Kundig",
+      "board": "jazzhr",
+      "company": "olsonkundig",
+      "blurb": "Seattle-based global design practice creating architecture, residential homes, and cultural exhibits."
+    },
+    {
+      "name": "Avista",
+      "board": "jazzhr",
+      "company": "avista",
+      "blurb": "Energy utility supplying electricity and natural gas across eastern Washington, northern Idaho, and parts of Oregon."
+    },
+    {
+      "name": "KPFF Consulting Engineers",
+      "board": "smartrecruiters",
+      "company": "kpffconsultingengineers",
+      "blurb": "Industry-leading civil and structural engineering consulting firm delivering innovative building and infrastructure design."
+    },
+    {
+      "name": "Scripps Research",
+      "board": "smartrecruiters",
+      "company": "scrippsresearch",
+      "blurb": "Nonprofit biomedical research institute advancing scientific discovery in immunology, chemistry, and molecular medicine."
+    },
+    {
+      "name": "Turner Construction",
+      "board": "smartrecruiters",
+      "company": "turnerconstruction",
+      "blurb": "North American general contractor and construction management firm managing major commercial, healthcare, and civic builds."
+    },
+    {
+      "name": "Skydio",
+      "board": "ashby",
+      "slug": "skydio",
+      "blurb": "Autonomous drone manufacturer using computer vision and AI navigation for enterprise inspection and public safety operations."
+    },
+    {
+      "name": "Saronic",
+      "board": "ashby",
+      "slug": "saronic",
+      "blurb": "Maritime robotics developer building autonomous surface vessels (ASVs) for maritime domain awareness and defense."
+    },
+    {
+      "name": "Absci",
+      "board": "ashby",
+      "slug": "absci",
+      "blurb": "Generative AI drug creation company creating de novo therapeutic antibodies and biologics at the intersection of AI and biology."
+    },
+    {
+      "name": "Synthesia",
+      "board": "ashby",
+      "slug": "synthesia",
+      "blurb": "AI video generation platform allowing enterprise teams to produce studio-grade video content with photorealistic avatars."
+    },
+    {
+      "name": "Brimstone",
+      "board": "ashby",
+      "slug": "brimstone",
+      "blurb": "Deeptech materials producer developing carbon-negative Portland cement from non-carbonate silicate rocks."
+    },
+    {
+      "name": "SpaceX",
+      "board": "greenhouse",
+      "token": "spacex",
+      "blurb": "Aerospace manufacturer and space transport pioneer developing reusable orbital launch vehicles and the Starlink satellite network."
+    },
+    {
+      "name": "KoBold Metals",
+      "board": "greenhouse",
+      "token": "koboldmetals",
+      "blurb": "AI-driven mineral exploration company mapping battery metals and critical resources essential for the global energy transition."
+    },
+    {
+      "name": "Isomorphic Labs",
+      "board": "greenhouse",
+      "token": "isomorphiclabs",
+      "blurb": "DeepMind spinout applying advanced artificial intelligence and structural biology to accelerate computational drug discovery."
+    },
+    {
+      "name": "Kairos Power",
+      "board": "greenhouse",
+      "token": "kairospower",
+      "blurb": "Advanced nuclear energy developer commercializing fluoride salt-cooled high-temperature reactors for clean electricity and heat."
+    },
+    {
+      "name": "Epirus",
+      "board": "greenhouse",
+      "token": "epirus",
+      "blurb": "High-power microwave defense systems company developing directed energy counter-electronics and anti-drone technologies."
+    },
+    {
+      "name": "Apptronik",
+      "board": "greenhouse",
+      "token": "apptronik",
+      "blurb": "Robotics developer creating general-purpose humanoid robots designed to operate alongside humans in logistics and manufacturing."
+    },
+    {
+      "name": "Agility Robotics",
+      "board": "greenhouse",
+      "token": "agilityrobotics",
+      "blurb": "Creator of the bipedal humanoid robot Digit, designed for warehouse automation and supply chain material handling."
+    },
+    {
+      "name": "Figure AI",
+      "board": "greenhouse",
+      "token": "figure",
+      "blurb": "AI robotics enterprise designing autonomous humanoid robots equipped with end-to-end neural network capabilities."
+    },
+    {
+      "name": "Lyell Immunopharma",
+      "board": "greenhouse",
+      "token": "lyellimmunopharma",
+      "blurb": "Clinical-stage biotech company developing cellular therapies designed to overcome primary barriers to T-cell functionality in solid tumors."
+    },
+    {
+      "name": "Heart Aerospace",
+      "board": "greenhouse",
+      "token": "heartaerospace",
+      "blurb": "Electric aviation innovator developing hybrid-electric regional passenger airplanes for decarbonized commercial air travel."
+    },
+    {
+      "name": "Vital Farms",
+      "board": "greenhouse",
+      "token": "vitalfarms",
+      "blurb": "Ethical food company and pasture-raised egg producer partnering with family farms across the United States."
+    },
+    {
+      "name": "Array Technologies",
+      "board": "greenhouse",
+      "token": "array",
+      "blurb": "Global provider of utility-scale solar tracking ground-mount systems designed to maximize solar panel energy harvest."
+    },
+    {
+      "name": "Blue Bottle Coffee",
+      "board": "lever",
+      "company": "bluebottlecoffee",
+      "blurb": "Specialty coffee roaster and cafe chain known for single-origin sourcing, precision brewing, and craft coffee retail."
+    },
+    {
+      "name": "Verkor",
+      "board": "lever",
+      "company": "verkor",
+      "blurb": "European battery cell manufacturer producing low-carbon lithium-ion cells for electric vehicles and industrial energy storage."
+    },
+    {
+      "name": "Climeworks",
+      "board": "recruitee",
+      "company": "climeworks",
+      "blurb": "Pioneer in direct air capture (DAC) technology that captures CO2 directly from ambient air for permanent underground storage."
+    },
+    {
+      "name": "Reed College",
+      "board": "breezy",
+      "company": "reed-college",
+      "blurb": "Distinguished liberal arts and sciences college located in Portland, Oregon, renowned for rigorous academic scholarship."
+    },
+    {
+      "name": "Solugen",
+      "board": "breezy",
+      "company": "solugen",
+      "blurb": "Decarbonized chemical company utilizing enzyme engineering and bio-manufacturing to produce sustainable industrial chemicals."
+    },
+    {
+      "name": "REI",
+      "board": "bamboohr",
+      "company": "rei",
+      "blurb": "Nationwide outdoor specialty retailer and consumer cooperative offering outdoor recreation gear, apparel, and stewardship."
+    },
+    {
+      "name": "Kinaxis",
+      "board": "icims",
+      "tenant": "careers-kinaxis",
+      "blurb": "Supply chain management and sales and operations planning software provider utilizing concurrent planning and AI, headquartered in Kanata, Ottawa."
+    },
+    {
+      "name": "Curtiss-Wright",
+      "board": "workday",
+      "url": "https://curtisswright.wd1.myworkdayjobs.com/wday/cxs/curtisswright/CW_External_Career_Site/jobs",
+      "careers_base": "https://curtisswright.wd1.myworkdayjobs.com/en-US/CW_External_Career_Site",
+      "blurb": "Global provider of highly engineered, critical function products and defense electronics, with a major Canadian business unit in Kanata, Ottawa."
+    },
+    {
+      "name": "Bank of Canada",
+      "board": "successfactors",
+      "company": "bankofcanada",
+      "domain": "careers.bankofcanada.ca",
+      "blurb": "Canada's central bank, responsible for formulating monetary policy, issuing currency, and promoting a stable and efficient financial system, headquartered in Ottawa."
+    },
+    {
+      "name": "Canada Post",
+      "board": "successfactors",
+      "company": "canadapost",
+      "domain": "jobs.canadapost.ca",
+      "blurb": "Canada's national postal service and leading parcel logistics provider, headquartered in Ottawa."
+    },
+    {
+      "name": "Canada Mortgage and Housing Corporation (CMHC)",
+      "board": "successfactors",
+      "company": "cmhc",
+      "domain": "careers.cmhc-schl.gc.ca",
+      "blurb": "Canada's national housing agency providing mortgage loan insurance, housing policy research, and financing solutions, headquartered in Ottawa."
+    },
+    {
+      "name": "VIA Rail Canada",
+      "board": "successfactors",
+      "company": "viarail",
+      "domain": "careers.viarail.ca",
+      "blurb": "Canada's national passenger rail service operator providing intercity train services across the country, with significant operations in the Ottawa-Montreal corridor."
+    },
+    {
+      "name": "Canadian Blood Services",
+      "board": "successfactors",
+      "company": "canadianbl",
+      "domain": "careers.blood.ca",
+      "blurb": "Non-profit charitable organization managing the national supply of blood, blood products, and stem cells for Canada (excluding Quebec), headquartered in Ottawa."
+    },
+    {
+      "name": "Export Development Canada",
+      "board": "workable",
+      "company": "export-development-canada",
+      "blurb": "Canada's export credit agency providing financing, insurance, and bonding services to Canadian exporters, headquartered in Ottawa."
+    },
+    {
+      "name": "March Networks",
+      "board": "workable",
+      "company": "march-networks",
+      "blurb": "Global video surveillance and video-based business intelligence solutions provider, headquartered in Kanata, Ottawa."
+    },
+    {
+      "name": "Canadian Internet Registration Authority (CIRA)",
+      "board": "bamboohr",
+      "company": "cira",
+      "blurb": "Member-based non-profit that manages the .CA top-level domain and provides enterprise DNS and cybersecurity services, headquartered in Ottawa."
+    },
+    {
+      "name": "Youth Services Bureau",
+      "board": "bamboohr",
+      "company": "youthservicesbureau",
+      "blurb": "Community agency in Ottawa providing youth engagement, mental health, community, housing, and employment services."
+    },
+    {
+      "name": "Canadian Medical Protective Association (CMPA)",
+      "board": "bamboohr",
+      "company": "cmpa",
+      "blurb": "National medical-legal association providing advice, support, and liability protection to Canadian physicians, headquartered in Ottawa."
+    },
+    {
+      "name": "Mercury Filmworks",
+      "board": "bamboohr",
+      "company": "mercuryfilmworks",
+      "blurb": "Leading 2D and digital animation studio based in Ottawa, producing animated series and films for major international studios."
+    },
+    {
+      "name": "Catholic Centre for Immigrants Ottawa",
+      "board": "bamboohr",
+      "company": "cciottawa",
+      "blurb": "Non-profit organization in Ottawa delivering settlement, housing, language, and community integration support for immigrants and refugees."
+    },
+    {
+      "name": "CDPQ",
+      "board": "workday",
+      "url": "https://cdpq.wd10.myworkdayjobs.com/wday/cxs/cdpq/CDPQ/jobs",
+      "careers_base": "https://cdpq.wd10.myworkdayjobs.com/en-US/CDPQ",
+      "blurb": "Global institutional investment organization managing funds for public and parapublic pension and insurance plans in Quebec."
+    },
+    {
+      "name": "Innergex Renewable Energy",
+      "board": "oraclecloud",
+      "tenant": "fa-ewqm-saasfaprod1.fa.ocs",
+      "site_number": "CX_1"
+    },
+    {
+      "name": "Medfar Clinical Solutions",
+      "board": "smartrecruiters",
+      "company": "medfar"
+    },
+    {
+      "name": "Vanier College",
+      "board": "bamboohr",
+      "company": "vanier"
+    },
+    {
+      "name": "Bixi Montréal",
+      "board": "recruitee",
+      "company": "biximontreal"
+    },
+    {
+      "name": "FLO",
+      "board": "bamboohr",
+      "company": "flo"
+    },
+    {
+      "name": "Groupe Dynamite",
+      "board": "ashby",
+      "slug": "garage"
+    },
+    {
+      "name": "Linen Chest",
+      "board": "smartrecruiters",
+      "company": "linenchest"
+    },
+    {
+      "name": "Renaud-Bray",
+      "board": "smartrecruiters",
+      "company": "renaud-bray"
+    },
+    {
+      "name": "Squeeze Animation",
+      "board": "recruitee",
+      "company": "squeezestudio"
+    },
+    {
+      "name": "Jam City Montréal",
+      "board": "lever",
+      "company": "jamcity"
+    },
+    {
+      "name": "Gearbox Studio Montreal",
+      "board": "greenhouse",
+      "token": "gearbox"
+    },
+    {
+      "name": "Maplr",
+      "board": "bamboohr",
+      "company": "maplr"
+    },
+    {
+      "name": "OneSpan",
+      "board": "greenhouse",
+      "token": "onespan"
+    },
+    {
+      "name": "Brevo",
+      "board": "lever",
+      "company": "brevo"
+    },
+    {
+      "name": "Exegy",
+      "board": "ashby",
+      "slug": "exegy"
+    },
+    {
+      "name": "Astellas Pharma",
+      "board": "successfactors",
+      "company": "astellas",
+      "domain": "careers.astellas.com",
+      "blurb": "Global pharmaceutical company developing innovative therapeutic treatments in oncology, urology, immunology, and nephrology."
+    },
+    {
+      "name": "Boston Scientific",
+      "board": "successfactors",
+      "company": "bostonscientific",
+      "domain": "jobs.bostonscientific.com",
+      "blurb": "Global biomedical and medical device manufacturer innovating interventional medical solutions for cardiovascular, endoscopy, and neuromodulation care."
+    },
+    {
+      "name": "B. Braun",
+      "board": "successfactors",
+      "company": "bbraun",
+      "domain": "jobs.bbraun.com",
+      "blurb": "Global medical and pharmaceutical device manufacturer specializing in anesthesia, intensive care, infusion therapy, and surgical instruments."
+    },
+    {
+      "name": "EssilorLuxottica",
+      "board": "successfactors",
+      "company": "essilorluxottica",
+      "domain": "careers.essilorluxottica.com",
+      "blurb": "Global leader in ophthalmic optics and eyewear design, manufacturing prescription lenses and iconic sunglasses brands worldwide."
+    },
+    {
+      "name": "Daiichi Sankyo",
+      "board": "successfactors",
+      "company": "daiichisankyo",
+      "domain": "careers.daiichisankyo.com",
+      "blurb": "Global pharmaceutical company specializing in antibody-drug conjugates (ADCs), oncology therapeutics, and cardiovascular medicine."
+    },
+    {
+      "name": "BMW Group",
+      "board": "successfactors",
+      "company": "bmwgroup",
+      "domain": "jobs.bmwgroup.com",
+      "blurb": "Global premium automotive and motorcycle manufacturer producing innovative luxury vehicles, electric mobility, and digital driving systems."
+    },
+    {
+      "name": "ZF Friedrichshafen",
+      "board": "successfactors",
+      "company": "zf",
+      "domain": "jobs.zf.com",
+      "blurb": "Global automotive and mobility technology supplier developing active safety, driveline, chassis, and autonomous driving systems."
+    },
+    {
+      "name": "Schaeffler",
+      "board": "successfactors",
+      "company": "schaeffler",
+      "domain": "jobs.schaeffler.com",
+      "blurb": "Global motion technology and automotive supplier manufacturing precision components and systems for electric and hybrid powertrains."
+    },
+    {
+      "name": "MTU Aero Engines",
+      "board": "successfactors",
+      "company": "mtu",
+      "domain": "jobs.mtu.de",
+      "blurb": "Germany's leading engine manufacturer developing commercial and military aircraft propulsion systems and maintenance solutions."
+    },
+    {
+      "name": "Alstom",
+      "board": "successfactors",
+      "company": "alstom",
+      "domain": "jobsearch.alstom.com",
+      "blurb": "Global leader in sustainable transportation developing high-speed trains, metros, monorails, and intelligent railway signaling systems."
+    },
+    {
+      "name": "Volvo Group",
+      "board": "successfactors",
+      "company": "volvogroup",
+      "domain": "jobs.volvogroup.com",
+      "blurb": "Global manufacturer of heavy commercial trucks, construction equipment, buses, and industrial power solutions."
+    },
+    {
+      "name": "Volvo Cars",
+      "board": "successfactors",
+      "company": "volvocars",
+      "domain": "jobs.volvocars.com",
+      "blurb": "Global premium automotive company known for vehicle safety innovation, electrification, and autonomous driving technology."
+    },
+    {
+      "name": "Charles River Laboratories",
+      "board": "successfactors",
+      "company": "criver",
+      "domain": "careers.criver.com",
+      "blurb": "Global contract research and drug discovery services company supporting preclinical and clinical biotechnology programs."
+    },
+    {
+      "name": "Mahle",
+      "board": "successfactors",
+      "company": "mahle",
+      "domain": "careers.mahle.com",
+      "blurb": "Global automotive supplier developing piston systems, cylinder components, valve train systems, and thermal management technologies."
+    },
+    {
+      "name": "Scania",
+      "board": "successfactors",
+      "company": "scania",
+      "domain": "jobs.scania.com",
+      "blurb": "Global manufacturer of heavy-duty commercial trucks, urban transit buses, and industrial engines, part of Traton Group."
+    },
+    {
+      "name": "Pirelli",
+      "board": "successfactors",
+      "company": "pirelli",
+      "domain": "jobs.pirelli.com",
+      "blurb": "Global tire manufacturer specializing in high-performance automotive and motorcycle tires, motorsport racing, and cycling products."
+    },
+    {
+      "name": "Deere & Company",
+      "board": "successfactors",
+      "company": "deere",
+      "domain": "jobs.deere.com",
+      "blurb": "Global manufacturer of agricultural, construction, forestry, and turf care machinery and precision ag technology."
+    },
+    {
+      "name": "Metso",
+      "board": "successfactors",
+      "company": "metso",
+      "domain": "careers.metso.com",
+      "blurb": "Global industrial machinery and technology provider for aggregate, minerals processing, and metals refining industries."
+    },
+    {
+      "name": "Wartsila",
+      "board": "successfactors",
+      "company": "wartsila",
+      "domain": "careers.wartsila.com",
+      "blurb": "Global technology leader in innovative power systems, decarbonization, and marine propulsion for shipping and energy markets."
+    },
+    {
+      "name": "PACCAR",
+      "board": "successfactors",
+      "company": "paccar",
+      "domain": "jobs.paccar.com",
+      "blurb": "Global commercial vehicle designer and manufacturer producing premium medium and heavy-duty commercial trucks under Kenworth, Peterbilt, and DAF."
+    },
+    {
+      "name": "Huntington Ingalls Industries",
+      "board": "successfactors",
+      "company": "huntingtoningalls",
+      "domain": "careers.huntingtoningalls.com",
+      "blurb": "America's largest military shipbuilder and defense technologies provider constructing nuclear-powered aircraft carriers and submarines."
+    },
+    {
+      "name": "Servier",
+      "board": "successfactors",
+      "company": "servier",
+      "domain": "jobs.servier.com",
+      "blurb": "International research-driven pharmaceutical group specializing in oncology, cardiovascular disease, and metabolic therapeutics."
+    },
+    {
+      "name": "Solvay",
+      "board": "successfactors",
+      "company": "solvay",
+      "domain": "careers.solvay.com",
+      "blurb": "Global leader in specialty materials and chemicals advancing sustainable industrial materials, batteries, and green hydrogen solutions."
+    },
+    {
+      "name": "Clariant",
+      "board": "successfactors",
+      "company": "clariant",
+      "domain": "careers.clariant.com",
+      "blurb": "Global specialty chemical company focusing on care chemicals, catalysts, and sustainable industrial additives."
+    },
+    {
+      "name": "Wacker Chemie",
+      "board": "successfactors",
+      "company": "wacker",
+      "domain": "jobs.wacker.com",
+      "blurb": "Global chemical manufacturer producing silicones, polymers, polysilicon for photovoltaics, and fine chemicals."
+    },
+    {
+      "name": "L3Harris",
+      "board": "successfactors",
+      "company": "l3harris",
+      "domain": "jobs.l3harris.com",
+      "blurb": "Global aerospace and defense technology innovator delivering mission-critical communications, sensors, and electronic warfare systems."
+    },
+    {
+      "name": "AkzoNobel",
+      "board": "successfactors",
+      "company": "akzonobel",
+      "domain": "careers.akzonobel.com",
+      "blurb": "Global leader in decorative paints and performance coatings providing sustainable surface solutions for architecture and industry."
+    },
+    {
+      "name": "Arkema",
+      "board": "successfactors",
+      "company": "arkema",
+      "domain": "jobs.arkema.com",
+      "blurb": "Global specialty materials manufacturer producing performance polymers, adhesive solutions, and advanced industrial chemicals."
+    },
+    {
+      "name": "Knorr-Bremse",
+      "board": "successfactors",
+      "company": "knorr-bremse",
+      "domain": "careers.knorr-bremse.com",
+      "blurb": "Global market leader in braking systems and subsystem supplier for rail and commercial vehicles."
+    },
+    {
+      "name": "EDP",
+      "board": "successfactors",
+      "company": "edp",
+      "domain": "jobs.edp.com",
+      "blurb": "Global renewable energy and utility leader operating electric power generation, distribution networks, and clean energy development."
+    },
+    {
+      "name": "Engie",
+      "board": "successfactors",
+      "company": "engie",
+      "domain": "jobs.engie.com",
+      "blurb": "Global low-carbon energy and services company operating renewable electricity, natural gas networks, and energy transition infrastructure."
+    },
+    {
+      "name": "E.ON",
+      "board": "successfactors",
+      "company": "eon",
+      "domain": "careers.eon.com",
+      "blurb": "Major European energy networks and infrastructure operator delivering sustainable electricity, heating, and grid solutions."
+    },
+    {
+      "name": "OMV",
+      "board": "successfactors",
+      "company": "omv",
+      "domain": "careers.omv.com",
+      "blurb": "Integrated Central and Southeastern European energy and chemical group producing fuels, natural gas, and sustainable polymers."
+    },
+    {
+      "name": "Fortum",
+      "board": "successfactors",
+      "company": "fortum",
+      "domain": "jobs.fortum.com",
+      "blurb": "Nordic clean energy company generating carbon-neutral electricity through nuclear, hydro, and district heating networks."
+    },
+    {
+      "name": "Teck Resources",
+      "board": "successfactors",
+      "company": "teck",
+      "domain": "jobs.teck.com",
+      "blurb": "Leading Canadian diversified resource company focused on sustainable production of copper and critical minerals for the low-carbon transition."
+    },
+    {
+      "name": "Nutrien",
+      "board": "successfactors",
+      "company": "nutrien",
+      "domain": "jobs.nutrien.com",
+      "blurb": "World's largest provider of crop nutrients, agricultural inputs, potash, and ag retail services, headquartered in Saskatoon and Calgary."
+    },
+    {
+      "name": "BHP",
+      "board": "successfactors",
+      "company": "bhp",
+      "domain": "careers.bhp.com",
+      "blurb": "World-leading resources and mining enterprise extracting copper, iron ore, and metallurgical coal for global infrastructure development."
+    },
+    {
+      "name": "RWE",
+      "board": "successfactors",
+      "company": "rwe",
+      "domain": "jobs.rwe.com",
+      "blurb": "Global renewable energy developer and power generation utility operating offshore/onshore wind, solar, and battery storage."
+    },
+    {
+      "name": "Ontario Power Generation",
+      "board": "successfactors",
+      "company": "opg",
+      "domain": "jobs.opg.com",
+      "blurb": "Public electricity generator producing safe, clean, and reliable low-cost nuclear and hydroelectric power across Ontario."
+    },
+    {
+      "name": "SaskPower",
+      "board": "successfactors",
+      "company": "saskpower",
+      "domain": "jobs.saskpower.com",
+      "blurb": "Principal electric utility in Saskatchewan generating, transmitting, and distributing electricity to over 500,000 customers."
+    },
+    {
+      "name": "Hydro One",
+      "board": "successfactors",
+      "company": "hydroone",
+      "domain": "jobs.hydroone.com",
+      "blurb": "Ontario's largest electricity transmission and distribution provider delivering electricity to over 1.5 million customers."
+    },
+    {
+      "name": "CRH",
+      "board": "successfactors",
+      "company": "crh",
+      "domain": "jobs.crh.com",
+      "blurb": "Global leader in building materials solutions manufacturing aggregates, cement, asphalt, and concrete products."
+    },
+    {
+      "name": "Reckitt",
+      "board": "successfactors",
+      "company": "reckitt",
+      "domain": "careers.reckitt.com",
+      "blurb": "Global consumer health and hygiene enterprise producing household wellness and nutrition brands worldwide."
+    },
+    {
+      "name": "Kellanova",
+      "board": "successfactors",
+      "company": "kellanova",
+      "domain": "jobs.kellanova.com",
+      "blurb": "Global snacking and cereal company producing leading packaged consumer snacks and plant-based foods."
+    },
+    {
+      "name": "Hershey",
+      "board": "successfactors",
+      "company": "thehersheycompany",
+      "domain": "careers.thehersheycompany.com",
+      "blurb": "Global confectionery leader producing chocolate, sweets, mints, and snack foods, headquartered in Hershey, Pennsylvania."
+    },
+    {
+      "name": "Barry Callebaut",
+      "board": "successfactors",
+      "company": "barry-callebaut",
+      "domain": "jobs.barry-callebaut.com",
+      "blurb": "World's leading manufacturer of high-quality chocolate and cocoa products supplying global food manufacturers and artisans."
+    },
+    {
+      "name": "Molson Coors",
+      "board": "successfactors",
+      "company": "molsoncoors",
+      "domain": "jobs.molsoncoors.com",
+      "blurb": "Global beverage and brewing company producing well-known beer brands, flavored beverages, and non-alcoholic drinks."
+    },
+    {
+      "name": "Under Armour",
+      "board": "successfactors",
+      "company": "underarmour",
+      "domain": "careers.underarmour.com",
+      "blurb": "Global sports performance and athletic apparel company manufacturing athletic footwear, sportswear, and fitness accessories."
+    },
+    {
+      "name": "Ross Stores",
+      "board": "successfactors",
+      "company": "rossstores",
+      "domain": "careers.rossstores.com",
+      "blurb": "Major American off-price retail apparel and home fashion department store chain operating thousands of locations nationwide."
+    },
+    {
+      "name": "Coty",
+      "board": "successfactors",
+      "company": "coty",
+      "domain": "careers.coty.com",
+      "blurb": "Global beauty company manufacturing luxury and consumer fragrances, cosmetics, and skin and body care products."
+    },
+    {
+      "name": "Newell Brands",
+      "board": "successfactors",
+      "company": "newellbrands",
+      "domain": "jobs.newellbrands.com",
+      "blurb": "Global consumer goods company manufacturing stationery, home appliances, outdoor equipment, and commercial products."
+    },
+    {
+      "name": "Coles Group",
+      "board": "successfactors",
+      "company": "colesgroup",
+      "domain": "careers.colesgroup.com.au",
+      "blurb": "Leading Australian retail chain operating supermarkets, liquor stores, and convenience retail networks across Australia."
+    },
+    {
+      "name": "Swiss Re",
+      "board": "successfactors",
+      "company": "swissre",
+      "domain": "careers.swissre.com",
+      "blurb": "Global wholesale provider of reinsurance, insurance, and risk transfer products, headquartered in Zurich, Switzerland."
+    },
+    {
+      "name": "Nordea",
+      "board": "successfactors",
+      "company": "nordea",
+      "domain": "careers.nordea.com",
+      "blurb": "Leading Nordic financial services group providing personal banking, commercial corporate banking, and asset management."
+    },
+    {
+      "name": "Adidas",
+      "board": "successfactors",
+      "company": "adidas-group",
+      "domain": "jobs.adidas-group.com",
+      "blurb": "Global sporting goods leader designing and manufacturing athletic footwear, apparel, and sports accessories."
+    },
+    {
+      "name": "ANZ",
+      "board": "successfactors",
+      "company": "anz",
+      "domain": "careers.anz.com",
+      "blurb": "Major Australian and New Zealand banking group providing commercial banking, institutional financing, and wealth management services."
+    },
+    {
+      "name": "Great-West Lifeco",
+      "board": "successfactors",
+      "company": "canadalife",
+      "domain": "jobs.canadalife.com",
+      "blurb": "International financial services holding company operating life insurance, retirement, and investment management under Canada Life."
+    },
+    {
+      "name": "BT Group",
+      "board": "successfactors",
+      "company": "bt",
+      "domain": "jobs.bt.com",
+      "blurb": "United Kingdom's leading telecommunications and network provider delivering fixed broadband, mobile, and digital IT services."
+    },
+    {
+      "name": "Rogers Communications",
+      "board": "successfactors",
+      "company": "rogers",
+      "domain": "jobs.rogers.com",
+      "blurb": "Canadian telecommunications and media leader providing wireless connectivity, cable television, residential broadband, and sports media."
+    },
+    {
+      "name": "Telus",
+      "board": "successfactors",
+      "company": "telus",
+      "domain": "careers.telus.com",
+      "blurb": "Canadian telecommunications enterprise providing wireless networks, broadband internet, digital healthcare, and agricultural technologies."
+    },
+    {
+      "name": "Telefonica",
+      "board": "successfactors",
+      "company": "telefonica",
+      "domain": "jobs.telefonica.com",
+      "blurb": "Global telecommunications and digital services provider operating broadband, mobile, and corporate connectivity under Movistar and O2."
+    },
+    {
+      "name": "NEC",
+      "board": "successfactors",
+      "company": "nec",
+      "domain": "careers.nec.com",
+      "blurb": "Global information and communications technology leader providing IT systems, biometrics, submarine cables, and network infrastructure."
+    },
+    {
+      "name": "Atos",
+      "board": "successfactors",
+      "company": "atos",
+      "domain": "jobs.atos.net",
+      "blurb": "Global digital transformation leader specializing in cybersecurity, cloud infrastructure, and enterprise IT services."
+    },
+    {
+      "name": "Capgemini",
+      "board": "successfactors",
+      "company": "capgemini",
+      "domain": "careers.capgemini.com",
+      "blurb": "Global consulting, technology services, and digital transformation leader empowering business innovation worldwide."
+    },
+    {
+      "name": "Kuehne+Nagel",
+      "board": "successfactors",
+      "company": "kuehne-nagel",
+      "domain": "careers.kuehne-nagel.com",
+      "blurb": "Global logistics and freight forwarding leader managing sea freight, air freight, contract logistics, and overland transport."
+    },
+    {
+      "name": "DSV",
+      "board": "successfactors",
+      "company": "dsv",
+      "domain": "jobs.dsv.com",
+      "blurb": "Global transport and logistics provider delivering supply chain management, air and sea freight, and road transport."
+    },
+    {
+      "name": "City of Toronto",
+      "board": "successfactors",
+      "company": "toronto",
+      "domain": "jobs.toronto.ca",
+      "blurb": "Municipal administration of Canada's largest city overseeing municipal infrastructure, public transit, emergency services, and community housing."
+    },
+    {
+      "name": "City of Vancouver",
+      "board": "successfactors",
+      "company": "vancouver",
+      "domain": "jobs.vancouver.ca",
+      "blurb": "Municipal local government administering civil infrastructure, civic planning, public safety, and community parks in Vancouver, British Columbia."
+    },
+    {
+      "name": "Province of Nova Scotia",
+      "board": "successfactors",
+      "company": "novascotia",
+      "domain": "jobs.novascotia.ca",
+      "blurb": "Provincial public service administration overseeing healthcare, education, natural resources, transportation, and civic services in Nova Scotia."
+    },
+    {
+      "name": "SBB CFF FFS",
+      "board": "successfactors",
+      "company": "sbb",
+      "domain": "careers.sbb.ch",
+      "blurb": "Switzerland's national rail operator running passenger transit, intercity train connections, and rail freight operations across the Swiss Alps."
+    },
+    {
+      "name": "Intesa Sanpaolo",
+      "board": "successfactors",
+      "company": "intesasanpaolo",
+      "domain": "jobs.intesasanpaolo.com",
+      "blurb": "Italy's leading commercial banking group providing retail banking, wealth management, and corporate financing across Europe."
+    },
+    {
+      "name": "Duke University",
+      "board": "successfactors",
+      "company": "duke",
+      "domain": "careers.duke.edu",
+      "blurb": "Prestigious private research university and academic health system located in Durham, North Carolina."
+    },
+    {
+      "name": "University of Toronto",
+      "board": "successfactors",
+      "company": "utoronto",
+      "domain": "jobs.utoronto.ca",
+      "blurb": "Canada's top public research university, renowned globally for medicine, artificial intelligence, humanities, and engineering research."
+    },
+    {
+      "name": "Purdue University",
+      "board": "successfactors",
+      "company": "purdue",
+      "domain": "careers.purdue.edu",
+      "blurb": "World-renowned public research university in West Lafayette, Indiana, recognized for engineering, agriculture, and aeronautics."
     }
   ],
   "criteria": {

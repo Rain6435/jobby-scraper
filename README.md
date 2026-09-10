@@ -3,8 +3,8 @@
 [![CI](https://github.com/Rain6435/jobby-scraper/actions/workflows/ci.yml/badge.svg)](https://github.com/Rain6435/jobby-scraper/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-A job pool generator, meant to be consumed by other apps. It polls **809
-companies** across 17 job-board integrations, stores every currently-listed
+A job pool generator, meant to be consumed by other apps. It polls **1,046
+companies** across 36 job-board integrations, stores every currently-listed
 posting **unfiltered** in a SQL database, and gets out of the way — no
 keyword/title/location/age curation happens in this pipeline.
 
@@ -26,7 +26,8 @@ keyword/title/location/age curation happens in this pipeline.
 ## How it works
 
 ```
-load config.json (809 companies)
+load config.json (1,046 companies)
+
         │
         ▼
 scrape every company in parallel (ThreadPoolExecutor, --concurrency workers,
@@ -72,17 +73,33 @@ company's whole scrape for the run.
 | `personio` | `company` (subdomain) | List-only; **XML feed**, not JSON; real posting date from `createdAt` |
 | `workable` | `company` (account slug) | List-only; real posting date from `published_on` |
 | `teamtailor` | `company` (subdomain slug) | List-only; real posting date from `date_published` |
+| `pinpoint` | `company` (subdomain) | List-only; real posting date from `created_at`/`updated_at` |
+| `jobvite` | `company_id` (companyEId) | List-only XML feed; real posting date from `date` |
+| `jazzhr` | `company` (subdomain) | List-only XML feed; **date-less** (`posted_days=None`) |
+| `governmentjobs` | `agency` (agency slug) | List-only RSS feed; real posting date from `pubDate` |
 | `usajobs` | none (needs `USAJOBS_API_KEY`/`USAJOBS_USER_AGENT`) | Nationwide, not per-employer — `Job.company` comes from each posting's own hiring agency |
+| `reliefweb` | none (open API) | Global humanitarian, not per-employer — `Job.company` comes from each posting's own source organization |
+| `oraclecloud` | `tenant` (subdomain or full host), `site_number` (optional) | List-only; keyless Candidate Experience REST API, real posting date from `PostedDate` |
+| `successfactors` | `company` (company slug), `domain` (optional) | List-only; Career Site Builder RSS feed, real posting date from `pubDate` |
+| `adp` | `cid` (Client ID), `cc_id` (optional) | List-only; static requisition JSON API, real posting date from `postDate` |
+| `paylocity` | `guid` (integration GUID) | List-only; public Job Feed V2 JSON API, real posting date from `postedDate` |
+| `icims` | `tenant` (subdomain), `domain` (optional) | List-only; streaming candidate search portal HTML, real posting date from `Posted Date` |
+| `atlassian` | none (or `category`, `location`, `keyword`) | Single unauthenticated JSON listings endpoint; full descriptions, real posting date from `updatedDate` |
+| `shopify` | none (or `location`, `keyword`) | React Router list + `.data` detail routes; real posting date, full descriptions |
+| `phenom` | `url` | Server-rendered `phApp.ddo` JSON; real posting date from `postedDate`, used by OpenText, Bell Canada, Air Canada |
 | `climatebase`, `cma_heritage`, `idc_career_centre`, `cip_planning`, `wp_job_manager` | site-specific | Small one-off integrations for individual job sites |
 
-Current distribution: 277 Greenhouse, 170 Workday, 133 Ashby, 75 BambooHR,
-58 SmartRecruiters, 44 Lever, 18 Rippling, 8 Teamtailor, 6 Breezy, 6
-Workable, 5 Recruitee, 4 Personio, plus a handful of one-off site
-integrations.
+Current distribution: 292 Greenhouse, 184 Workday, 140 Ashby, 92 BambooHR,
+90 SAP SuccessFactors, 73 SmartRecruiters, 50 Lever, 20 GovernmentJobs, 18 Rippling,
+10 Teamtailor, 10 Pinpoint, 9 Phenom, 8 Breezy, 8 Workable, 8 Recruitee, 7 JazzHR,
+4 Oracle Cloud, 4 Personio, custom tech platforms (Google, Amazon, Apple, Microsoft,
+Netflix, IBM, TikTok, Atlassian, EA, Valve, Shopify), plus USAJobs, ReliefWeb,
+and one-off site integrations.
 
 Descriptions are **never truncated** — downstream consumers parse them for
 skills/requirements, and content routinely runs past what an older 1500-char
 cap used to allow.
+
 
 ## Getting started
 

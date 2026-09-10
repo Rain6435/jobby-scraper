@@ -51,8 +51,19 @@ Every entry in `config.json` must strictly conform to [scraper/config_types.py](
 | **Breezy** | `company` | `{company}.breezy.hr/json` | `{"name": "DuckDuckGo", "board": "breezy", "company": "duckduckgo"}` |
 | **Personio** | `company` | `{company}.jobs.personio.de/xml` | `{"name": "Spryker", "board": "personio", "company": "spryker"}` |
 | **Teamtailor** | `company` | `api.teamtailor.com/v1/jobs` | `{"name": "Kry", "board": "teamtailor", "company": "kry"}` |
+| **Pinpoint** | `company` | `{company}.pinpointhq.com/postings.json` | `{"name": "Taxfix", "board": "pinpoint", "company": "taxfix"}` |
+| **Jobvite** | `company_id` | `app.jobvite.com/CompanyJobs/Xml.aspx?c={company_id}` | `{"name": "Zillow", "board": "jobvite", "company_id": "q9x9Vfws"}` |
+| **JazzHR** | `company` | `app.jazz.co/feeds/export/jobs/{company}` | `{"name": "DesignStudio", "board": "jazzhr", "company": "designstudio"}` |
+| **GovernmentJobs** | `agency` | `agency.governmentjobs.com/{agency}/jobfeed.cfm` | `{"name": "City of Seattle", "board": "governmentjobs", "agency": "seattle"}` |
+| **ReliefWeb** | (none) | `api.reliefweb.int/v2/jobs` | `{"name": "ReliefWeb", "board": "reliefweb"}` |
+| **Oracle Cloud HCM** | `tenant`, `site_number` | `{tenant}.oraclecloud.com/hcmRestApi/.../recruitingCEJobRequisitions` | `{"name": "Enterprise Corp", "board": "oraclecloud", "tenant": "enterprise.fa.ocs", "site_number": "CX"}` |
+| **SAP SuccessFactors** | `company`, `domain` | `{domain}/services/rss/job/?locale=en_US` | `{"name": "Global SAP Co", "board": "successfactors", "company": "globalsap"}` |
+| **ADP Workforce Now** | `cid`, `cc_id` | `workforcenow.adp.com/mascsr/default/careercenter/public/static/v1/reqs` | `{"name": "Midland Mfg", "board": "adp", "cid": "...", "cc_id": "19000101_000001"}` |
+| **Paylocity** | `guid` | `recruiting.paylocity.com/recruiting/v2/api/feed/jobs/{guid}` | `{"name": "Apex Healthcare", "board": "paylocity", "guid": "..."}` |
+| **iCIMS** | `tenant`, `domain` | `{tenant}.icims.com/jobs/search?pr={page}&in_iframe=1` | `{"name": "Pacific Transit", "board": "icims", "tenant": "careers-pacifictransit"}` |
 
 ---
+
 
 ## 3. Autonomous Expansion Runbook
 
