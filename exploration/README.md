@@ -125,3 +125,115 @@ python exploration/explore_bamboohr.py euna
 ```json
 { "name": "Euna", "board": "bamboohr", "company": "euna" }
 ```
+
+### IBM — Internal Elasticsearch API (`genesis`)
+See full documentation in [exploration/ibm_api.md](ibm_api.md).
+```bash
+python exploration/explore_ibm.py --country "United States" --remote
+```
+```json
+{ "name": "IBM", "board": "ibm" }
+```
+
+### Amazon — Custom Jobs Search API
+See full documentation in [exploration/amazon_api.md](amazon_api.md).
+```bash
+python exploration/explore_amazon.py --category software-development --country USA
+```
+```json
+{ "name": "Amazon", "board": "amazon" }
+```
+
+### Microsoft — Careers PCSX API
+See full documentation in [exploration/microsoft_api.md](microsoft_api.md).
+```bash
+python exploration/explore_microsoft.py --remote
+```
+```json
+{ "name": "Microsoft", "board": "microsoft" }
+```
+
+### Apple — React Router Static Hydration
+See full documentation in [exploration/apple_api.md](apple_api.md).
+```bash
+python exploration/explore_apple.py --search "machine learning"
+```
+```json
+{ "name": "Apple", "board": "apple" }
+```
+
+### Valve — Static HTML Careers Page
+See full documentation in [exploration/valve_api.md](valve_api.md).
+```bash
+python exploration/explore_valve.py
+```
+```json
+{ "name": "Valve", "board": "valve" }
+```
+
+### TikTok — Public Supplier Careers API
+See full documentation in [exploration/tiktok_api.md](tiktok_api.md).
+```bash
+python exploration/explore_tiktok.py --keyword "machine learning"
+```
+```json
+{ "name": "TikTok", "board": "tiktok" }
+```
+
+### Netflix — Eightfold Careers Portal
+See full documentation in [exploration/netflix_api.md](netflix_api.md).
+```bash
+python exploration/explore_netflix.py --query "engineer"
+```
+```json
+{ "name": "Netflix", "board": "netflix" }
+```
+
+### Google — BoQ AF_initDataCallback (Google, DeepMind, YouTube)
+See full documentation in [exploration/google_api.md](google_api.md).
+```bash
+python exploration/explore_google.py --company "DeepMind"
+```
+```json
+{ "name": "Google", "board": "google" }
+{ "name": "Google DeepMind", "board": "google", "company_name": "DeepMind" }
+```
+
+### Electronic Arts (EA) — Careers Search Portal
+See full documentation in [exploration/ea_api.md](ea_api.md).
+```bash
+python exploration/explore_ea.py --keyword "engineer"
+```
+```json
+{ "name": "Electronic Arts", "board": "ea" }
+```
+
+### Atlassian — Careers Listings JSON Endpoint
+See full documentation in [exploration/atlassian_api.md](atlassian_api.md).
+```bash
+python exploration/explore_atlassian.py --category Engineering
+```
+```json
+{ "name": "Atlassian", "board": "atlassian" }
+```
+
+### Shopify — In-house React Router Careers Platform
+See full documentation in [exploration/shopify_api.md](shopify_api.md).
+```bash
+python exploration/explore_shopify.py --details
+```
+```json
+{ "name": "Shopify", "board": "shopify" }
+```
+
+### Phenom People — Enterprise TXP SSR Global Platform (OpenText, Bell Canada, Air Canada)
+See full documentation in [exploration/phenom_api.md](phenom_api.md).
+```bash
+python exploration/explore_phenom.py --url https://jobs.bell.ca/ca/en
+```
+```json
+{ "name": "Bell Canada", "board": "phenom", "url": "https://jobs.bell.ca/ca/en" },
+{ "name": "OpenText", "board": "phenom", "url": "https://careers.opentext.com/us/en" },
+{ "name": "Air Canada", "board": "phenom", "url": "https://careers.aircanada.com/ca/en" }
+```
+

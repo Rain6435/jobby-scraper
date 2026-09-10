@@ -337,6 +337,166 @@ def probe_teamtailor(slug: str, timeout: float = 3.0) -> dict[str, Any] | None:
     return None
 
 
+def probe_pinpoint(slug: str, timeout: float = 3.0) -> dict[str, Any] | None:
+    try:
+        r = requests.get(
+            f"https://{slug}.pinpointhq.com/postings.json", headers=HEADERS, timeout=timeout
+        )
+        if r.status_code == 200:
+            data = r.json()
+            postings = data if isinstance(data, list) else data.get("data", [])
+            if postings:
+                sample = postings[0].get("title", "")
+                loc = postings[0].get("location", "")
+                if isinstance(loc, dict):
+                    loc = loc.get("name") or loc.get("city") or ""
+                return {
+                    "board": "pinpoint",
+                    "company": slug,
+                    "count": len(postings),
+                    "sample": sample,
+                    "location": str(loc),
+                }
+    except Exception:
+        pass
+    return None
+
+
+def probe_jobvite(slug: str, timeout: float = 3.0) -> dict[str, Any] | None:
+    try:
+        r = requests.get(
+            f"https://app.jobvite.com/CompanyJobs/Xml.aspx?c={slug}",
+            headers=HEADERS,
+            timeout=timeout,
+        )
+        if r.status_code == 200 and b"<job>" in r.content:
+            import xml.etree.ElementTree as ET
+
+            root = ET.fromstring(r.content)
+            jobs = root.findall(".//job")
+            if jobs:
+                sample = jobs[0].findtext("title", "")
+                loc = jobs[0].findtext("location", "")
+                return {
+                    "board": "jobvite",
+                    "company_id": slug,
+                    "count": len(jobs),
+                    "sample": sample,
+                    "location": loc,
+                }
+    except Exception:
+        pass
+    return None
+
+
+def probe_jazzhr(slug: str, timeout: float = 3.0) -> dict[str, Any] | None:
+    try:
+        r = requests.get(
+            f"https://app.jazz.co/feeds/export/jobs/{slug}", headers=HEADERS, timeout=timeout
+        )
+        if r.status_code == 200 and b"<job>" in r.content:
+            import xml.etree.ElementTree as ET
+
+            root = ET.fromstring(r.content)
+            jobs = root.findall(".//job")
+            if jobs:
+                sample = jobs[0].findtext("title", "")
+                city = jobs[0].findtext("city", "")
+                state = jobs[0].findtext("state", "")
+                loc = f"{city}, {state}".strip(", ")
+                return {
+                    "board": "jazzhr",
+                    "company": slug,
+                    "count": len(jobs),
+                    "sample": sample,
+                    "location": loc,
+                }
+    except Exception:
+        pass
+    return None
+
+
+def probe_governmentjobs(slug: str, timeout: float = 3.0) -> dict[str, Any] | None:
+    try:
+        r = requests.get(
+            f"https://agency.governmentjobs.com/jobfeed_v2.cfm?agency={slug}",
+            headers=HEADERS,
+            timeout=timeout,
+        )
+        if r.status_code == 200 and (b"<item" in r.content or b"<job" in r.content):
+            import re
+
+            items = re.findall(r"<item\b.*?>(.*?)</item>", r.text, re.DOTALL)
+            if items:
+                title_m = re.search(r"<title\b.*?>(.*?)</title>", items[0], re.DOTALL)
+                sample = title_m.group(1).strip() if title_m else ""
+                return {
+                    "board": "governmentjobs",
+                    "agency": slug,
+                    "count": len(items),
+                    "sample": sample,
+                    "location": "",
+                }
+    except Exception:
+        pass
+    return None
+
+
+def probe_successfactors(slug: str, timeout: float = 3.0) -> dict[str, Any] | None:
+    for domain in (f"jobs.{slug}.com", f"{slug}.jobs", f"careers.{slug}.com"):
+        try:
+            r = requests.get(
+                f"https://{domain}/services/rss/job/?locale=en_US",
+                headers=HEADERS,
+                timeout=timeout,
+            )
+            if r.status_code == 200 and (b"<rss" in r.content or b"<item" in r.content):
+                import re
+
+                items = re.findall(r"<item\b.*?>(.*?)</item>", r.text, re.DOTALL)
+                if items:
+                    title_m = re.search(r"<title\b.*?>(.*?)</title>", items[0], re.DOTALL)
+                    sample = title_m.group(1).strip() if title_m else ""
+                    return {
+                        "board": "successfactors",
+                        "company": slug,
+                        "domain": domain,
+                        "count": len(items),
+                        "sample": sample,
+                        "location": "",
+                    }
+        except Exception:
+            pass
+    return None
+
+
+def probe_oraclecloud(slug: str, timeout: float = 3.0) -> dict[str, Any] | None:
+    for site in ("CX", "CX_1", "CX_1001"):
+        try:
+            r = requests.get(
+                f"https://{slug}.oraclecloud.com/hcmRestApi/resources/latest/recruitingCEJobRequisitions?finder=findReqs;siteNumber={site}&limit=1&onlyData=true",
+                headers=HEADERS,
+                timeout=timeout,
+            )
+            if r.status_code == 200:
+                data = r.json()
+                items = data.get("items", [])
+                if items:
+                    sample = items[0].get("Title", "")
+                    loc = items[0].get("PrimaryLocation", "")
+                    return {
+                        "board": "oraclecloud",
+                        "tenant": slug,
+                        "site_number": site,
+                        "count": data.get("totalResults", len(items)),
+                        "sample": sample,
+                        "location": loc,
+                    }
+        except Exception:
+            pass
+    return None
+
+
 PROBERS = {
     "greenhouse": probe_greenhouse,
     "ashby": probe_ashby,
@@ -349,6 +509,12 @@ PROBERS = {
     "breezy": probe_breezy,
     "personio": probe_personio,
     "teamtailor": probe_teamtailor,
+    "pinpoint": probe_pinpoint,
+    "jobvite": probe_jobvite,
+    "jazzhr": probe_jazzhr,
+    "governmentjobs": probe_governmentjobs,
+    "successfactors": probe_successfactors,
+    "oraclecloud": probe_oraclecloud,
 }
 
 
@@ -372,6 +538,16 @@ def load_existing_config() -> tuple[list[dict[str, Any]], set[str]]:
             signatures.add(f"ashby:{c['slug'].lower()}")
         if "company" in c:
             signatures.add(f"{board}:{c['company'].lower()}")
+        if "company_id" in c:
+            signatures.add(f"jobvite:{c['company_id'].lower()}")
+        if "agency" in c:
+            signatures.add(f"governmentjobs:{c['agency'].lower()}")
+        if "tenant" in c:
+            signatures.add(f"{board}:{c['tenant'].lower()}")
+        if "cid" in c:
+            signatures.add(f"adp:{c['cid'].lower()}")
+        if "guid" in c:
+            signatures.add(f"paylocity:{c['guid'].lower()}")
         if "board_id" in c:
             signatures.add(f"rippling:{c['board_id'].lower()}")
         if "url" in c:
@@ -460,6 +636,54 @@ def verify_live_scraper(cfg: dict[str, Any]) -> tuple[bool, int, str]:
             from scraper.boards.workday import WorkdayScraper
 
             scraper = WorkdayScraper(clean_cfg)
+        elif board == "pinpoint":
+            from scraper.boards.pinpoint import PinpointScraper
+
+            scraper = PinpointScraper(clean_cfg)
+        elif board == "jobvite":
+            from scraper.boards.jobvite import JobviteScraper
+
+            scraper = JobviteScraper(clean_cfg)
+        elif board == "jazzhr":
+            from scraper.boards.jazzhr import JazzHrScraper
+
+            scraper = JazzHrScraper(clean_cfg)
+        elif board == "governmentjobs":
+            from scraper.boards.governmentjobs import GovernmentJobsScraper
+
+            scraper = GovernmentJobsScraper(clean_cfg)
+        elif board == "reliefweb":
+            from scraper.boards.reliefweb import ReliefwebScraper
+
+            scraper = ReliefwebScraper(clean_cfg)
+        elif board == "oraclecloud":
+            from scraper.boards.oraclecloud import OracleCloudScraper
+
+            scraper = OracleCloudScraper(clean_cfg)
+        elif board == "successfactors":
+            from scraper.boards.successfactors import SuccessFactorsScraper
+
+            scraper = SuccessFactorsScraper(clean_cfg)
+        elif board == "adp":
+            from scraper.boards.adp import AdpScraper
+
+            scraper = AdpScraper(clean_cfg)
+        elif board == "paylocity":
+            from scraper.boards.paylocity import PaylocityScraper
+
+            scraper = PaylocityScraper(clean_cfg)
+        elif board == "icims":
+            from scraper.boards.icims import IcimsScraper
+
+            scraper = IcimsScraper(clean_cfg)
+        elif board == "personio":
+            from scraper.boards.personio import PersonioScraper
+
+            scraper = PersonioScraper(clean_cfg)
+        elif board == "teamtailor":
+            from scraper.boards.teamtailor import TeamtailorScraper
+
+            scraper = TeamtailorScraper(clean_cfg)
         else:
             return False, 0, f"Unsupported board {board}"
 

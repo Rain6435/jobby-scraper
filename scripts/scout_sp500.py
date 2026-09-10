@@ -351,6 +351,111 @@ def probe_breezy(slug: str, session: requests.Session) -> dict[str, Any] | None:
     return None
 
 
+def probe_pinpoint(slug: str, session: requests.Session) -> dict[str, Any] | None:
+    try:
+        r = session.get(f"https://{slug}.pinpointhq.com/postings.json", timeout=2.5)
+        if r.status_code == 200:
+            data = r.json()
+            postings = data if isinstance(data, list) else data.get("data", [])
+            if postings:
+                return {
+                    "board": "pinpoint",
+                    "company": slug,
+                    "count": len(postings),
+                    "sample": postings[0].get("title", ""),
+                }
+    except Exception:
+        pass
+    return None
+
+
+def probe_jobvite(slug: str, session: requests.Session) -> dict[str, Any] | None:
+    try:
+        r = session.get(f"https://app.jobvite.com/CompanyJobs/Xml.aspx?c={slug}", timeout=2.5)
+        if r.status_code == 200 and b"<job>" in r.content:
+            import xml.etree.ElementTree as ET
+
+            root = ET.fromstring(r.content)
+            jobs = root.findall(".//job")
+            if jobs:
+                return {
+                    "board": "jobvite",
+                    "company_id": slug,
+                    "count": len(jobs),
+                    "sample": jobs[0].findtext("title", ""),
+                }
+    except Exception:
+        pass
+    return None
+
+
+def probe_jazzhr(slug: str, session: requests.Session) -> dict[str, Any] | None:
+    try:
+        r = session.get(f"https://app.jazz.co/feeds/export/jobs/{slug}", timeout=2.5)
+        if r.status_code == 200 and b"<job>" in r.content:
+            import xml.etree.ElementTree as ET
+
+            root = ET.fromstring(r.content)
+            jobs = root.findall(".//job")
+            if jobs:
+                return {
+                    "board": "jazzhr",
+                    "company": slug,
+                    "count": len(jobs),
+                    "sample": jobs[0].findtext("title", ""),
+                }
+    except Exception:
+        pass
+    return None
+
+
+def probe_governmentjobs(slug: str, session: requests.Session) -> dict[str, Any] | None:
+    try:
+        r = session.get(
+            f"https://agency.governmentjobs.com/jobfeed_v2.cfm?agency={slug}", timeout=2.5
+        )
+        if r.status_code == 200 and (b"<item" in r.content or b"<job" in r.content):
+            import re
+
+            items = re.findall(r"<item\b.*?>(.*?)</item>", r.text, re.DOTALL)
+            if items:
+                title_m = re.search(r"<title\b.*?>(.*?)</title>", items[0], re.DOTALL)
+                return {
+                    "board": "governmentjobs",
+                    "agency": slug,
+                    "count": len(items),
+                    "sample": title_m.group(1).strip() if title_m else "",
+                }
+    except Exception:
+        pass
+    return None
+
+
+def probe_successfactors(slug: str, session: requests.Session) -> dict[str, Any] | None:
+    for domain in (f"jobs.{slug}.com", f"{slug}.jobs", f"careers.{slug}.com"):
+        try:
+            r = session.get(
+                f"https://{domain}/services/rss/job/?locale=en_US",
+                timeout=2.5,
+            )
+            if r.status_code == 200 and (b"<rss" in r.content or b"<item" in r.content):
+                import re
+
+                items = re.findall(r"<item\b.*?>(.*?)</item>", r.text, re.DOTALL)
+                if items:
+                    title_m = re.search(r"<title\b.*?>(.*?)</title>", items[0], re.DOTALL)
+                    return {
+                        "board": "successfactors",
+                        "company": slug,
+                        "domain": domain,
+                        "count": len(items),
+                        "sample": title_m.group(1).strip() if title_m else "",
+                    }
+        except Exception:
+            pass
+    return None
+
+
 PROBERS = {
     "smartrecruiters": probe_smartrecruiters,
     "greenhouse": probe_greenhouse,
@@ -363,6 +468,11 @@ PROBERS = {
     "recruitee": probe_recruitee,
     "teamtailor": probe_teamtailor,
     "breezy": probe_breezy,
+    "pinpoint": probe_pinpoint,
+    "jobvite": probe_jobvite,
+    "jazzhr": probe_jazzhr,
+    "governmentjobs": probe_governmentjobs,
+    "successfactors": probe_successfactors,
 }
 
 
@@ -372,18 +482,24 @@ def verify_live_scraper(cfg: dict[str, Any]) -> tuple[bool, int, str]:
         "name": cfg.get("name", ""),
         "board": board,
     }
-    if "url" in cfg:
-        clean_cfg["url"] = cfg["url"]
-    if "careers_base" in cfg:
-        clean_cfg["careers_base"] = cfg["careers_base"]
-    if "token" in cfg:
-        clean_cfg["token"] = cfg["token"]
-    if "slug" in cfg:
-        clean_cfg["slug"] = cfg["slug"]
-    if "company" in cfg:
-        clean_cfg["company"] = cfg["company"]
-    if "board_id" in cfg:
-        clean_cfg["board_id"] = cfg["board_id"]
+    for k in (
+        "url",
+        "careers_base",
+        "token",
+        "slug",
+        "company",
+        "board_id",
+        "company_id",
+        "agency",
+        "tenant",
+        "site_number",
+        "domain",
+        "cid",
+        "cc_id",
+        "guid",
+    ):
+        if k in cfg:
+            clean_cfg[k] = cfg[k]
 
     try:
         if board == "greenhouse":
@@ -434,6 +550,46 @@ def verify_live_scraper(cfg: dict[str, Any]) -> tuple[bool, int, str]:
             from scraper.boards.breezy import BreezyScraper
 
             s = BreezyScraper(clean_cfg)
+        elif board == "pinpoint":
+            from scraper.boards.pinpoint import PinpointScraper
+
+            s = PinpointScraper(clean_cfg)
+        elif board == "jobvite":
+            from scraper.boards.jobvite import JobviteScraper
+
+            s = JobviteScraper(clean_cfg)
+        elif board == "jazzhr":
+            from scraper.boards.jazzhr import JazzHrScraper
+
+            s = JazzHrScraper(clean_cfg)
+        elif board == "governmentjobs":
+            from scraper.boards.governmentjobs import GovernmentJobsScraper
+
+            s = GovernmentJobsScraper(clean_cfg)
+        elif board == "reliefweb":
+            from scraper.boards.reliefweb import ReliefwebScraper
+
+            s = ReliefwebScraper(clean_cfg)
+        elif board == "oraclecloud":
+            from scraper.boards.oraclecloud import OracleCloudScraper
+
+            s = OracleCloudScraper(clean_cfg)
+        elif board == "successfactors":
+            from scraper.boards.successfactors import SuccessFactorsScraper
+
+            s = SuccessFactorsScraper(clean_cfg)
+        elif board == "adp":
+            from scraper.boards.adp import AdpScraper
+
+            s = AdpScraper(clean_cfg)
+        elif board == "paylocity":
+            from scraper.boards.paylocity import PaylocityScraper
+
+            s = PaylocityScraper(clean_cfg)
+        elif board == "icims":
+            from scraper.boards.icims import IcimsScraper
+
+            s = IcimsScraper(clean_cfg)
         else:
             return False, 0, f"Unsupported board {board}"
 
