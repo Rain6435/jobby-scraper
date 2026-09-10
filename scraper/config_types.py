@@ -89,5 +89,124 @@ class IdcCareerCentreConfig(CompanyConfig):
     pass
 
 
+class PinpointConfig(CompanyConfig):
+    company: str
+
+
+class JobviteConfig(CompanyConfig):
+    company_id: str
+
+
+class JazzHrConfig(CompanyConfig):
+    company: str
+
+
+class GovernmentJobsConfig(CompanyConfig):
+    agency: str
+
+
+class ReliefwebConfig(CompanyConfig):
+    pass
+
+
+class OracleCloudConfig(CompanyConfig):
+    tenant: str
+    site_number: NotRequired[str]
+
+
+class SuccessFactorsConfig(CompanyConfig):
+    company: str
+    domain: NotRequired[str]
+
+
+class AdpConfig(CompanyConfig):
+    cid: str
+    cc_id: NotRequired[str]
+
+
+class PaylocityConfig(CompanyConfig):
+    guid: str
+
+
+class IcimsConfig(CompanyConfig):
+    tenant: str
+    domain: NotRequired[str]
+
+
+class IBMConfig(CompanyConfig):
+    pass
+
+
+class AmazonConfig(CompanyConfig):
+    category: NotRequired[str]
+    country: NotRequired[str]
+    business_category: NotRequired[str]
+    max_pages: NotRequired[int]
+
+
+class MicrosoftConfig(CompanyConfig):
+    location: NotRequired[str]
+    query: NotRequired[str]
+    max_pages: NotRequired[int]
+    fetch_details: NotRequired[bool]
+
+
+class AppleConfig(CompanyConfig):
+    search: NotRequired[str]
+    location: NotRequired[str]
+    team: NotRequired[str]
+    max_pages: NotRequired[int]
+
+
+class ValveConfig(CompanyConfig):
+    fetch_details: NotRequired[bool]
+
+
+class TikTokConfig(CompanyConfig):
+    keyword: NotRequired[str]
+    max_pages: NotRequired[int]
+
+
+class NetflixConfig(CompanyConfig):
+    query: NotRequired[str]
+    location: NotRequired[str]
+    max_pages: NotRequired[int]
+    fetch_details: NotRequired[bool]
+
+
+class GoogleConfig(CompanyConfig):
+    query: NotRequired[str]
+    location: NotRequired[str]
+    company_name: NotRequired[str]
+    max_pages: NotRequired[int]
+
+
+class EAConfig(CompanyConfig):
+    search: NotRequired[str]
+    max_pages: NotRequired[int]
+    fetch_details: NotRequired[bool]
+
+
+class AtlassianConfig(CompanyConfig):
+    category: NotRequired[str]
+    location: NotRequired[str]
+    keyword: NotRequired[str]
+
+
+class ShopifyConfig(CompanyConfig):
+    location: NotRequired[str]
+    keyword: NotRequired[str]
+    fetch_details: NotRequired[bool]
+
+
+class PhenomConfig(CompanyConfig):
+    url: str
+    location: NotRequired[str]
+    category: NotRequired[str]
+    keyword: NotRequired[str]
+    max_pages: NotRequired[int]
+    fetch_details: NotRequired[bool]
+
+
 class ConfigFile(TypedDict):
     companies: list[CompanyConfig]
