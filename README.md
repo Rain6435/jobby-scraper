@@ -3,7 +3,7 @@
 [![CI](https://github.com/Rain6435/jobby-scraper/actions/workflows/ci.yml/badge.svg)](https://github.com/Rain6435/jobby-scraper/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-A job pool generator, meant to be consumed by other apps. It polls **1,082
+A job pool generator, meant to be consumed by other apps. It polls **1,102
 companies** across 37 job-board integrations, stores every currently-listed
 posting **unfiltered** in a SQL database, and gets out of the way — no
 keyword/title/location/age curation happens in this pipeline.
@@ -26,7 +26,7 @@ keyword/title/location/age curation happens in this pipeline.
 ## How it works
 
 ```
-load config.json (1,082 companies)
+load config.json (1,102 companies)
 
         │
         ▼

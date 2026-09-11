@@ -1699,7 +1699,8 @@
     {
       "name": "Harvey",
       "board": "ashby",
-      "slug": "harvey"
+      "slug": "harvey",
+      "blurb": "Leading legal AI intelligence platform developed for top global law firms and corporate legal teams."
     },
     {
       "name": "Fireworks AI",
@@ -1834,7 +1835,8 @@
     {
       "name": "Axiom Law",
       "board": "greenhouse",
-      "token": "axiom"
+      "token": "axiom",
+      "blurb": "Global pioneer in flexible, high-caliber on-demand legal talent and law firm alternative solutions."
     },
     {
       "name": "Kodiak Robotics",
@@ -3212,11 +3214,6 @@
       "name": "Waabi",
       "board": "lever",
       "company": "waabi"
-    },
-    {
-      "name": "Deep Genomics",
-      "board": "lever",
-      "company": "deepgenomics"
     },
     {
       "name": "Geotab",
@@ -5924,6 +5921,147 @@
       "url": "https://cliftonlarsonallen.wd115.myworkdayjobs.com/wday/cxs/cliftonlarsonallen/CLA/jobs",
       "careers_base": "https://cliftonlarsonallen.wd115.myworkdayjobs.com/en-US/CLA",
       "blurb": "Top ten national professional services firm providing wealth advisory, digital, audit, tax, and consulting services."
+    },
+    {
+      "name": "DLA Piper",
+      "board": "workday",
+      "url": "https://dlapiper.wd1.myworkdayjobs.com/wday/cxs/dlapiper/dlapiper/jobs",
+      "careers_base": "https://dlapiper.wd1.myworkdayjobs.com/en-US/dlapiper",
+      "blurb": "Global law firm with lawyers located in more than 40 countries delivering cross-border legal services."
+    },
+    {
+      "name": "White & Case",
+      "board": "workday",
+      "url": "https://whitecase.wd1.myworkdayjobs.com/wday/cxs/whitecase/External/jobs",
+      "careers_base": "https://whitecase.wd1.myworkdayjobs.com/en-US/External",
+      "blurb": "Global law firm advising companies, governments, and financial institutions on complex corporate matters."
+    },
+    {
+      "name": "Sidley Austin",
+      "board": "workday",
+      "url": "https://sidley.wd501.myworkdayjobs.com/wday/cxs/sidley/US/jobs",
+      "careers_base": "https://sidley.wd501.myworkdayjobs.com/en-US/US",
+      "blurb": "Premier international law firm with 2,300+ lawyers across 21 global offices."
+    },
+    {
+      "name": "Clyde & Co",
+      "board": "workday",
+      "url": "https://clydeco.wd103.myworkdayjobs.com/wday/cxs/clydeco/clydecocareers/jobs",
+      "careers_base": "https://clydeco.wd103.myworkdayjobs.com/en-US/clydecocareers",
+      "blurb": "Leading global law firm specializing in insurance, transport, energy, infrastructure, and trade."
+    },
+    {
+      "name": "Cooley",
+      "board": "workday",
+      "url": "https://cooley.wd1.myworkdayjobs.com/wday/cxs/cooley/Cooley_US_LLP/jobs",
+      "careers_base": "https://cooley.wd1.myworkdayjobs.com/en-US/Cooley_US_LLP",
+      "blurb": "Top-tier law firm renowned for advising high-growth technology, life sciences, and venture capital clients."
+    },
+    {
+      "name": "Jackson Lewis",
+      "board": "workday",
+      "url": "https://jacksonlewis.wd1.myworkdayjobs.com/wday/cxs/jacksonlewis/JacksonLewisLawyerCareers/jobs",
+      "careers_base": "https://jacksonlewis.wd1.myworkdayjobs.com/en-US/JacksonLewisLawyerCareers",
+      "blurb": "National law firm focused on labor and employment law with 950+ attorneys across 60+ offices."
+    },
+    {
+      "name": "Holland & Knight",
+      "board": "workday",
+      "url": "https://hklaw.wd1.myworkdayjobs.com/wday/cxs/hklaw/Holland_Knight/jobs",
+      "careers_base": "https://hklaw.wd1.myworkdayjobs.com/en-US/Holland_Knight",
+      "blurb": "Global law firm with 2,200+ lawyers across 34 offices delivering litigation, corporate, and real estate counsel."
+    },
+    {
+      "name": "Simpson Thacher & Bartlett",
+      "board": "workday",
+      "url": "https://stblaw.wd1.myworkdayjobs.com/wday/cxs/stblaw/careers/jobs",
+      "careers_base": "https://stblaw.wd1.myworkdayjobs.com/en-US/careers",
+      "blurb": "Elite international law firm recognized for premier corporate, M&A, private equity, and litigation practices."
+    },
+    {
+      "name": "Perkins Coie",
+      "board": "workday",
+      "url": "https://perkinscoie.wd115.myworkdayjobs.com/wday/cxs/perkinscoie/perkinscoieexternal/jobs",
+      "careers_base": "https://perkinscoie.wd115.myworkdayjobs.com/en-US/perkinscoieexternal",
+      "blurb": "International law firm with 1,200+ lawyers advising leading tech companies from startups to Fortune 50 giants."
+    },
+    {
+      "name": "King & Spalding",
+      "board": "workday",
+      "url": "https://kslaw.wd1.myworkdayjobs.com/wday/cxs/kslaw/careers/jobs",
+      "careers_base": "https://kslaw.wd1.myworkdayjobs.com/en-US/careers",
+      "blurb": "International law firm representing leading global corporations in litigation, regulatory, and corporate matters."
+    },
+    {
+      "name": "Morgan Lewis",
+      "board": "workday",
+      "url": "https://morganlewis.wd5.myworkdayjobs.com/wday/cxs/morganlewis/morganlewis/jobs",
+      "careers_base": "https://morganlewis.wd5.myworkdayjobs.com/en-US/morganlewis",
+      "blurb": "Global law firm with 2,200+ legal professionals across 30+ offices providing comprehensive legal counsel."
+    },
+    {
+      "name": "Paul Hastings",
+      "board": "workday",
+      "url": "https://paulhastings.wd1.myworkdayjobs.com/wday/cxs/paulhastings/PH-Staff/jobs",
+      "careers_base": "https://paulhastings.wd1.myworkdayjobs.com/en-US/PH-Staff",
+      "blurb": "Leading global law firm providing strategic advice to financial institutions and Fortune 500 companies."
+    },
+    {
+      "name": "Norton Rose Fulbright Canada",
+      "board": "workday",
+      "url": "https://nrfcanada.wd10.myworkdayjobs.com/wday/cxs/nrfcanada/NRFC/jobs",
+      "careers_base": "https://nrfcanada.wd10.myworkdayjobs.com/en-US/NRFC",
+      "blurb": "Canadian member firm of Norton Rose Fulbright providing business law services across industries."
+    },
+    {
+      "name": "Alston & Bird",
+      "board": "workday",
+      "url": "https://alston.wd1.myworkdayjobs.com/wday/cxs/alston/ExternalCareer/jobs",
+      "careers_base": "https://alston.wd1.myworkdayjobs.com/en-US/ExternalCareer",
+      "blurb": "National law firm with key practices in litigation, IP, tax, wealth planning, and finance."
+    },
+    {
+      "name": "Borden Ladner Gervais (BLG)",
+      "board": "workday",
+      "url": "https://blgllp.wd10.myworkdayjobs.com/wday/cxs/blgllp/BLG-External/jobs",
+      "careers_base": "https://blgllp.wd10.myworkdayjobs.com/en-US/BLG-External",
+      "blurb": "Canada's largest, truly full-service law firm with more than 800 lawyers, IP agents, and professionals."
+    },
+    {
+      "name": "Keller Postman",
+      "board": "greenhouse",
+      "token": "kellerpostman",
+      "blurb": "Nationally recognized litigation firm pursuing complex class actions and mass arbitrations."
+    },
+    {
+      "name": "Foley Hoag LLP",
+      "board": "greenhouse",
+      "token": "foleyhoag",
+      "blurb": "Prominent law firm serving clients in life sciences, clean energy, technology, and international arbitration."
+    },
+    {
+      "name": "Scale LLP",
+      "board": "greenhouse",
+      "token": "scalellp",
+      "blurb": "Distributed corporate and tech law firm built by Silicon Valley founders and general counsels."
+    },
+    {
+      "name": "Everlaw",
+      "board": "greenhouse",
+      "token": "everlaw",
+      "blurb": "Cloud-based e-discovery and legal litigation platform used by leading law firms and government agencies."
+    },
+    {
+      "name": "Norm Law",
+      "board": "ashby",
+      "slug": "normlaw",
+      "blurb": "Modern, AI-native corporate law firm integrating proprietary technology with top-tier legal practice."
+    },
+    {
+      "name": "Omnilex",
+      "board": "ashby",
+      "slug": "omnilex",
+      "blurb": "Legal tech intelligence firm developing automation and data platforms for legal services."
     }
   ],
   "criteria": {
