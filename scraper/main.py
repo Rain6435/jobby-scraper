@@ -29,6 +29,10 @@ Usage:
                                                       # scrape more companies in parallel
                                                       # (default 16; board scrapers retry
                                                       # transient failures with backoff)
+    python -m scraper.main --database "sqlite:///jobs.db" --shard-size 100
+                                                      # split into 100-company batches,
+                                                      # each scraped/diffed/written on its
+                                                      # own (bounded memory, isolated failures)
 
 Env (also loadable from a .env file in the repo root — see .env.example):
     ANTHROPIC_API_KEY    optional — enables AI role summaries for new jobs.
@@ -90,8 +94,8 @@ class RunDeps:
     config_path: Path = CONFIG_PATH
     scrapers: dict[str, type[BaseScraper]] = field(default_factory=lambda: dict(SCRAPERS))
     summarize_role: Callable[[str, str, str], str] = summarize_role
-    write_jobs: Callable[[str, list[Job], set[str]], bool] = write_jobs
-    load_previous: Callable[[str], dict[str, Job]] = load_previous
+    write_jobs: Callable[..., bool] = write_jobs
+    load_previous: Callable[..., dict[str, Job]] = load_previous
     update_role_summary: Callable[[str, str, str], bool] = update_role_summary
 
 
@@ -102,50 +106,42 @@ def _configure_log_level(verbose: bool) -> None:
     logging.getLogger("scraper").setLevel(level)
 
 
-def run(
-    company: str | None = None,
-    limit: int | None = None,
-    verbose: bool = False,
-    database: str | None = None,
-    concurrency: int | None = None,
-    no_detail_cache: bool = False,
-    llm_provider: str | None = None,
-    deps: RunDeps | None = None,
+def _run_batch(
+    companies: list[CompanyConfig],
+    *,
+    company: str | None,
+    limit: int | None,
+    database: str | None,
+    concurrency: int | None,
+    no_detail_cache: bool,
+    deps: RunDeps,
+    config: ConfigFile,
+    run_started: float,
+    shard_scope: set[str] | None,
 ) -> int:
-    deps = deps or RunDeps()
-    _configure_log_level(verbose)
-    if llm_provider:
-        # scraper/summarize.py reads this to pin to one provider instead of
-        # its default try-Anthropic-then-Ollama fallback.
-        os.environ["LLM_PROVIDER"] = llm_provider
-    run_started = time.monotonic()
-    log.debug("Config path: %s", deps.config_path)
+    """Scrape, diff, write, and summarize exactly this batch of companies.
 
-    config: ConfigFile = json.loads(deps.config_path.read_text(encoding="utf-8"))
-    # board-agnostic options passed to every scraper's __init__ — currently
-    # empty (max_age_days was the only one, now removed: every board fetches
-    # its full current listing every run, no age-based filtering).
+    Factored out of run() so a full run can be split into several smaller
+    batches (--shard-size) that each scrape/diff/write/summarize
+    independently, instead of one pass across every configured company that
+    holds the entire previous+current pool in memory for the whole run and
+    writes it all in a single transaction at the very end. See
+    scraper/db.py's write_jobs()/load_previous() `scope_companies`/
+    `company_names` parameters, which this function's `shard_scope` drives.
+
+    shard_scope=None means "this batch is the whole configured pool" — the
+    original, unsharded behavior (run() with no --shard-size, or a
+    --company on-demand refresh, both pass None here and get the exact
+    prior full-replace write/load semantics). shard_scope=<names> means
+    "this batch is one shard of a larger sharded run" — previous state and
+    the write are both scoped to just this shard's companies, so neither
+    this batch's memory footprint nor a failure in it touches any other
+    shard.
+
+    Return value matches run()'s own contract (0 success, 1 hard failure,
+    130 interrupted) for exactly this batch.
+    """
     settings: dict[str, object] = {}
-    log.debug("Loaded config: %d companies", len(config["companies"]))
-
-    # --database is the only sink now (docs/jobs.json is no longer written),
-    # so without it a real run would do all the scrape work and then persist
-    # nothing — a silent no-op. --limit is exempt: it's a smoke test that
-    # never touches the database in either direction by design.
-    if limit is None and not database:
-        log.error(
-            "--database is required (it's the only place this run's results "
-            "are written — see scraper/db.py). Pass --limit instead for a "
-            "smoke test that doesn't need it."
-        )
-        return 1
-
-    companies = config["companies"]
-    if company is not None:
-        companies = [c for c in companies if c["name"] == company]
-        if not companies:
-            log.error("No configured company named %r", company)
-            return 1
 
     log.info("Scraping %d compan%s...", len(companies), "y" if len(companies) == 1 else "ies")
 
@@ -157,7 +153,7 @@ def run(
     # read would create the file via metadata.create_all(), so it's skipped
     # here too.
     if database and limit is None:
-        previous = deps.load_previous(database)
+        previous = deps.load_previous(database, shard_scope)
     else:
         log.debug("--limit set — skipping --database read for this smoke-test run")
         previous = {}
@@ -325,7 +321,6 @@ def run(
         # the full snapshot would discard jobs it never even considered, and
         # this is a smoke test, not a real run. Skip the write.
         log.info("--limit set — skipping database write (%d jobs)", len(full_current))
-        log.info("Run finished in %.1fs", time.monotonic() - run_started)
         return 0
 
     # --database is the only sink now (docs/jobs.json is gone), so a failed
@@ -345,7 +340,9 @@ def run(
     write_succeeded = False
     write_attempts = 3
     for attempt in range(1, write_attempts + 1):
-        write_succeeded = deps.write_jobs(database, full_current, {j.id for j in new_jobs})
+        write_succeeded = deps.write_jobs(
+            database, full_current, {j.id for j in new_jobs}, scope_companies=shard_scope
+        )
         if write_succeeded:
             break
         if attempt < write_attempts:
@@ -413,8 +410,128 @@ def run(
         # exit code (e.g. main.py's --jobscraper-pipeline).
         return 130
 
-    log.info("Run finished in %.1fs", time.monotonic() - run_started)
     return 0
+
+
+def _shard(companies: list[CompanyConfig], shard_size: int | None) -> list[list[CompanyConfig]]:
+    """Split `companies` into consecutive shard_size-sized batches, in their
+    existing config.json order. shard_size=None (or >= len(companies))
+    returns a single shard containing everything — the original, unsharded
+    behavior."""
+    if not shard_size or shard_size >= len(companies):
+        return [companies]
+    return [companies[i : i + shard_size] for i in range(0, len(companies), shard_size)]
+
+
+def run(
+    company: str | None = None,
+    limit: int | None = None,
+    verbose: bool = False,
+    database: str | None = None,
+    concurrency: int | None = None,
+    no_detail_cache: bool = False,
+    llm_provider: str | None = None,
+    shard_size: int | None = None,
+    deps: RunDeps | None = None,
+) -> int:
+    """Load config, resolve which companies to scrape, and run them as one
+    or more independent batches (see _run_batch).
+
+    shard_size splits a full run (no --company) into consecutive batches of
+    at most that many companies, each scraped/diffed/written/summarized on
+    its own — see _run_batch's docstring for why: bounding peak memory to
+    one shard's previous+current job set instead of the whole pool's, and
+    containing a batch's failure/timeout to just that batch instead of
+    losing an entire run's results. Default (None): a single shard holding
+    every company, which is exactly the original unsharded behavior — every
+    existing caller (including --company, which always gets its own single
+    unscoped batch regardless of shard_size) is unaffected unless it opts
+    in.
+
+    Returns the highest-severity exit code across all shards: 1 (hard
+    failure) beats 130 (interrupted) beats 0 (success) — a caller checking
+    the exit code must see a failure/interruption in ANY shard, not just
+    the last one. An interrupt during one shard's scrape does not abort
+    remaining shards; consistent with a single-shard run's own
+    "interrupted" contract of saving what finished and returning 130 rather
+    than raising, this loop keeps going so unaffected shards still get their
+    normal scrape instead of being skipped because of the interrupt.
+    """
+    deps = deps or RunDeps()
+    _configure_log_level(verbose)
+    if llm_provider:
+        # scraper/summarize.py reads this to pin to one provider instead of
+        # its default try-Anthropic-then-Ollama fallback.
+        os.environ["LLM_PROVIDER"] = llm_provider
+    run_started = time.monotonic()
+    log.debug("Config path: %s", deps.config_path)
+
+    config: ConfigFile = json.loads(deps.config_path.read_text(encoding="utf-8"))
+    log.debug("Loaded config: %d companies", len(config["companies"]))
+
+    # --database is the only sink now (docs/jobs.json is no longer written),
+    # so without it a real run would do all the scrape work and then persist
+    # nothing — a silent no-op. --limit is exempt: it's a smoke test that
+    # never touches the database in either direction by design.
+    if limit is None and not database:
+        log.error(
+            "--database is required (it's the only place this run's results "
+            "are written — see scraper/db.py). Pass --limit instead for a "
+            "smoke test that doesn't need it."
+        )
+        return 1
+
+    all_companies = config["companies"]
+    if company is not None:
+        selected = [c for c in all_companies if c["name"] == company]
+        if not selected:
+            log.error("No configured company named %r", company)
+            return 1
+        # --company is always its own single unscoped batch — sharding only
+        # applies to a full run across every configured company.
+        shards = [selected]
+        shard_scopes: list[set[str] | None] = [None]
+    else:
+        shards = _shard(all_companies, shard_size)
+        if len(shards) > 1:
+            log.info(
+                "--shard-size %d: splitting %d companies into %d batches",
+                shard_size,
+                len(all_companies),
+                len(shards),
+            )
+        # A single shard covering the whole pool keeps the original
+        # unscoped full-replace write/load (shard_scope=None) — only a
+        # genuinely multi-shard run scopes each batch's write/load to its
+        # own companies.
+        shard_scopes = (
+            [None] if len(shards) == 1 else [{c["name"] for c in batch} for batch in shards]
+        )
+
+    exit_code = 0
+    for batch, scope in zip(shards, shard_scopes):
+        batch_code = _run_batch(
+            batch,
+            company=company,
+            limit=limit,
+            database=database,
+            concurrency=concurrency,
+            no_detail_cache=no_detail_cache,
+            deps=deps,
+            config=config,
+            run_started=run_started,
+            shard_scope=scope,
+        )
+        # Worst-severity-wins: 1 > 130 > 0, so one shard's hard failure is
+        # never masked by a later shard's clean 0, and an interruption is
+        # never masked by a later shard finishing normally.
+        if batch_code == 1:
+            exit_code = 1
+        elif batch_code == 130 and exit_code == 0:
+            exit_code = 130
+
+    log.info("Run finished in %.1fs", time.monotonic() - run_started)
+    return exit_code
 
 
 def main() -> None:
@@ -486,6 +603,19 @@ def main() -> None:
         "failure returns '' instead of silently falling back. Default: try "
         "Anthropic first, fall back to Ollama if it's unconfigured or fails.",
     )
+    parser.add_argument(
+        "--shard-size",
+        type=int,
+        help="split a full run (ignored when --company is set) into consecutive "
+        "batches of at most this many companies, each scraped/diffed/written/"
+        "summarized independently instead of one pass across every configured "
+        "company. Bounds peak memory to one shard's previous+current job set "
+        "instead of the whole pool's, and contains a batch's failure/timeout "
+        "to just that batch instead of losing an entire run's results — see "
+        "scraper/db.py's write_jobs()/load_previous() scope_companies/"
+        "company_names parameters. Default (unset): a single shard covering "
+        "every company, i.e. the original unsharded behavior.",
+    )
     args = parser.parse_args()
     sys.exit(
         run(
@@ -496,6 +626,7 @@ def main() -> None:
             concurrency=args.concurrency,
             no_detail_cache=args.no_detail_cache,
             llm_provider=args.llm_provider,
+            shard_size=args.shard_size,
         )
     )
 

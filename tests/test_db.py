@@ -323,3 +323,88 @@ def test_get_or_create_locations_town_id_none_for_unmatched_location() -> None:
             select(locations_table.c.town_id).where(locations_table.c.id == loc_id)
         ).scalar_one()
     assert town_id is None
+
+
+def test_write_jobs_scoped_only_replaces_its_own_companies(tmp_path: Path) -> None:
+    """scope_companies must delete/replace only rows for the given
+    companies — a scoped write for one shard must never touch another
+    shard's already-written rows for a different company, unlike the
+    default unscoped full-replace."""
+    url = f"sqlite:///{tmp_path / 'jobs.db'}"
+    write_jobs(url, [job("acme:1", company="Acme"), job("beta:1", company="Beta")], new_ids=set())
+
+    # Scoped write for Acme only: Acme gets a fresh job, Beta is untouched.
+    write_jobs(
+        url,
+        [job("acme:2", company="Acme")],
+        new_ids={"acme:2"},
+        scope_companies={"Acme"},
+    )
+
+    engine = create_engine(url)
+    with engine.connect() as conn:
+        ids = {r.id for r in conn.execute(select(jobs_table))}
+        company_names = {r.name for r in conn.execute(select(companies_table))}
+
+    assert ids == {"acme:2", "beta:1"}
+    # Beta's own companies-table row is untouched (scoped writes never
+    # delete company/source/location lookup rows, even for out-of-scope
+    # companies) and Acme's row is still there too (get_or_create, not
+    # deleted-then-reinserted).
+    assert company_names == {"Acme", "Beta"}
+
+
+def test_write_jobs_scoped_removes_company_with_zero_current_jobs(tmp_path: Path) -> None:
+    """A company in scope_companies with no jobs in this write (e.g. it
+    scraped to an empty listing) must still have its old rows deleted —
+    same 'job leaves the pool once a scrape no longer lists it' contract as
+    the unscoped path."""
+    url = f"sqlite:///{tmp_path / 'jobs.db'}"
+    write_jobs(url, [job("acme:1", company="Acme"), job("beta:1", company="Beta")], new_ids=set())
+
+    write_jobs(url, [], new_ids=set(), scope_companies={"Acme"})
+
+    engine = create_engine(url)
+    with engine.connect() as conn:
+        ids = {r.id for r in conn.execute(select(jobs_table))}
+
+    assert ids == {"beta:1"}
+
+
+def test_write_jobs_scoped_deletes_job_locations_for_its_companies_only(tmp_path: Path) -> None:
+    url = f"sqlite:///{tmp_path / 'jobs.db'}"
+    write_jobs(
+        url,
+        [
+            job("acme:1", company="Acme", locations=["Montreal", "Toronto"]),
+            job("beta:1", company="Beta", locations=["Paris"]),
+        ],
+        new_ids=set(),
+    )
+
+    write_jobs(url, [job("acme:2", company="Acme")], new_ids=set(), scope_companies={"Acme"})
+
+    engine = create_engine(url)
+    with engine.connect() as conn:
+        location_job_ids = {r.job_id for r in conn.execute(select(job_locations_table))}
+
+    assert location_job_ids == {"acme:2", "beta:1"}
+
+
+def test_load_previous_scoped_to_company_names(tmp_path: Path) -> None:
+    url = f"sqlite:///{tmp_path / 'jobs.db'}"
+    write_jobs(url, [job("acme:1", company="Acme"), job("beta:1", company="Beta")], new_ids=set())
+
+    scoped = load_previous(url, {"Acme"})
+
+    assert set(scoped) == {"acme:1"}
+    assert scoped["acme:1"].company == "Acme"
+
+
+def test_load_previous_unscoped_returns_everything(tmp_path: Path) -> None:
+    url = f"sqlite:///{tmp_path / 'jobs.db'}"
+    write_jobs(url, [job("acme:1", company="Acme"), job("beta:1", company="Beta")], new_ids=set())
+
+    everything = load_previous(url)
+
+    assert set(everything) == {"acme:1", "beta:1"}

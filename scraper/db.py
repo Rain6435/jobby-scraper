@@ -204,10 +204,17 @@ def get_engine(database_url: str) -> Engine:
     return engine
 
 
-def load_previous(database_url: str) -> dict[str, Job]:
+def load_previous(database_url: str, company_names: set[str] | None = None) -> dict[str, Job]:
     """The last run's full job set, keyed by Job.id — main.py's `previous`
     for diffing/first_seen-carryover/detail-fetch-caching, read from
     whatever write_jobs() last wrote here instead of docs/jobs.json.
+
+    company_names, when given, scopes both the query and the returned dict
+    to just those companies' previously stored jobs — the sharded-run path
+    (main.py's --shard-size) uses this so a shard's peak memory is bounded
+    by that shard's own previous+current job count, not the whole pool's.
+    None (the default) loads everything, same as before this parameter
+    existed.
 
     posted_on/posted_days come back empty/None on every reconstructed Job:
     this schema only stores the derived posted_date, and neither raw field
@@ -234,17 +241,29 @@ def load_previous(database_url: str) -> dict[str, Job]:
         with engine.connect() as conn:
             companies_by_id = {row.id: row for row in conn.execute(select(companies_table))}
             sources_by_id = {row.id: row for row in conn.execute(select(sources_table))}
+
+            jobs_query = select(jobs_table)
+            if company_names is not None:
+                scoped_company_ids = {
+                    cid for cid, row in companies_by_id.items() if row.name in company_names
+                }
+                jobs_query = jobs_query.where(jobs_table.c.company_id.in_(scoped_company_ids))
+            job_rows = list(conn.execute(jobs_query))
+            job_ids = {row.id for row in job_rows}
+
             locations_by_id = {row.id: row.name for row in conn.execute(select(locations_table))}
             locations_by_job: dict[str, list[str]] = {}
             for row in conn.execute(
                 select(job_locations_table).order_by(job_locations_table.c.ordinal)
             ):
+                if company_names is not None and row.job_id not in job_ids:
+                    continue
                 name = locations_by_id.get(row.location_id)
                 if name is not None:
                     locations_by_job.setdefault(row.job_id, []).append(name)
 
             previous: dict[str, Job] = {}
-            for row in conn.execute(select(jobs_table)):
+            for row in job_rows:
                 company = companies_by_id.get(row.company_id)
                 source = sources_by_id.get(row.source_id)
                 locations = locations_by_job.get(row.id, [])
@@ -407,11 +426,31 @@ def get_or_create_locations(conn: Connection, names: set[str]) -> dict[str, int]
     return {name: existing_by_key[parsed.normalized_key] for name, parsed in parsed_by_name.items()}
 
 
-def write_jobs(database_url: str, jobs: list[Job], new_ids: set[str]) -> bool:
-    """Replace every table's contents with the full current snapshot.
+def write_jobs(
+    database_url: str,
+    jobs: list[Job],
+    new_ids: set[str],
+    *,
+    scope_companies: set[str] | None = None,
+) -> bool:
+    """Replace the current snapshot's contents with `jobs`.
 
-    Full-replace semantics (not an incremental upsert) so the tables never
-    accumulate jobs no longer in the pool.
+    scope_companies=None (the default): full-replace semantics across every
+    table — every companies/sources/locations/jobs/job_locations row is
+    deleted and reinserted from `jobs`, so the tables never accumulate jobs
+    no longer in the pool. This is the original, whole-pool behavior.
+
+    scope_companies=<names>: a sharded write (main.py's --shard-size path).
+    Only jobs/job_locations rows belonging to those companies are deleted
+    before reinserting `jobs` — company/source/location lookup rows are
+    left alone (get_or_create semantics: looked up or inserted, never
+    deleted), since a scoped write only knows about its own shard's
+    content and wiping those shared lookup tables would break FK
+    references still held by every other shard's already-written rows.
+    Companies in scope_companies that no longer have any current job (e.g.
+    a company scraped to zero postings this run) still get their old rows
+    deleted with nothing to replace them, same "job leaves the pool once a
+    scrape no longer lists it" contract as the whole-pool path.
 
     Returns True on success, False on failure — the caller (scraper/main.py's
     run()) must check this and fail the run's exit code accordingly. This
@@ -442,14 +481,28 @@ def write_jobs(database_url: str, jobs: list[Job], new_ids: set[str]) -> bool:
         unique_jobs = list(by_id.values())
 
         with engine.begin() as conn:
-            # Child-to-parent delete order (job_locations -> jobs/locations ->
-            # companies/sources) to respect FK constraints on databases that
-            # enforce them.
-            conn.execute(job_locations_table.delete())
-            conn.execute(jobs_table.delete())
-            conn.execute(companies_table.delete())
-            conn.execute(sources_table.delete())
-            conn.execute(locations_table.delete())
+            # Child-to-parent delete order (job_locations -> jobs[-> locations/
+            # companies/sources when unscoped]) to respect FK constraints on
+            # databases that enforce them.
+            if scope_companies is None:
+                conn.execute(job_locations_table.delete())
+                conn.execute(jobs_table.delete())
+                conn.execute(companies_table.delete())
+                conn.execute(sources_table.delete())
+                conn.execute(locations_table.delete())
+            else:
+                scoped_company_ids = select(companies_table.c.id).where(
+                    companies_table.c.name.in_(scope_companies)
+                )
+                scoped_job_ids = select(jobs_table.c.id).where(
+                    jobs_table.c.company_id.in_(scoped_company_ids)
+                )
+                conn.execute(
+                    job_locations_table.delete().where(
+                        job_locations_table.c.job_id.in_(scoped_job_ids)
+                    )
+                )
+                conn.execute(jobs_table.delete().where(jobs_table.c.company_id.in_(scoped_company_ids)))
 
             company_blurbs = {job.company: job.company_blurb for job in unique_jobs}
             company_ids = _get_or_create_ids(conn, companies_table, set(company_blurbs))

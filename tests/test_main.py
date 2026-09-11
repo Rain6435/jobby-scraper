@@ -68,7 +68,14 @@ class CountingWriteJobsStub:
         self.success = success
         self.calls = 0
 
-    def __call__(self, database: str, jobs: list[Job], new_ids: set[str]) -> bool:
+    def __call__(
+        self,
+        database: str,
+        jobs: list[Job],
+        new_ids: set[str],
+        *,
+        scope_companies: set[str] | None = None,
+    ) -> bool:
         self.calls += 1
         return self.success
 
@@ -81,7 +88,14 @@ class FlakyWriteJobsStub:
         self.fail_times = fail_times
         self.calls = 0
 
-    def __call__(self, database: str, jobs: list[Job], new_ids: set[str]) -> bool:
+    def __call__(
+        self,
+        database: str,
+        jobs: list[Job],
+        new_ids: set[str],
+        *,
+        scope_companies: set[str] | None = None,
+    ) -> bool:
         self.calls += 1
         return self.calls > self.fail_times
 
@@ -486,3 +500,138 @@ def test_first_seen_survives_unchanged_across_runs(tmp_path: Path) -> None:
 
     assert first_seen_2 == first_seen_1
     assert posted_date_2 == posted_date_1
+
+
+def test_shard_size_produces_same_result_as_unsharded(tmp_path: Path) -> None:
+    """--shard-size must be purely a memory/isolation optimization — the
+    final pool contents for a full run must be identical whether it's done
+    as one batch or several."""
+    db_url, deps = setup_run(
+        tmp_path,
+        companies=[
+            {"name": "Acme", "board": "stub"},
+            {"name": "Beta", "board": "stub"},
+            {"name": "Gamma", "board": "stub"},
+        ],
+        jobs_by_company={
+            "Acme": [job("Acme", "acme:1")],
+            "Beta": [job("Beta", "beta:1")],
+            "Gamma": [job("Gamma", "gamma:1")],
+        },
+    )
+
+    result = main_module.run(database=db_url, deps=deps, shard_size=1)
+
+    assert result == 0
+    assert db_job_ids(db_url) == {"acme:1", "beta:1", "gamma:1"}
+
+
+def test_shard_size_scopes_write_to_its_own_companies(tmp_path: Path) -> None:
+    """A sharded write must only ever delete/replace rows for companies in
+    its own shard — a later shard's write must never touch an earlier
+    shard's already-committed rows for a *different* company."""
+    db_url, deps = setup_run(
+        tmp_path,
+        companies=[
+            {"name": "Acme", "board": "stub"},
+            {"name": "Beta", "board": "stub"},
+        ],
+        jobs_by_company={
+            "Acme": [job("Acme", "acme:1")],
+            "Beta": [job("Beta", "beta:1")],
+        },
+    )
+
+    assert main_module.run(database=db_url, deps=deps, shard_size=1) == 0
+    assert db_job_ids(db_url) == {"acme:1", "beta:1"}
+
+    # Re-run with Acme now scraping to zero jobs (e.g. the board returned an
+    # empty listing) — only Acme's rows should be removed; Beta's shard
+    # never re-runs in this second call, so its row must survive untouched.
+    jobs_by_company_state["Acme"] = []
+    assert main_module.run(database=db_url, deps=deps, shard_size=1) == 0
+    assert db_job_ids(db_url) == {"beta:1"}
+
+
+def test_shard_failure_does_not_lose_other_shards_results(tmp_path: Path) -> None:
+    """The whole point of sharding: one shard's write failure must not
+    discard another shard's already-committed results, unlike the original
+    single-transaction-for-everything behavior."""
+    db_url, deps = setup_run(
+        tmp_path,
+        companies=[
+            {"name": "Acme", "board": "stub"},
+            {"name": "Beta", "board": "stub"},
+        ],
+        jobs_by_company={
+            "Acme": [job("Acme", "acme:1")],
+            "Beta": [job("Beta", "beta:1")],
+        },
+    )
+
+    real_write_jobs = deps.write_jobs
+
+    def fail_beta_only(
+        database: str,
+        jobs: list[Job],
+        new_ids: set[str],
+        *,
+        scope_companies: set[str] | None = None,
+    ) -> bool:
+        if scope_companies == {"Beta"}:
+            return False
+        return real_write_jobs(database, jobs, new_ids, scope_companies=scope_companies)
+
+    deps.write_jobs = fail_beta_only
+
+    result = main_module.run(database=db_url, deps=deps, shard_size=1)
+
+    # Overall run reports failure (Beta's shard genuinely failed)...
+    assert result == 1
+    # ...but Acme's shard, which succeeded, is still in the pool.
+    assert "acme:1" in db_job_ids(db_url)
+    assert "beta:1" not in db_job_ids(db_url)
+
+
+def test_shard_size_omitted_is_a_single_unscoped_shard(tmp_path: Path) -> None:
+    """No --shard-size (or a size >= company count) must behave exactly
+    like the original unsharded run: one batch, unscoped full-replace
+    write."""
+    db_url, deps = setup_run(
+        tmp_path,
+        companies=[
+            {"name": "Acme", "board": "stub"},
+            {"name": "Beta", "board": "stub"},
+        ],
+        jobs_by_company={
+            "Acme": [job("Acme", "acme:1")],
+            "Beta": [job("Beta", "beta:1")],
+        },
+    )
+    write_calls = CountingWriteJobsStub(success=True)
+    deps.write_jobs = write_calls
+
+    assert main_module.run(database=db_url, deps=deps) == 0
+    assert write_calls.calls == 1  # one batch, not one per company
+
+    write_calls_oversized = CountingWriteJobsStub(success=True)
+    deps.write_jobs = write_calls_oversized
+    assert main_module.run(database=db_url, deps=deps, shard_size=100) == 0
+    assert write_calls_oversized.calls == 1  # shard_size >= company count collapses to one batch
+
+
+def test_company_scoped_run_ignores_shard_size(tmp_path: Path) -> None:
+    """--company is always its own single unscoped batch — --shard-size
+    only applies to a full run across every configured company."""
+    db_url, deps = setup_run(
+        tmp_path,
+        companies=[{"name": "Acme", "board": "stub"}],
+        jobs_by_company={"Acme": [job("Acme", "acme:1")]},
+    )
+    write_calls = CountingWriteJobsStub(success=True)
+    deps.write_jobs = write_calls
+
+    result = main_module.run(company="Acme", database=db_url, deps=deps, shard_size=1)
+
+    assert result == 0
+    assert write_calls.calls == 1
