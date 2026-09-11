@@ -3,8 +3,8 @@
 [![CI](https://github.com/Rain6435/jobby-scraper/actions/workflows/ci.yml/badge.svg)](https://github.com/Rain6435/jobby-scraper/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-A job pool generator, meant to be consumed by other apps. It polls **1,046
-companies** across 36 job-board integrations, stores every currently-listed
+A job pool generator, meant to be consumed by other apps. It polls **1,082
+companies** across 37 job-board integrations, stores every currently-listed
 posting **unfiltered** in a SQL database, and gets out of the way — no
 keyword/title/location/age curation happens in this pipeline.
 
@@ -26,7 +26,7 @@ keyword/title/location/age curation happens in this pipeline.
 ## How it works
 
 ```
-load config.json (1,046 companies)
+load config.json (1,082 companies)
 
         │
         ▼
@@ -86,13 +86,14 @@ company's whole scrape for the run.
 | `icims` | `tenant` (subdomain), `domain` (optional) | List-only; streaming candidate search portal HTML, real posting date from `Posted Date` |
 | `atlassian` | none (or `category`, `location`, `keyword`) | Single unauthenticated JSON listings endpoint; full descriptions, real posting date from `updatedDate` |
 | `shopify` | none (or `location`, `keyword`) | React Router list + `.data` detail routes; real posting date, full descriptions |
-| `phenom` | `url` | Server-rendered `phApp.ddo` JSON; real posting date from `postedDate`, used by OpenText, Bell Canada, Air Canada |
+| `phenom` | `url` | Server-rendered `phApp.ddo` JSON; real posting date from `postedDate`, used by OpenText, Bell Canada, Air Canada, NASA JPL |
+| `jibe` | `tenant` (subdomain) or `url` (base URL) | List-only public JSON search API; full HTML descriptions, real posting date from `create_date`, used by GitHub, PepsiCo, Costco, FedEx |
 | `climatebase`, `cma_heritage`, `idc_career_centre`, `cip_planning`, `wp_job_manager` | site-specific | Small one-off integrations for individual job sites |
 
-Current distribution: 292 Greenhouse, 184 Workday, 140 Ashby, 92 BambooHR,
-90 SAP SuccessFactors, 73 SmartRecruiters, 50 Lever, 20 GovernmentJobs, 18 Rippling,
-10 Teamtailor, 10 Pinpoint, 9 Phenom, 8 Breezy, 8 Workable, 8 Recruitee, 7 JazzHR,
-4 Oracle Cloud, 4 Personio, custom tech platforms (Google, Amazon, Apple, Microsoft,
+Current distribution: 296 Greenhouse, 185 Workday, 142 Ashby, 92 BambooHR,
+90 SAP SuccessFactors, 74 SmartRecruiters, 50 Lever, 20 GovernmentJobs, 18 Rippling,
+15 Phenom, 10 Teamtailor, 10 Pinpoint, 8 Breezy, 8 Workable, 8 Recruitee, 7 JazzHR,
+5 Jibe, 4 Oracle Cloud, 4 Personio, custom tech platforms (Google, Amazon, Apple, Microsoft,
 Netflix, IBM, TikTok, Atlassian, EA, Valve, Shopify), plus USAJobs, ReliefWeb,
 and one-off site integrations.
 

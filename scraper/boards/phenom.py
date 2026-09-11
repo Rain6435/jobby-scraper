@@ -118,8 +118,13 @@ def normalize_urls(configured_url: str) -> tuple[str, str]:
 class PhenomScraper(BaseScraper):
     source = "phenom"
 
-    def __init__(self, company: PhenomConfig) -> None:
-        super().__init__(company)
+    def __init__(
+        self,
+        company: PhenomConfig,
+        settings: dict[str, object] | None = None,
+        previous: dict[str, Job] | None = None,
+    ) -> None:
+        super().__init__(company, settings, previous)
         self.session = make_session()
 
     def _fetch_page(self, search_url: str, offset: int) -> tuple[int, list[PhenomRawJob]]:

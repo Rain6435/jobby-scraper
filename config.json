@@ -5696,6 +5696,234 @@
       "company": "purdue",
       "domain": "careers.purdue.edu",
       "blurb": "World-renowned public research university in West Lafayette, Indiana, recognized for engineering, agriculture, and aeronautics."
+    },
+    {
+      "name": "GitHub",
+      "board": "jibe",
+      "tenant": "githubinc",
+      "blurb": "The world's leading developer platform for version control, collaboration, CI/CD, and agentic AI software development."
+    },
+    {
+      "name": "PepsiCo",
+      "board": "jibe",
+      "tenant": "pepsico",
+      "blurb": "Global food and beverage giant with a portfolio of iconic brands including Pepsi, Lay's, Quaker, Doritos, and Gatorade."
+    },
+    {
+      "name": "Costco",
+      "board": "jibe",
+      "tenant": "costco",
+      "blurb": "Global membership-only wholesale retail corporation known for high-volume consumer goods, private label Kirkland Signature, and warehouse operations."
+    },
+    {
+      "name": "Alaska Airlines",
+      "board": "jibe",
+      "tenant": "alaskaair",
+      "blurb": "Major US airline carrier operating an extensive domestic and international route network centered on the Pacific Northwest and West Coast."
+    },
+    {
+      "name": "General Mills",
+      "board": "jibe",
+      "tenant": "generalmills",
+      "blurb": "Leading multinational consumer foods manufacturer producing household brands like Cheerios, Betty Crocker, Nature Valley, and Yoplait."
+    },
+    {
+      "name": "NASA Jet Propulsion Laboratory",
+      "board": "phenom",
+      "url": "https://www.jpl.jobs",
+      "blurb": "NASA's premier federally funded research and development center managed by Caltech, spearheading robotic space and planetary exploration."
+    },
+    {
+      "name": "Activision Blizzard",
+      "board": "phenom",
+      "url": "https://careers.activisionblizzard.com",
+      "blurb": "Premier video game developer and interactive entertainment publisher behind franchises like Call of Duty, Warcraft, Overwatch, and Diablo."
+    },
+    {
+      "name": "Southwest Airlines",
+      "board": "phenom",
+      "url": "https://careers.southwestair.com",
+      "blurb": "Major US passenger airline recognized for point-to-point low-cost air travel, hospitality, and extensive North American routes."
+    },
+    {
+      "name": "United Airlines",
+      "board": "phenom",
+      "url": "https://careers.united.com/us/en",
+      "blurb": "Major American legacy airline operating a vast domestic and global passenger flight network across major global hubs."
+    },
+    {
+      "name": "Abbott",
+      "board": "phenom",
+      "url": "https://www.jobs.abbott/us/en",
+      "blurb": "Global healthcare and medical technology leader specializing in diagnostics, medical devices, nutrition, and branded generic pharmaceuticals."
+    },
+    {
+      "name": "Thermo Fisher Scientific",
+      "board": "phenom",
+      "url": "https://jobs.thermofisher.com/global/en",
+      "blurb": "World leader in serving science, supplying life sciences solutions, analytical instruments, laboratory equipment, and clinical trial services."
+    },
+    {
+      "name": "Nintendo",
+      "board": "greenhouse",
+      "token": "nintendo",
+      "blurb": "Worldwide pioneer in interactive entertainment and video games, creator of legendary franchises including Mario, Zelda, and Pokémon."
+    },
+    {
+      "name": "Naughty Dog",
+      "board": "greenhouse",
+      "token": "naughtydog",
+      "blurb": "Critically acclaimed PlayStation game development studio renowned for cinematic story-driven titles like The Last of Us and Uncharted."
+    },
+    {
+      "name": "DoorDash",
+      "board": "greenhouse",
+      "token": "doordashusa",
+      "blurb": "Leading local commerce and on-demand delivery platform connecting consumers with restaurants, grocery stores, and retail merchants."
+    },
+    {
+      "name": "Wolt",
+      "board": "greenhouse",
+      "token": "wolt",
+      "blurb": "Helsinki-based technology company and DoorDash subsidiary providing seamless local delivery and food ordering across Europe and Asia."
+    },
+    {
+      "name": "Mistral AI",
+      "board": "ashby",
+      "slug": "mistral.ai",
+      "blurb": "Paris-based frontier artificial intelligence lab developing open-weights and commercial frontier language models."
+    },
+    {
+      "name": "LlamaIndex",
+      "board": "ashby",
+      "slug": "llamaindex",
+      "blurb": "Leading data framework for connecting custom enterprise data sources to large language models for advanced agentic workflows."
+    },
+    {
+      "name": "CERN",
+      "board": "smartrecruiters",
+      "company": "CERN",
+      "blurb": "European Organization for Nuclear Research, operating the Large Hadron Collider and leading global particle physics experiments."
+    },
+    {
+      "name": "Snap",
+      "board": "workday",
+      "url": "https://wd1.myworkdaysite.com/wday/cxs/snapchat/snap/jobs",
+      "careers_base": "https://wd1.myworkdaysite.com/recruiting/snapchat/snap",
+      "blurb": "Camera and social technology company behind Snapchat, Spectacles, and augmented reality developer platforms."
+    },
+    {
+      "name": "PwC",
+      "board": "phenom",
+      "url": "https://jobs-us.pwc.com/us/en",
+      "blurb": "One of the Big Four professional services firms providing assurance, tax, and advisory services globally."
+    },
+    {
+      "name": "PwC Canada",
+      "board": "phenom",
+      "url": "https://jobs-ca.pwc.com/ca/en",
+      "blurb": "Canadian member firm of PwC delivering audit, tax, consulting, and deals services."
+    },
+    {
+      "name": "Boston Consulting Group (BCG)",
+      "board": "phenom",
+      "url": "https://careers.bcg.com/global/en",
+      "blurb": "Top-tier global management consulting firm advising business and societal leaders on critical strategy."
+    },
+    {
+      "name": "Marsh McLennan",
+      "board": "phenom",
+      "url": "https://careers.marsh.com/global/en",
+      "blurb": "Global professional services firm comprising Marsh, Guy Carpenter, Mercer, and Oliver Wyman."
+    },
+    {
+      "name": "EY",
+      "board": "successfactors",
+      "company": "ey",
+      "domain": "careers.ey.com",
+      "blurb": "Global leader in assurance, tax, transaction, and consulting services operating across 150+ countries."
+    },
+    {
+      "name": "KPMG Canada",
+      "board": "jibe",
+      "tenant": "kpmgca",
+      "blurb": "Canadian Big Four professional services firm offering audit, tax, and advisory capabilities nationwide."
+    },
+    {
+      "name": "KPMG Global Services",
+      "board": "oraclecloud",
+      "tenant": "ejgk.fa.em2",
+      "site_number": "CX_3",
+      "blurb": "Global delivery network for KPMG member firms providing professional audit, advisory, and tax solutions."
+    },
+    {
+      "name": "KPMG Australia",
+      "board": "smartrecruiters",
+      "company": "kpmgaustralia",
+      "blurb": "Australian member firm of KPMG providing audit, assurance, tax, and advisory services."
+    },
+    {
+      "name": "BDO",
+      "board": "oraclecloud",
+      "tenant": "ebqb.fa.us2",
+      "site_number": "BDOExperiencedCareers",
+      "blurb": "International network of public accounting, tax, and financial advisory firms."
+    },
+    {
+      "name": "Grant Thornton",
+      "board": "oraclecloud",
+      "tenant": "ehzq.fa.us2",
+      "site_number": "CX_1",
+      "blurb": "Leading independent audit, tax, and advisory firm serving dynamic organizations worldwide."
+    },
+    {
+      "name": "Accenture",
+      "board": "workday",
+      "url": "https://accenture.wd103.myworkdayjobs.com/wday/cxs/accenture/AccentureCareers/jobs",
+      "careers_base": "https://accenture.wd103.myworkdayjobs.com/en-US/AccentureCareers",
+      "blurb": "Global professional services company providing strategy, consulting, digital, technology, and operations services."
+    },
+    {
+      "name": "Booz Allen Hamilton",
+      "board": "workday",
+      "url": "https://bah.wd1.myworkdayjobs.com/wday/cxs/bah/BAH_Jobs/jobs",
+      "careers_base": "https://bah.wd1.myworkdayjobs.com/en-US/BAH_Jobs",
+      "blurb": "Management and technology consulting firm supporting defense, intelligence, and civil government agencies."
+    },
+    {
+      "name": "RSM US",
+      "board": "workday",
+      "url": "https://rsm.wd1.myworkdayjobs.com/wday/cxs/rsm/RSMCareers/jobs",
+      "careers_base": "https://rsm.wd1.myworkdayjobs.com/en-US/RSMCareers",
+      "blurb": "Leading provider of audit, tax, and consulting services focused on the middle market."
+    },
+    {
+      "name": "Guidehouse",
+      "board": "workday",
+      "url": "https://guidehouse.wd1.myworkdayjobs.com/wday/cxs/guidehouse/External/jobs",
+      "careers_base": "https://guidehouse.wd1.myworkdayjobs.com/en-US/External",
+      "blurb": "Global provider of public sector and commercial consulting services in management, technology, and risk."
+    },
+    {
+      "name": "Crowe",
+      "board": "workday",
+      "url": "https://crowe.wd12.myworkdayjobs.com/wday/cxs/crowe/External_Careers/jobs",
+      "careers_base": "https://crowe.wd12.myworkdayjobs.com/en-US/External_Careers",
+      "blurb": "Public accounting, consulting, and technology firm providing audit, tax, and advisory solutions."
+    },
+    {
+      "name": "Protiviti",
+      "board": "workday",
+      "url": "https://roberthalf.wd1.myworkdayjobs.com/wday/cxs/roberthalf/ProtivitiNA/jobs",
+      "careers_base": "https://roberthalf.wd1.myworkdayjobs.com/en-US/ProtivitiNA",
+      "blurb": "Global consulting firm delivering deep expertise in audit, risk, compliance, technology, and business processes."
+    },
+    {
+      "name": "CliftonLarsonAllen (CLA)",
+      "board": "workday",
+      "url": "https://cliftonlarsonallen.wd115.myworkdayjobs.com/wday/cxs/cliftonlarsonallen/CLA/jobs",
+      "careers_base": "https://cliftonlarsonallen.wd115.myworkdayjobs.com/en-US/CLA",
+      "blurb": "Top ten national professional services firm providing wealth advisory, digital, audit, tax, and consulting services."
     }
   ],
   "criteria": {

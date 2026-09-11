@@ -208,5 +208,11 @@ class PhenomConfig(CompanyConfig):
     fetch_details: NotRequired[bool]
 
 
+class JibeConfig(CompanyConfig):
+    tenant: NotRequired[str]
+    url: NotRequired[str]
+    max_pages: NotRequired[int]
+
+
 class ConfigFile(TypedDict):
     companies: list[CompanyConfig]

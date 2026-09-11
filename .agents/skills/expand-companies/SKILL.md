@@ -61,6 +61,7 @@ Every entry in `config.json` must strictly conform to [scraper/config_types.py](
 | **ADP Workforce Now** | `cid`, `cc_id` | `workforcenow.adp.com/mascsr/default/careercenter/public/static/v1/reqs` | `{"name": "Midland Mfg", "board": "adp", "cid": "...", "cc_id": "19000101_000001"}` |
 | **Paylocity** | `guid` | `recruiting.paylocity.com/recruiting/v2/api/feed/jobs/{guid}` | `{"name": "Apex Healthcare", "board": "paylocity", "guid": "..."}` |
 | **iCIMS** | `tenant`, `domain` | `{tenant}.icims.com/jobs/search?pr={page}&in_iframe=1` | `{"name": "Pacific Transit", "board": "icims", "tenant": "careers-pacifictransit"}` |
+| **Jibe** | `tenant` or `url` | `{base_url}/api/jobs?page={page}&limit={limit}` | `{"name": "GitHub", "board": "jibe", "tenant": "githubinc"}` |
 
 ---
 

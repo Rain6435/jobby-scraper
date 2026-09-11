@@ -18,6 +18,7 @@ from scraper.boards.ibm import IBMScraper
 from scraper.boards.icims import IcimsScraper
 from scraper.boards.idc_career_centre import IdcCareerCentreScraper
 from scraper.boards.jazzhr import JazzHrScraper
+from scraper.boards.jibe import JibeScraper
 from scraper.boards.jobvite import JobviteScraper
 from scraper.boards.lever import LeverScraper
 from scraper.boards.microsoft import MicrosoftScraper
@@ -80,4 +81,5 @@ SCRAPERS = {
     AtlassianScraper.source: AtlassianScraper,
     ShopifyScraper.source: ShopifyScraper,
     PhenomScraper.source: PhenomScraper,
+    JibeScraper.source: JibeScraper,
 }

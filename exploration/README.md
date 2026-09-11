@@ -226,7 +226,7 @@ python exploration/explore_shopify.py --details
 { "name": "Shopify", "board": "shopify" }
 ```
 
-### Phenom People — Enterprise TXP SSR Global Platform (OpenText, Bell Canada, Air Canada)
+### Phenom People — Enterprise TXP SSR Global Platform (OpenText, Bell Canada, Air Canada, NASA JPL)
 See full documentation in [exploration/phenom_api.md](phenom_api.md).
 ```bash
 python exploration/explore_phenom.py --url https://jobs.bell.ca/ca/en
@@ -234,6 +234,19 @@ python exploration/explore_phenom.py --url https://jobs.bell.ca/ca/en
 ```json
 { "name": "Bell Canada", "board": "phenom", "url": "https://jobs.bell.ca/ca/en" },
 { "name": "OpenText", "board": "phenom", "url": "https://careers.opentext.com/us/en" },
-{ "name": "Air Canada", "board": "phenom", "url": "https://careers.aircanada.com/ca/en" }
+{ "name": "Air Canada", "board": "phenom", "url": "https://careers.aircanada.com/ca/en" },
+{ "name": "NASA Jet Propulsion Laboratory", "board": "phenom", "url": "https://www.jpl.jobs" }
+```
+
+### Jibe (iCIMS) — Enterprise Career Platform (GitHub, PepsiCo, Costco, FedEx, Alaska Airlines)
+See full documentation in [exploration/jibe_api.md](jibe_api.md).
+```bash
+python exploration/explore_jibe.py --tenant githubinc
+python exploration/explore_jibe.py --tenant pepsico
+```
+```json
+{ "name": "GitHub", "board": "jibe", "tenant": "githubinc" },
+{ "name": "PepsiCo", "board": "jibe", "tenant": "pepsico" },
+{ "name": "Costco", "board": "jibe", "tenant": "costco" }
 ```
 
