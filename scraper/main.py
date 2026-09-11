@@ -33,6 +33,10 @@ Usage:
                                                       # split into 100-company batches,
                                                       # each scraped/diffed/written on its
                                                       # own (bounded memory, isolated failures)
+    python -m scraper.main --database "sqlite:///jobs.db" --per-company-timeout 60
+                                                      # requeue any company still scraping
+                                                      # after 60s instead of blocking on it
+                                                      # (on by default at 120s)
 
 Env (also loadable from a .env file in the repo root — see .env.example):
     ANTHROPIC_API_KEY    optional — enables AI role summaries for new jobs.
@@ -54,7 +58,7 @@ import os
 import sys
 import time
 from collections.abc import Callable
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ALL_COMPLETED, FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
@@ -72,6 +76,23 @@ from scraper.summarize import summarize_role
 ROOT = Path(__file__).resolve().parent.parent
 CONFIG_PATH = ROOT / "config.json"
 DEFAULT_CONCURRENCY = 16
+
+# How long a single company's scrape may run before it's considered a
+# straggler. Not a hard kill: requests/urllib3 calls in a worker thread
+# can't be forcibly interrupted from outside, so a stalled scrape_one()
+# keeps occupying its worker slot regardless — this timeout only stops it
+# from blocking the REST of the batch. See _scrape_companies' docstring.
+# IBM's own ~2000-job scrape took ~22s in a live smoke test; most boards
+# are far smaller, so 120s gives real slow-but-fine companies (large
+# Workday tenants doing a detail GET per posting) headroom without letting
+# one genuinely stuck host hold up an entire shard.
+DEFAULT_PER_COMPANY_TIMEOUT_S = 120
+
+# A company that stalls twice in a row is treated as failed rather than
+# requeued a third time — an unbounded requeue loop against a company
+# that's simply unreachable this run would otherwise tie up a worker slot
+# with a fresh doomed attempt forever, one requeue after another.
+MAX_REQUEUE_ATTEMPTS = 2
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
 log = logging.getLogger("scraper")
@@ -106,6 +127,177 @@ def _configure_log_level(verbose: bool) -> None:
     logging.getLogger("scraper").setLevel(level)
 
 
+def _scrape_companies(
+    companies: list[CompanyConfig],
+    scrape_one: Callable[[CompanyConfig], list[Job] | None],
+    *,
+    workers: int,
+    per_company_timeout_s: float | None,
+) -> tuple[set[str], list[list[Job] | None], bool]:
+    """Run scrape_one for every company in a bounded thread pool, requeuing
+    (not killing) any company that's still running past per_company_timeout_s.
+
+    Python can't forcibly interrupt a worker thread blocked inside a
+    requests/urllib3 call — there is no safe cross-thread cancel for a
+    stalled scrape_one(). So a straggler is never killed: past the timeout,
+    a FRESH attempt for that same company is submitted alongside the
+    original (effectively re-queued behind whatever else is already
+    pending), and the original's eventual result — whenever it finally
+    returns — is discarded rather than double-counted. This costs one
+    worker slot for as long as the abandoned original keeps running, but it
+    means everyone else keeps moving instead of the whole batch blocking on
+    one slow host. A company that stalls MAX_REQUEUE_ATTEMPTS times in a
+    row is left to run to completion in the background and simply counted
+    as a failure for this batch, rather than requeued forever.
+
+    per_company_timeout_s=None disables this entirely — every future is
+    waited on with no timeout, identical to the original as_completed()
+    loop this replaces.
+
+    Returns (completed_names, results, interrupted) — completed_names is
+    every company name that got at least one non-abandoned attempt
+    scheduled (used for the interrupted-run "carry forward unscraped
+    companies" path), results is one list[Job]|None per company actually
+    counted (excludes abandoned stragglers and any of their duplicate
+    late-arriving results), interrupted mirrors the original Ctrl-C
+    contract.
+    """
+    if per_company_timeout_s is None:
+        # Original, unbounded behavior — no polling loop needed.
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            futures = {pool.submit(scrape_one, c): c for c in companies}
+            completed_names: set[str] = set()
+            results: list[list[Job] | None] = []
+            try:
+                for future in wait(futures, return_when=ALL_COMPLETED).done:
+                    completed_names.add(futures[future]["name"])
+                    results.append(future.result())
+                return completed_names, results, False
+            except KeyboardInterrupt:
+                log.warning(
+                    "Interrupted — %d/%d companies had already finished scraping; "
+                    "saving their results instead of discarding the run",
+                    len(results),
+                    len(companies),
+                )
+                for f in futures:
+                    f.cancel()
+                return completed_names, results, True
+
+    completed_names = set()
+    results = []
+    # One entry per LIVE attempt (original or requeued). abandoned tracks
+    # attempts whose result must be discarded when they eventually arrive —
+    # a company's own worst case is bounded by MAX_REQUEUE_ATTEMPTS, not by
+    # how long any individual abandoned attempt happens to keep running.
+    abandoned: set[Future[list[Job] | None]] = set()
+    poll_interval = min(per_company_timeout_s, 5.0)
+
+    # Deliberately not a `with ThreadPoolExecutor(...) as pool:` block: that
+    # context manager's __exit__ calls shutdown(wait=True), which blocks
+    # until EVERY submitted thread finishes — including an abandoned
+    # straggler still retrying a dead connection. That would silently
+    # defeat the entire point of this function: the caller would still
+    # block on the straggler, just at the end of this function instead of
+    # inside its own attempt. shutdown(wait=False) below returns as soon as
+    # every NON-abandoned future has resolved, leaving any abandoned
+    # thread(s) to finish entirely on their own — bounded, not indefinite,
+    # since every board passes timeout=TIMEOUT (30s) per request and
+    # make_session()'s Retry caps total attempts at 4, so one board's own
+    # fetch_jobs() naturally gives up within a few minutes even against a
+    # fully dead host. NOTE: ThreadPoolExecutor's worker threads are NOT
+    # daemon threads (confirmed: a stdlib ThreadPoolExecutor always creates
+    # them non-daemon) — so an abandoned thread still delays the Python
+    # process's own final exit by however long it takes to naturally time
+    # out, even after every shard's scrape/write/summarize work is done.
+    # That's an accepted tradeoff, not a hang: bounded by the request-level
+    # timeouts above, and it no longer blocks this function's caller from
+    # making progress on the REST of the batch/shard in the meantime.
+    pool = ThreadPoolExecutor(max_workers=workers)
+    submitted_at: dict[Future[list[Job] | None], float] = {}
+    attempt_number: dict[Future[list[Job] | None], int] = {}
+    future_company: dict[Future[list[Job] | None], CompanyConfig] = {}
+
+    def submit(company_cfg: CompanyConfig, attempt: int) -> "Future[list[Job] | None]":
+        f = pool.submit(scrape_one, company_cfg)
+        submitted_at[f] = time.monotonic()
+        attempt_number[f] = attempt
+        future_company[f] = company_cfg
+        return f
+
+    for c in companies:
+        submit(c, attempt=1)
+
+    pending = set(submitted_at)
+    try:
+        while pending:
+            done, pending = wait(pending, timeout=poll_interval, return_when=FIRST_COMPLETED)
+            now = time.monotonic()
+
+            for f in done:
+                company_cfg = future_company[f]
+                if f in abandoned:
+                    # A requeued attempt for this company already
+                    # completed and was counted — this is the late
+                    # arrival of the original, abandoned attempt.
+                    log.debug(
+                        "%s: abandoned attempt finally returned — discarding",
+                        company_cfg["name"],
+                    )
+                    continue
+                completed_names.add(company_cfg["name"])
+                results.append(f.result())
+
+            # Any STILL-pending future that's now past the timeout gets
+            # a fresh attempt submitted behind it, unless it's already
+            # used up its requeue budget — in which case it's left to
+            # run in the background (still occupying a worker slot) and
+            # simply never contributes a result, i.e. counted as failed
+            # once every other future has resolved.
+            for f in list(pending):
+                if f in abandoned:
+                    continue
+                if now - submitted_at[f] < per_company_timeout_s:
+                    continue
+                company_cfg = future_company[f]
+                attempt = attempt_number[f]
+                abandoned.add(f)
+                pending.discard(f)
+                if attempt >= MAX_REQUEUE_ATTEMPTS:
+                    log.warning(
+                        "%s: still running after %d attempt(s) over %.0fs — "
+                        "giving up on this batch (left running in the "
+                        "background; will not block the rest of the shard)",
+                        company_cfg["name"],
+                        attempt,
+                        per_company_timeout_s,
+                    )
+                    completed_names.add(company_cfg["name"])
+                    results.append(None)
+                    continue
+                log.warning(
+                    "%s: still running after %.0fs — requeuing a fresh "
+                    "attempt (%d/%d) behind the rest of the batch instead "
+                    "of blocking on it",
+                    company_cfg["name"],
+                    per_company_timeout_s,
+                    attempt + 1,
+                    MAX_REQUEUE_ATTEMPTS,
+                )
+                pending.add(submit(company_cfg, attempt=attempt + 1))
+        pool.shutdown(wait=False)
+        return completed_names, results, False
+    except KeyboardInterrupt:
+        log.warning(
+            "Interrupted — %d/%d companies had already finished scraping; "
+            "saving their results instead of discarding the run",
+            len(results),
+            len(companies),
+        )
+        pool.shutdown(wait=False, cancel_futures=True)
+        return completed_names, results, True
+
+
 def _run_batch(
     companies: list[CompanyConfig],
     *,
@@ -118,6 +310,7 @@ def _run_batch(
     config: ConfigFile,
     run_started: float,
     shard_scope: set[str] | None,
+    per_company_timeout_s: float | None,
 ) -> int:
     """Scrape, diff, write, and summarize exactly this batch of companies.
 
@@ -201,42 +394,11 @@ def _run_batch(
             log.exception("Scrape failed for %s — continuing", company_cfg["name"])
             return None
 
-    # Companies are independent and network-bound — scrape them in parallel.
-    # Each scraper builds its own requests.Session, so threads don't share state.
-    # Most companies hit distinct hosts (their own Workday tenant, Greenhouse
-    # token, etc.), so raising this mostly increases cross-host throughput
-    # rather than the request rate against any single host; each session also
-    # retries transient failures (429/5xx) with backoff (scraper.boards.base
-    # .make_session), so higher concurrency doesn't just produce more 429s.
-    #
-    # submit()+as_completed() rather than pool.map(): map() only yields once
-    # EVERY task is done (or raises), so a Ctrl-C partway through a ~166-
-    # company run had nothing to show for whatever had already finished —
-    # results were held inside the executor, inaccessible once the process
-    # unwound. Tracking futures individually means a KeyboardInterrupt here
-    # can still fall through to the partial-write path below with whatever
-    # companies did complete, instead of losing the entire run's work.
     workers = concurrency if concurrency is not None else DEFAULT_CONCURRENCY
     scrape_started = time.monotonic()
-    completed_names: set[str] = set()
-    results: list[list[Job] | None] = []
-    interrupted = False
-    with ThreadPoolExecutor(max_workers=workers) as pool:
-        futures = {pool.submit(scrape_one, c): c for c in companies}
-        try:
-            for future in as_completed(futures):
-                completed_names.add(futures[future]["name"])
-                results.append(future.result())
-        except KeyboardInterrupt:
-            interrupted = True
-            log.warning(
-                "Interrupted — %d/%d companies had already finished scraping; "
-                "saving their results instead of discarding the run",
-                len(results),
-                len(companies),
-            )
-            for f in futures:
-                f.cancel()
+    completed_names, results, interrupted = _scrape_companies(
+        companies, scrape_one, workers=workers, per_company_timeout_s=per_company_timeout_s
+    )
     log.debug("Scrape phase took %.1fs total", time.monotonic() - scrape_started)
 
     failures = sum(1 for r in results if r is None)
@@ -432,6 +594,7 @@ def run(
     no_detail_cache: bool = False,
     llm_provider: str | None = None,
     shard_size: int | None = None,
+    per_company_timeout_s: float | None = DEFAULT_PER_COMPANY_TIMEOUT_S,
     deps: RunDeps | None = None,
 ) -> int:
     """Load config, resolve which companies to scrape, and run them as one
@@ -447,6 +610,14 @@ def run(
     existing caller (including --company, which always gets its own single
     unscoped batch regardless of shard_size) is unaffected unless it opts
     in.
+
+    per_company_timeout_s bounds how long any one company's scrape may run
+    before a fresh attempt is requeued behind it — see _scrape_companies'
+    docstring for the full mechanics (a stalled attempt is never killed,
+    just abandoned and superseded). Defaults ON (DEFAULT_PER_COMPANY_TIMEOUT_S)
+    since a single hanging company blocking an entire batch/shard is exactly
+    the failure mode this whole run() restructuring exists to contain; pass
+    None to fall back to the original unbounded per-company wait.
 
     Returns the highest-severity exit code across all shards: 1 (hard
     failure) beats 130 (interrupted) beats 0 (success) — a caller checking
@@ -521,6 +692,7 @@ def run(
             config=config,
             run_started=run_started,
             shard_scope=scope,
+            per_company_timeout_s=per_company_timeout_s,
         )
         # Worst-severity-wins: 1 > 130 > 0, so one shard's hard failure is
         # never masked by a later shard's clean 0, and an interruption is
@@ -616,19 +788,57 @@ def main() -> None:
         "company_names parameters. Default (unset): a single shard covering "
         "every company, i.e. the original unsharded behavior.",
     )
-    args = parser.parse_args()
-    sys.exit(
-        run(
-            company=args.company,
-            limit=args.limit,
-            verbose=args.verbose,
-            database=args.database,
-            concurrency=args.concurrency,
-            no_detail_cache=args.no_detail_cache,
-            llm_provider=args.llm_provider,
-            shard_size=args.shard_size,
-        )
+    parser.add_argument(
+        "--per-company-timeout",
+        type=float,
+        default=DEFAULT_PER_COMPANY_TIMEOUT_S,
+        help="seconds a single company's scrape may run before a fresh attempt "
+        "is requeued behind it instead of letting it block the rest of the "
+        f"batch (default {DEFAULT_PER_COMPANY_TIMEOUT_S:.0f}s). The original, "
+        "stalled attempt is never killed (Python can't safely interrupt a "
+        "worker thread mid-request) — it's abandoned and its eventual result "
+        "discarded, costing one worker slot until it finishes on its own. A "
+        f"company that stalls past this timeout {MAX_REQUEUE_ATTEMPTS} times "
+        "in a row is left running in the background and counted as failed "
+        "for this batch rather than requeued forever. Pass 0 or a negative "
+        "number to disable and wait on every company unboundedly instead "
+        "(the original behavior).",
     )
+    args = parser.parse_args()
+    exit_code = run(
+        company=args.company,
+        limit=args.limit,
+        verbose=args.verbose,
+        database=args.database,
+        concurrency=args.concurrency,
+        no_detail_cache=args.no_detail_cache,
+        llm_provider=args.llm_provider,
+        shard_size=args.shard_size,
+        per_company_timeout_s=(
+            args.per_company_timeout if args.per_company_timeout > 0 else None
+        ),
+    )
+    # os._exit() instead of sys.exit(): a requeued/abandoned company (see
+    # _scrape_companies) can leave a non-daemon worker thread still
+    # retrying a dead connection — stdlib ThreadPoolExecutor threads are
+    # never daemon threads, so a plain interpreter shutdown (which sys.exit
+    # triggers) blocks joining that thread, delaying this process's actual
+    # exit by however long that abandoned request takes to naturally time
+    # out (bounded by each board's own request timeout/retry count — a few
+    # minutes at worst, not indefinite, but still pure waste once every
+    # shard's real work — scrape, diff, write, summarize — is already done
+    # and this process has nothing left to do). Confirmed live: a run with
+    # one genuinely unreachable company took 2.5+ minutes just to exit after
+    # its last useful log line, purely waiting on that thread. Safe here
+    # specifically because this is the __main__ CLI entrypoint, not the
+    # importable run() function — jobs/scraper_runner.py (the real caller
+    # on prod) always launches this as its own `python -m scraper.main`
+    # subprocess, so skipping normal interpreter teardown here can't affect
+    # any other Python state; run() itself is untouched and still returns
+    # normally for tests/embedders that don't want a hard process exit.
+    sys.stdout.flush()
+    sys.stderr.flush()
+    os._exit(exit_code)
 
 
 if __name__ == "__main__":

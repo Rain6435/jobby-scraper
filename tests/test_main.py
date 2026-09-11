@@ -1,5 +1,7 @@
 import json
 import os
+import threading
+import time
 from pathlib import Path
 
 import pytest
@@ -635,3 +637,150 @@ def test_company_scoped_run_ignores_shard_size(tmp_path: Path) -> None:
 
     assert result == 0
     assert write_calls.calls == 1
+
+
+def _company(name: str) -> CompanyConfig:
+    return {"name": name, "board": "stub"}
+
+
+def test_scrape_companies_requeues_a_straggler_past_the_timeout() -> None:
+    """A company still running past per_company_timeout_s must get a fresh
+    attempt submitted behind it rather than blocking the rest of the batch —
+    the fast retry's result is what gets counted."""
+    call_count: dict[str, int] = {}
+    unblock = threading.Event()
+
+    def scrape_one(cfg: CompanyConfig) -> list[Job] | None:
+        call_count[cfg["name"]] = call_count.get(cfg["name"], 0) + 1
+        if cfg["name"] == "Acme" and call_count["Acme"] == 1:
+            # First attempt stalls until the test explicitly releases it —
+            # simulates a genuinely hung request.
+            unblock.wait(timeout=5)
+            return [job("Acme", "acme:stale")]
+        if cfg["name"] == "Acme":
+            return [job("Acme", "acme:fresh")]
+        return [job(cfg["name"], f"{cfg['name'].lower()}:1")]
+
+    completed, results, interrupted = main_module._scrape_companies(
+        [_company("Acme"), _company("Beta")],
+        scrape_one,
+        workers=4,
+        per_company_timeout_s=0.2,
+    )
+    unblock.set()  # let the abandoned first attempt finish so the thread pool can join
+
+    assert interrupted is False
+    assert completed == {"Acme", "Beta"}
+    ids = {j.id for r in results if r is not None for j in r}
+    # The fresh requeued attempt's result counts, not the stale original's.
+    assert "acme:fresh" in ids
+    assert "acme:stale" not in ids
+    assert "beta:1" in ids
+    assert call_count["Acme"] == 2
+
+
+def test_scrape_companies_gives_up_after_max_requeue_attempts() -> None:
+    """A company that stalls past the timeout on every attempt must
+    eventually be counted as failed (None) instead of requeued forever."""
+
+    def always_stalls(cfg: CompanyConfig) -> list[Job] | None:
+        time.sleep(2)
+        return [job(cfg["name"], "should-not-count")]
+
+    completed, results, interrupted = main_module._scrape_companies(
+        [_company("Acme")],
+        always_stalls,
+        workers=4,
+        per_company_timeout_s=0.1,
+    )
+
+    assert interrupted is False
+    assert completed == {"Acme"}
+    assert results == [None]
+    time.sleep(2.5)  # let the abandoned background attempts actually finish
+
+
+def test_scrape_companies_fast_company_unaffected_by_timeout() -> None:
+    def fast(cfg: CompanyConfig) -> list[Job] | None:
+        return [job(cfg["name"], f"{cfg['name'].lower()}:1")]
+
+    completed, results, interrupted = main_module._scrape_companies(
+        [_company("Acme"), _company("Beta")],
+        fast,
+        workers=4,
+        per_company_timeout_s=30,
+    )
+
+    assert interrupted is False
+    assert completed == {"Acme", "Beta"}
+    ids = {j.id for r in results if r is not None for j in r}
+    assert ids == {"acme:1", "beta:1"}
+
+
+def test_scrape_companies_none_timeout_preserves_original_unbounded_wait() -> None:
+    def fast(cfg: CompanyConfig) -> list[Job] | None:
+        return [job(cfg["name"], f"{cfg['name'].lower()}:1")]
+
+    completed, results, interrupted = main_module._scrape_companies(
+        [_company("Acme"), _company("Beta")],
+        fast,
+        workers=4,
+        per_company_timeout_s=None,
+    )
+
+    assert interrupted is False
+    assert completed == {"Acme", "Beta"}
+    ids = {j.id for r in results if r is not None for j in r}
+    assert ids == {"acme:1", "beta:1"}
+
+
+def test_full_run_with_default_timeout_completes_normally(tmp_path: Path) -> None:
+    """The new default-on per_company_timeout_s must not interfere with a
+    normal, fast run — end-to-end through run(), not just _scrape_companies."""
+    db_url, deps = setup_run(
+        tmp_path,
+        companies=[{"name": "Acme", "board": "stub"}],
+        jobs_by_company={"Acme": [job("Acme", "acme:1")]},
+    )
+
+    result = main_module.run(database=db_url, deps=deps)  # default per_company_timeout_s
+
+    assert result == 0
+    assert db_job_ids(db_url) == {"acme:1"}
+
+
+def test_main_calls_os_exit_not_sys_exit(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """main() must call os._exit(), not sys.exit() — a requeued/abandoned
+    company (see _scrape_companies) can leave a non-daemon worker thread
+    still retrying a dead connection, and stdlib ThreadPoolExecutor threads
+    are never daemon threads, so a plain sys.exit()-triggered interpreter
+    shutdown would block joining it (confirmed live: 2.5+ minutes of pure
+    waste after a run's real work was already done). This test locks in
+    that main() takes the hard-exit path rather than silently regressing
+    back to sys.exit() in some future refactor."""
+    db_url, deps = setup_run(
+        tmp_path,
+        companies=[{"name": "Acme", "board": "stub"}],
+        jobs_by_company={"Acme": [job("Acme", "acme:1")]},
+    )
+    monkeypatch.setattr(main_module, "RunDeps", lambda: deps)
+    monkeypatch.setattr(
+        "sys.argv", ["scraper.main", "--database", db_url]
+    )
+
+    exit_calls: list[int] = []
+
+    def fake_os_exit(code: int) -> None:
+        exit_calls.append(code)
+        raise SystemExit(code)  # stand in for the real hard exit in this test process
+
+    monkeypatch.setattr(main_module.os, "_exit", fake_os_exit)
+
+    with pytest.raises(SystemExit) as exc_info:
+        main_module.main()
+
+    assert exit_calls == [0]
+    assert exc_info.value.code == 0
+    assert db_job_ids(db_url) == {"acme:1"}
