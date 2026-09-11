@@ -507,6 +507,33 @@ def write_jobs(database_url: str, jobs: list[Job], new_ids: set[str]) -> bool:
         return False
 
 
+def update_role_summary(database_url: str, job_id: str, role_summary: str) -> bool:
+    """Patch a single job's role_summary in place after write_jobs() already
+    committed the pool — see scraper/main.py's run(), which now writes the
+    pool first and requests AI summaries afterward so a slow/failing LLM
+    provider can no longer delay the pool write itself. A single-row UPDATE
+    rather than another full-table write; a no-op (returns True) if the job
+    isn't present, which can legitimately happen if a later shard's/run's
+    write already replaced it by the time this patch lands.
+
+    Best-effort like write_jobs() — logs and returns False on failure rather
+    than raising, since a missed summary patch is not worth losing the run
+    over (unlike the pool write itself).
+    """
+    try:
+        engine = get_engine(database_url)
+        with engine.begin() as conn:
+            conn.execute(
+                jobs_table.update()
+                .where(jobs_table.c.id == job_id)
+                .values(role_summary=role_summary)
+            )
+        return True
+    except Exception:
+        log.exception("role_summary patch failed for job %s", job_id)
+        return False
+
+
 def _redacted(database_url: str) -> str:
     """Strip credentials from a connection URL before it hits the logs."""
     try:

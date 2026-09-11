@@ -60,7 +60,7 @@ from dotenv import load_dotenv
 from scraper.boards import SCRAPERS
 from scraper.boards.base import BaseScraper
 from scraper.config_types import CompanyConfig, ConfigFile
-from scraper.db import load_previous, write_jobs
+from scraper.db import load_previous, update_role_summary, write_jobs
 from scraper.models import Job
 from scraper.storage import diff
 from scraper.summarize import summarize_role
@@ -92,6 +92,7 @@ class RunDeps:
     summarize_role: Callable[[str, str, str], str] = summarize_role
     write_jobs: Callable[[str, list[Job], set[str]], bool] = write_jobs
     load_previous: Callable[[str], dict[str, Job]] = load_previous
+    update_role_summary: Callable[[str, str, str], bool] = update_role_summary
 
 
 def _configure_log_level(verbose: bool) -> None:
@@ -319,30 +320,6 @@ def run(
     for j in new_jobs:
         log.debug("New job: %s — %s @ %s", j.id, j.title, j.company)
 
-    # AI role summaries: for every new job. Best-effort — summarize_role()
-    # never raises, so no failure here can abort the run; ANTHROPIC_API_KEY
-    # absent just means every summary stays "". Skipped entirely when
-    # interrupted — the operator asked this run to stop, and a summary call
-    # per new job is exactly the kind of extra network round-trip that
-    # shouldn't run after a Ctrl-C, on top of delaying the save it triggered.
-    summarized = 0
-    if interrupted:
-        log.info("Interrupted — skipping AI role summaries for %d new jobs", len(new_jobs))
-    else:
-        for job in new_jobs:
-            log.debug("Requesting AI role summary for %s @ %s", job.title, job.company)
-            job.role_summary = deps.summarize_role(job.title, job.company, job.description)
-            if job.role_summary:
-                summarized += 1
-                log.info(
-                    "Role summary for %s @ %s: %s",
-                    job.title,
-                    job.company,
-                    job.role_summary,
-                )
-        if new_jobs:
-            log.info("AI role summaries: %d of %d succeeded", summarized, len(new_jobs))
-
     if limit is not None:
         # --limit truncates the scraped list arbitrarily — writing that as
         # the full snapshot would discard jobs it never even considered, and
@@ -383,6 +360,43 @@ def run(
     if not write_succeeded:
         log.error("Database write failed — run's results were NOT persisted")
         return 1
+
+    # AI role summaries: requested only AFTER the pool write above has
+    # already committed, one job at a time, each patched in via a narrow
+    # single-row UPDATE (update_role_summary) rather than held in memory
+    # for a second full write. Previously this ran before write_jobs(),
+    # inside the same window as the rest of the run's in-memory state —
+    # on a slow/degraded LLM provider (or, as seen in practice on prod, one
+    # that's failing every call with retries), that meant hundreds of
+    # sequential blocking HTTP round-trips extending the exact window
+    # during which the full previous+current job set sits resident in
+    # memory. Reordering doesn't reduce total run time, but it does mean a
+    # slow/failing summarize_role() can no longer delay the moment new/
+    # updated postings actually reach consumers — the write above already
+    # happened regardless of what follows here. Best-effort — summarize_role()
+    # never raises, so no failure here can abort the run; ANTHROPIC_API_KEY
+    # absent just means every summary stays "". Skipped entirely when
+    # interrupted — the operator asked this run to stop, and a summary call
+    # per new job is exactly the kind of extra network round-trip that
+    # shouldn't run after a Ctrl-C, on top of delaying this function's return.
+    summarized = 0
+    if interrupted:
+        log.info("Interrupted — skipping AI role summaries for %d new jobs", len(new_jobs))
+    else:
+        for job in new_jobs:
+            log.debug("Requesting AI role summary for %s @ %s", job.title, job.company)
+            role_summary = deps.summarize_role(job.title, job.company, job.description)
+            if role_summary:
+                summarized += 1
+                log.info(
+                    "Role summary for %s @ %s: %s",
+                    job.title,
+                    job.company,
+                    role_summary,
+                )
+                deps.update_role_summary(database, job.id, role_summary)
+        if new_jobs:
+            log.info("AI role summaries: %d of %d succeeded", summarized, len(new_jobs))
 
     if interrupted:
         log.warning(
