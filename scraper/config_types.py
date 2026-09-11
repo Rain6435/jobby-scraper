@@ -214,5 +214,13 @@ class JibeConfig(CompanyConfig):
     max_pages: NotRequired[int]
 
 
+class MetaConfig(CompanyConfig):
+    query: NotRequired[str]
+
+
+class JaneStreetConfig(CompanyConfig):
+    location: NotRequired[str]
+
+
 class ConfigFile(TypedDict):
     companies: list[CompanyConfig]

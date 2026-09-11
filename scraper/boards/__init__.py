@@ -17,10 +17,12 @@ from scraper.boards.greenhouse import GreenhouseScraper
 from scraper.boards.ibm import IBMScraper
 from scraper.boards.icims import IcimsScraper
 from scraper.boards.idc_career_centre import IdcCareerCentreScraper
+from scraper.boards.janestreet import JaneStreetScraper
 from scraper.boards.jazzhr import JazzHrScraper
 from scraper.boards.jibe import JibeScraper
 from scraper.boards.jobvite import JobviteScraper
 from scraper.boards.lever import LeverScraper
+from scraper.boards.meta import MetaScraper
 from scraper.boards.microsoft import MicrosoftScraper
 from scraper.boards.netflix import NetflixScraper
 from scraper.boards.oraclecloud import OracleCloudScraper
@@ -82,4 +84,6 @@ SCRAPERS = {
     ShopifyScraper.source: ShopifyScraper,
     PhenomScraper.source: PhenomScraper,
     JibeScraper.source: JibeScraper,
+    MetaScraper.source: MetaScraper,
+    JaneStreetScraper.source: JaneStreetScraper,
 }

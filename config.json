@@ -2778,8 +2778,8 @@
     },
     {
       "name": "Jane Street",
-      "board": "greenhouse",
-      "token": "janestreet"
+      "board": "janestreet",
+      "blurb": "Quantitative trading firm and liquidity provider powered by machine learning and OCaml technology."
     },
     {
       "name": "Komodo Health",
@@ -6062,6 +6062,35 @@
       "board": "ashby",
       "slug": "omnilex",
       "blurb": "Legal tech intelligence firm developing automation and data platforms for legal services."
+    },
+    {
+      "name": "Meta",
+      "board": "meta",
+      "blurb": "Global technology leader behind Facebook, Instagram, WhatsApp, Messenger, and Meta Quest."
+    },
+    {
+      "name": "Hudson River Trading",
+      "board": "greenhouse",
+      "token": "wehrtyou",
+      "blurb": "Quantitative multi-asset algorithmic trading firm developing ultra-low-latency financial technology."
+    },
+    {
+      "name": "Anduril Industries",
+      "board": "greenhouse",
+      "token": "andurilindustries",
+      "blurb": "Defense technology and autonomous systems company developing Lattice OS, counter-UAS, and autonomous underwater vehicles."
+    },
+    {
+      "name": "CD Projekt Red",
+      "board": "smartrecruiters",
+      "company": "cdprojektred",
+      "blurb": "Video game development studio acclaimed for The Witcher series and Cyberpunk 2077."
+    },
+    {
+      "name": "Tower Research Capital",
+      "board": "greenhouse",
+      "token": "towerresearchcapital",
+      "blurb": "Quantitative trading and technology firm operating computerized trading systems across global markets."
     }
   ],
   "criteria": {
