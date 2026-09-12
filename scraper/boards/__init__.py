@@ -11,6 +11,7 @@ from scraper.boards.cip_planning import CipPlanningScraper
 from scraper.boards.climatebase import ClimatebaseScraper
 from scraper.boards.cma_heritage import CmaHeritageScraper
 from scraper.boards.ea import EaScraper
+from scraper.boards.gc_jobs import GCJobsScraper
 from scraper.boards.google import GoogleScraper
 from scraper.boards.governmentjobs import GovernmentJobsScraper
 from scraper.boards.greenhouse import GreenhouseScraper
@@ -86,4 +87,6 @@ SCRAPERS = {
     JibeScraper.source: JibeScraper,
     MetaScraper.source: MetaScraper,
     JaneStreetScraper.source: JaneStreetScraper,
+    GCJobsScraper.source: GCJobsScraper,
+    "gcjobs": GCJobsScraper,
 }

@@ -218,7 +218,7 @@ def _scrape_companies(
     attempt_number: dict[Future[list[Job] | None], int] = {}
     future_company: dict[Future[list[Job] | None], CompanyConfig] = {}
 
-    def submit(company_cfg: CompanyConfig, attempt: int) -> "Future[list[Job] | None]":
+    def submit(company_cfg: CompanyConfig, attempt: int) -> Future[list[Job] | None]:
         f = pool.submit(scrape_one, company_cfg)
         submitted_at[f] = time.monotonic()
         attempt_number[f] = attempt
@@ -228,41 +228,47 @@ def _scrape_companies(
     for c in companies:
         submit(c, attempt=1)
 
+    # Only LIVE (non-abandoned) futures ever sit in `pending` — this is
+    # deliberately a different set from `abandoned` rather than one
+    # combined collection, because concurrent.futures.wait()'s `not_done`
+    # return value has no concept of "abandoned": it reports a future as
+    # not-done for as long as its thread is still actually running, so a
+    # naive `while pending:` loop built directly on wait()'s own
+    # done/not_done sets would never terminate while a genuinely stuck
+    # abandoned attempt keeps running — confirmed live on prod: a trial
+    # hung indefinitely (all companies had long since scraped) because two
+    # abandoned Workday attempts were still slowly finishing in the
+    # background, and got handed straight back into `pending` by every
+    # subsequent wait() call. Removing an abandoned future from `pending`
+    # for good, right when it's abandoned, is what makes the loop's own
+    # progress independent of how long an abandoned attempt keeps running.
     pending = set(submitted_at)
     try:
         while pending:
-            done, pending = wait(pending, timeout=poll_interval, return_when=FIRST_COMPLETED)
+            done, still_pending = wait(pending, timeout=poll_interval, return_when=FIRST_COMPLETED)
             now = time.monotonic()
 
             for f in done:
                 company_cfg = future_company[f]
-                if f in abandoned:
-                    # A requeued attempt for this company already
-                    # completed and was counted — this is the late
-                    # arrival of the original, abandoned attempt.
-                    log.debug(
-                        "%s: abandoned attempt finally returned — discarding",
-                        company_cfg["name"],
-                    )
-                    continue
                 completed_names.add(company_cfg["name"])
                 results.append(f.result())
 
-            # Any STILL-pending future that's now past the timeout gets
-            # a fresh attempt submitted behind it, unless it's already
-            # used up its requeue budget — in which case it's left to
-            # run in the background (still occupying a worker slot) and
-            # simply never contributes a result, i.e. counted as failed
-            # once every other future has resolved.
-            for f in list(pending):
-                if f in abandoned:
-                    continue
+            # Every STILL-pending future that's now past the timeout gets a
+            # fresh attempt submitted behind it, unless it's already used
+            # up its requeue budget — in which case it's left to run in
+            # the background (still occupying a worker slot) and simply
+            # never contributes a result, i.e. counted as failed once
+            # every other future has resolved. Either way it's removed
+            # from `still_pending` here — once abandoned, a future is
+            # never waited on again, regardless of how long it keeps
+            # running (see the comment above `pending = set(...)`).
+            for f in list(still_pending):
                 if now - submitted_at[f] < per_company_timeout_s:
                     continue
                 company_cfg = future_company[f]
                 attempt = attempt_number[f]
                 abandoned.add(f)
-                pending.discard(f)
+                still_pending.discard(f)
                 if attempt >= MAX_REQUEUE_ATTEMPTS:
                     log.warning(
                         "%s: still running after %d attempt(s) over %.0fs — "
@@ -284,7 +290,8 @@ def _scrape_companies(
                     attempt + 1,
                     MAX_REQUEUE_ATTEMPTS,
                 )
-                pending.add(submit(company_cfg, attempt=attempt + 1))
+                still_pending.add(submit(company_cfg, attempt=attempt + 1))
+            pending = still_pending
         pool.shutdown(wait=False)
         return completed_names, results, False
     except KeyboardInterrupt:
@@ -814,9 +821,7 @@ def main() -> None:
         no_detail_cache=args.no_detail_cache,
         llm_provider=args.llm_provider,
         shard_size=args.shard_size,
-        per_company_timeout_s=(
-            args.per_company_timeout if args.per_company_timeout > 0 else None
-        ),
+        per_company_timeout_s=(args.per_company_timeout if args.per_company_timeout > 0 else None),
     )
     # os._exit() instead of sys.exit(): a requeued/abandoned company (see
     # _scrape_companies) can leave a non-daemon worker thread still

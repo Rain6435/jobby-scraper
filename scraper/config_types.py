@@ -222,5 +222,14 @@ class JaneStreetConfig(CompanyConfig):
     location: NotRequired[str]
 
 
+class GCJobsConfig(CompanyConfig):
+    title: NotRequired[str]
+    department: NotRequired[str]
+    location: NotRequired[str]
+    language: NotRequired[str]
+    max_pages: NotRequired[int]
+    fetch_details: NotRequired[bool]
+
+
 class ConfigFile(TypedDict):
     companies: list[CompanyConfig]

@@ -6091,6 +6091,11 @@
       "board": "greenhouse",
       "token": "towerresearchcapital",
       "blurb": "Quantitative trading and technology firm operating computerized trading systems across global markets."
+    },
+    {
+      "name": "Government of Canada",
+      "board": "gc_jobs",
+      "blurb": "Federal public service of Canada offering career opportunities across all federal departments, agencies, and Crown corporations."
     }
   ],
   "criteria": {

@@ -502,7 +502,9 @@ def write_jobs(
                         job_locations_table.c.job_id.in_(scoped_job_ids)
                     )
                 )
-                conn.execute(jobs_table.delete().where(jobs_table.c.company_id.in_(scoped_company_ids)))
+                conn.execute(
+                    jobs_table.delete().where(jobs_table.c.company_id.in_(scoped_company_ids))
+                )
 
             company_blurbs = {job.company: job.company_blurb for job in unique_jobs}
             company_ids = _get_or_create_ids(conn, companies_table, set(company_blurbs))

@@ -700,6 +700,54 @@ def test_scrape_companies_gives_up_after_max_requeue_attempts() -> None:
     time.sleep(2.5)  # let the abandoned background attempts actually finish
 
 
+def test_scrape_companies_returns_promptly_despite_a_long_abandoned_straggler() -> None:
+    """Regression test for a real hang found live on prod: once a company
+    is abandoned (past MAX_REQUEUE_ATTEMPTS), _scrape_companies' own loop
+    must return as soon as every OTHER company is done — it must not keep
+    waiting on the abandoned straggler just because concurrent.futures.wait()
+    keeps reporting it as "not done" for as long as its thread keeps
+    running. The bug: wait()'s not_done return value was being assigned
+    straight back to the loop's own `pending` set, which had no notion of
+    "abandoned" — so a still-running abandoned future kept getting handed
+    back into `pending` forever, and `while pending:` never became false.
+    Confirmed live: a 36-company trial with two large, slow companies hung
+    for 10+ minutes after every company had actually finished scraping,
+    because two abandoned attempts were still slowly running in the
+    background — this test reproduces that shape with a bounded timeout so
+    a regression here fails fast instead of hanging the test suite."""
+    STRAGGLER_DURATION_S = 3.0  # much longer than per_company_timeout_s below
+    unblock = threading.Event()
+
+    def scrape_one(cfg: CompanyConfig) -> list[Job] | None:
+        if cfg["name"] == "SlowCo":
+            # Simulates a real hung request: keeps "running" well past every
+            # requeue attempt's own timeout, exactly like the abandoned
+            # Workday/OracleCloud tenants seen live on prod.
+            unblock.wait(timeout=STRAGGLER_DURATION_S)
+            return [job("SlowCo", "slowco:stale")]
+        return [job(cfg["name"], f"{cfg['name'].lower()}:1")]
+
+    start = time.monotonic()
+    completed, results, interrupted = main_module._scrape_companies(
+        [_company("SlowCo"), _company("FastCo1"), _company("FastCo2")],
+        scrape_one,
+        workers=4,
+        per_company_timeout_s=0.1,
+    )
+    elapsed = time.monotonic() - start
+    unblock.set()  # let the abandoned straggler's thread finish so the test can exit cleanly
+
+    # The whole point: this must return once SlowCo has been abandoned
+    # MAX_REQUEUE_ATTEMPTS times and the two fast companies are done —
+    # NOT wait out the straggler's full multi-second duration.
+    assert elapsed < STRAGGLER_DURATION_S / 2
+    assert interrupted is False
+    assert completed == {"SlowCo", "FastCo1", "FastCo2"}
+    ids = {j.id for r in results if r is not None for j in r}
+    assert ids == {"fastco1:1", "fastco2:1"}  # SlowCo's late/stale result never counted
+    time.sleep(STRAGGLER_DURATION_S)  # let the background thread actually finish
+
+
 def test_scrape_companies_fast_company_unaffected_by_timeout() -> None:
     def fast(cfg: CompanyConfig) -> list[Job] | None:
         return [job(cfg["name"], f"{cfg['name'].lower()}:1")]
@@ -749,9 +797,7 @@ def test_full_run_with_default_timeout_completes_normally(tmp_path: Path) -> Non
     assert db_job_ids(db_url) == {"acme:1"}
 
 
-def test_main_calls_os_exit_not_sys_exit(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_main_calls_os_exit_not_sys_exit(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """main() must call os._exit(), not sys.exit() — a requeued/abandoned
     company (see _scrape_companies) can leave a non-daemon worker thread
     still retrying a dead connection, and stdlib ThreadPoolExecutor threads
@@ -766,9 +812,7 @@ def test_main_calls_os_exit_not_sys_exit(
         jobs_by_company={"Acme": [job("Acme", "acme:1")]},
     )
     monkeypatch.setattr(main_module, "RunDeps", lambda: deps)
-    monkeypatch.setattr(
-        "sys.argv", ["scraper.main", "--database", db_url]
-    )
+    monkeypatch.setattr("sys.argv", ["scraper.main", "--database", db_url])
 
     exit_calls: list[int] = []
 
