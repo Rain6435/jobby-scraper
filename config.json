@@ -2245,12 +2245,6 @@
       "company": "AveryDennison"
     },
     {
-      "name": "Micron",
-      "board": "workday",
-      "url": "https://micron.wd1.myworkdayjobs.com/wday/cxs/micron/External/jobs",
-      "careers_base": "https://micron.wd1.myworkdayjobs.com/en-US/External"
-    },
-    {
       "name": "Cisco",
       "board": "workday",
       "url": "https://cisco.wd5.myworkdayjobs.com/wday/cxs/cisco/Cisco_Careers/jobs",
@@ -6248,6 +6242,279 @@
       "url": "https://chipotle.wd5.myworkdayjobs.com/wday/cxs/chipotle/chipotleCareers/jobs",
       "careers_base": "https://chipotle.wd5.myworkdayjobs.com/en-US/chipotleCareers",
       "blurb": "Leading international fast-casual restaurant chain serving sustainably sourced, freshly prepared Mexican-inspired food."
+    },
+    {
+      "name": "Medtronic",
+      "board": "workday",
+      "url": "https://medtronic.wd1.myworkdayjobs.com/wday/cxs/medtronic/MedtronicCareers/jobs",
+      "careers_base": "https://medtronic.wd1.myworkdayjobs.com/en-US/MedtronicCareers",
+      "blurb": "Global healthcare technology leader developing medical devices and therapies for cardiovascular, neuroscience, and surgical conditions."
+    },
+    {
+      "name": "Alliant Energy",
+      "board": "workday",
+      "url": "https://alliantenergy.wd1.myworkdayjobs.com/wday/cxs/alliantenergy/alliant/jobs",
+      "careers_base": "https://alliantenergy.wd1.myworkdayjobs.com/en-US/alliant",
+      "blurb": "Public utility holding company providing regulated electric and natural gas service to communities across Iowa and Wisconsin."
+    },
+    {
+      "name": "American Electric Power",
+      "board": "workday",
+      "url": "https://aep.wd1.myworkdayjobs.com/wday/cxs/aep/AEPCareerSite/jobs",
+      "careers_base": "https://aep.wd1.myworkdayjobs.com/en-US/AEPCareerSite",
+      "blurb": "Major investor-owned electric utility operating one of the largest transmission and distribution networks in the United States."
+    },
+    {
+      "name": "Apollo Global Management",
+      "board": "workday",
+      "url": "https://athene.wd5.myworkdayjobs.com/wday/cxs/athene/Apollo_Careers/jobs",
+      "careers_base": "https://athene.wd5.myworkdayjobs.com/en-US/Apollo_Careers",
+      "blurb": "High-growth global alternative asset manager providing innovative capital solutions across private equity, credit, and real assets."
+    },
+    {
+      "name": "AT&T",
+      "board": "workday",
+      "url": "https://att.wd1.myworkdayjobs.com/wday/cxs/att/ATTGeneral/jobs",
+      "careers_base": "https://att.wd1.myworkdayjobs.com/en-US/ATTGeneral",
+      "blurb": "Telecommunications conglomerate delivering high-speed 5G mobile connectivity, fiber broadband, and corporate communications solutions."
+    },
+    {
+      "name": "Biogen",
+      "board": "workday",
+      "url": "https://biibhr.wd3.myworkdayjobs.com/wday/cxs/biibhr/external/jobs",
+      "careers_base": "https://biibhr.wd3.myworkdayjobs.com/en-US/external",
+      "blurb": "Global biotechnology pioneer discovering and delivering therapies for neurological disorders and rare diseases."
+    },
+    {
+      "name": "Church & Dwight",
+      "board": "workday",
+      "url": "https://churchdwight.wd1.myworkdayjobs.com/wday/cxs/churchdwight/chdcareers/jobs",
+      "careers_base": "https://churchdwight.wd1.myworkdayjobs.com/en-US/chdcareers",
+      "blurb": "Major consumer packaged goods manufacturer of personal care, household, and specialty products including Arm & Hammer."
+    },
+    {
+      "name": "Citigroup",
+      "board": "workday",
+      "url": "https://citi.wd5.myworkdayjobs.com/wday/cxs/citi/2/jobs",
+      "careers_base": "https://citi.wd5.myworkdayjobs.com/en-US/2",
+      "blurb": "Global financial services corporation connecting millions of consumers, corporations, and governments across international markets."
+    },
+    {
+      "name": "Deckers Brands",
+      "board": "workday",
+      "url": "https://deckers.wd5.myworkdayjobs.com/wday/cxs/deckers/Deckers/jobs",
+      "careers_base": "https://deckers.wd5.myworkdayjobs.com/en-US/Deckers",
+      "blurb": "Global designer and distributor of innovative footwear and apparel brands including HOKA, UGG, Teva, and Sanuk."
+    },
+    {
+      "name": "Comcast",
+      "board": "workday",
+      "url": "https://comcast.wd115.myworkdayjobs.com/wday/cxs/comcast/Comcast_Careers/jobs",
+      "careers_base": "https://comcast.wd115.myworkdayjobs.com/en-US/Comcast_Careers",
+      "blurb": "Global media and technology company offering broadband connectivity, entertainment through NBCUniversal, and sports broadcasting."
+    },
+    {
+      "name": "Corpay",
+      "board": "workday",
+      "url": "https://corpay.wd103.myworkdayjobs.com/wday/cxs/corpay/Ext_001/jobs",
+      "careers_base": "https://corpay.wd103.myworkdayjobs.com/en-US/Ext_001",
+      "blurb": "Global corporate payments company helping businesses track, manage, and pay expenses through digital payment technologies."
+    },
+    {
+      "name": "Atmos Energy",
+      "board": "workday",
+      "url": "https://atmosenergy.wd108.myworkdayjobs.com/wday/cxs/atmosenergy/External_Career_Site/jobs",
+      "careers_base": "https://atmosenergy.wd108.myworkdayjobs.com/en-US/External_Career_Site",
+      "blurb": "Largest fully regulated natural gas-only distributor in the United States serving residential and business customers."
+    },
+    {
+      "name": "Elevance Health",
+      "board": "workday",
+      "url": "https://elevancehealth.wd1.myworkdayjobs.com/wday/cxs/elevancehealth/ANT/jobs",
+      "careers_base": "https://elevancehealth.wd1.myworkdayjobs.com/en-US/ANT",
+      "blurb": "Healthcare enterprise committed to supporting whole health through health plans, digital health tools, and integrated care solutions."
+    },
+    {
+      "name": "F5, Inc.",
+      "board": "workday",
+      "url": "https://ffive.wd5.myworkdayjobs.com/wday/cxs/ffive/f5jobs/jobs",
+      "careers_base": "https://ffive.wd5.myworkdayjobs.com/en-US/f5jobs",
+      "blurb": "Multi-cloud application security and delivery company empowering enterprises to secure and optimize modern digital applications."
+    },
+    {
+      "name": "Ferguson Enterprises",
+      "board": "workday",
+      "url": "https://ferguson.wd1.myworkdayjobs.com/wday/cxs/ferguson/Ferguson_Experienced/jobs",
+      "careers_base": "https://ferguson.wd1.myworkdayjobs.com/en-US/Ferguson_Experienced",
+      "blurb": "Leading value-added distributor of plumbing supplies, HVAC equipment, and industrial infrastructure solutions across North America."
+    },
+    {
+      "name": "GE Vernova",
+      "board": "workday",
+      "url": "https://gevernova.wd5.myworkdayjobs.com/wday/cxs/gevernova/Vernova_ExternalSite/jobs",
+      "careers_base": "https://gevernova.wd5.myworkdayjobs.com/en-US/Vernova_ExternalSite",
+      "blurb": "Global energy equipment and services company pioneering power generation, wind power, and electrification infrastructure."
+    },
+    {
+      "name": "Huntington Bancshares",
+      "board": "workday",
+      "url": "https://huntington.wd12.myworkdayjobs.com/wday/cxs/huntington/HNBcareers/jobs",
+      "careers_base": "https://huntington.wd12.myworkdayjobs.com/en-US/HNBcareers",
+      "blurb": "Regional bank holding company providing commercial banking, consumer banking, wealth management, and mortgage lending services."
+    },
+    {
+      "name": "Invesco",
+      "board": "workday",
+      "url": "https://invesco.wd1.myworkdayjobs.com/wday/cxs/invesco/IVZ/jobs",
+      "careers_base": "https://invesco.wd1.myworkdayjobs.com/en-US/IVZ",
+      "blurb": "Independent global investment management firm offering equities, fixed income, real estate, and exchange-traded fund products."
+    },
+    {
+      "name": "Invitation Homes",
+      "board": "workday",
+      "url": "https://invitationhomes.wd503.myworkdayjobs.com/wday/cxs/invitationhomes/INVH/jobs",
+      "careers_base": "https://invitationhomes.wd503.myworkdayjobs.com/en-US/INVH",
+      "blurb": "Premier home leasing company operating high-quality single-family rental homes across major United States metropolitan markets."
+    },
+    {
+      "name": "Johnson Controls",
+      "board": "workday",
+      "url": "https://jci.wd5.myworkdayjobs.com/wday/cxs/jci/JCI/jobs",
+      "careers_base": "https://jci.wd5.myworkdayjobs.com/en-US/JCI",
+      "blurb": "Global leader in smart, healthy, and sustainable building systems, HVAC solutions, and integrated digital infrastructure."
+    },
+    {
+      "name": "KeyCorp",
+      "board": "workday",
+      "url": "https://keybank.wd5.myworkdayjobs.com/wday/cxs/keybank/External_Career_Site/jobs",
+      "careers_base": "https://keybank.wd5.myworkdayjobs.com/en-US/External_Career_Site",
+      "blurb": "Financial services company offering retail banking, corporate financing, and investment advisory services through KeyBank."
+    },
+    {
+      "name": "Kimco Realty",
+      "board": "workday",
+      "url": "https://kimcorealty.wd503.myworkdayjobs.com/wday/cxs/kimcorealty/KimcoCareers/jobs",
+      "careers_base": "https://kimcorealty.wd503.myworkdayjobs.com/en-US/KimcoCareers",
+      "blurb": "Real estate investment trust specializing in grocery-anchored shopping centers and mixed-use commercial properties nationwide."
+    },
+    {
+      "name": "M&T Bank",
+      "board": "workday",
+      "url": "https://mtb.wd5.myworkdayjobs.com/wday/cxs/mtb/MTB/jobs",
+      "careers_base": "https://mtb.wd5.myworkdayjobs.com/en-US/MTB",
+      "blurb": "Financial holding company offering full-service community banking, commercial lending, and trust and wealth solutions."
+    },
+    {
+      "name": "Nasdaq",
+      "board": "workday",
+      "url": "https://nasdaq.wd1.myworkdayjobs.com/wday/cxs/nasdaq/Global_External_Site/jobs",
+      "careers_base": "https://nasdaq.wd1.myworkdayjobs.com/en-US/Global_External_Site",
+      "blurb": "Financial technology corporation providing electronic trading marketplaces, capital market software, and regulatory intelligence."
+    },
+    {
+      "name": "Nike",
+      "board": "workday",
+      "url": "https://nike.wd1.myworkdayjobs.com/wday/cxs/nike/nke/jobs",
+      "careers_base": "https://nike.wd1.myworkdayjobs.com/en-US/nke",
+      "blurb": "World foremost designer, marketer, and distributor of authentic athletic footwear, sports apparel, and fitness gear."
+    },
+    {
+      "name": "Northern Trust",
+      "board": "workday",
+      "url": "https://ntrs.wd1.myworkdayjobs.com/wday/cxs/ntrs/northerntrust/jobs",
+      "careers_base": "https://ntrs.wd1.myworkdayjobs.com/en-US/northerntrust",
+      "blurb": "Leading provider of wealth management, asset servicing, asset management, and banking solutions for institutions and individuals."
+    },
+    {
+      "name": "Occidental Petroleum",
+      "board": "workday",
+      "url": "https://oxy.wd5.myworkdayjobs.com/wday/cxs/oxy/Corporate/jobs",
+      "careers_base": "https://oxy.wd5.myworkdayjobs.com/en-US/Corporate",
+      "blurb": "International energy company with assets in oil and gas exploration, basic chemical manufacturing, and carbon management."
+    },
+    {
+      "name": "Otis Worldwide",
+      "board": "workday",
+      "url": "https://otis.wd504.myworkdayjobs.com/wday/cxs/otis/REC_Ext_Gateway/jobs",
+      "careers_base": "https://otis.wd504.myworkdayjobs.com/en-US/REC_Ext_Gateway",
+      "blurb": "World leading manufacturer and service provider of elevators, escalators, moving walkways, and vertical transit systems."
+    },
+    {
+      "name": "Realty Income",
+      "board": "workday",
+      "url": "https://realtyincome.wd108.myworkdayjobs.com/wday/cxs/realtyincome/realty_income_careers/jobs",
+      "careers_base": "https://realtyincome.wd108.myworkdayjobs.com/en-US/realty_income_careers",
+      "blurb": "S&P 500 real estate company dedicated to providing dependable monthly dividends supported by thousands of commercial properties."
+    },
+    {
+      "name": "ResMed",
+      "board": "workday",
+      "url": "https://resmed.wd3.myworkdayjobs.com/wday/cxs/resmed/Resmed_External_Careers/jobs",
+      "careers_base": "https://resmed.wd3.myworkdayjobs.com/en-US/Resmed_External_Careers",
+      "blurb": "Global digital health company developing cloud-connected medical devices and digital medicine platforms for sleep and respiratory care."
+    },
+    {
+      "name": "Pfizer",
+      "board": "workday",
+      "url": "https://pfizer.wd1.myworkdayjobs.com/wday/cxs/pfizer/PfizerCareers/jobs",
+      "careers_base": "https://pfizer.wd1.myworkdayjobs.com/en-US/PfizerCareers",
+      "blurb": "Premier research-based biopharmaceutical company discovering and developing breakthroughs that change patients lives."
+    },
+    {
+      "name": "The J.M. Smucker Company",
+      "board": "workday",
+      "url": "https://smucker.wd5.myworkdayjobs.com/wday/cxs/smucker/US_External_Careers/jobs",
+      "careers_base": "https://smucker.wd5.myworkdayjobs.com/en-US/US_External_Careers",
+      "blurb": "Manufacturer of iconic food, beverage, coffee, and pet consumer brands including Smuckers, Jif, and Folgers."
+    },
+    {
+      "name": "Stanley Black & Decker",
+      "board": "workday",
+      "url": "https://sbdinc.wd1.myworkdayjobs.com/wday/cxs/sbdinc/Stanley_Black_Decker_Career_Site/jobs",
+      "careers_base": "https://sbdinc.wd1.myworkdayjobs.com/en-US/Stanley_Black_Decker_Career_Site",
+      "blurb": "Global provider of hand tools, power tools, outdoor equipment, and engineered fastening solutions across top brands."
+    },
+    {
+      "name": "T-Mobile US",
+      "board": "workday",
+      "url": "https://tmobile.wd1.myworkdayjobs.com/wday/cxs/tmobile/External/jobs",
+      "careers_base": "https://tmobile.wd1.myworkdayjobs.com/en-US/External",
+      "blurb": "Major mobile communications carrier providing nationwide 5G wireless networks, mobile plans, and digital connectivity."
+    },
+    {
+      "name": "Tapestry",
+      "board": "workday",
+      "url": "https://tapestry.wd108.myworkdayjobs.com/wday/cxs/tapestry/Tapestry_Careers/jobs",
+      "careers_base": "https://tapestry.wd108.myworkdayjobs.com/en-US/Tapestry_Careers",
+      "blurb": "Global house of luxury and lifestyle accessories brands uniting Coach, Kate Spade New York, and Stuart Weitzman."
+    },
+    {
+      "name": "Tyson Foods",
+      "board": "workday",
+      "url": "https://tysonfoods.wd5.myworkdayjobs.com/wday/cxs/tysonfoods/TSN/jobs",
+      "careers_base": "https://tysonfoods.wd5.myworkdayjobs.com/en-US/TSN",
+      "blurb": "One of the world largest food production companies supplying chicken, beef, pork, and prepared foods globally."
+    },
+    {
+      "name": "United Rentals",
+      "board": "workday",
+      "url": "https://ur.wd1.myworkdayjobs.com/wday/cxs/ur/URcareers/jobs",
+      "careers_base": "https://ur.wd1.myworkdayjobs.com/en-US/URcareers",
+      "blurb": "Largest equipment rental company in the world providing heavy equipment, industrial tools, and trench safety solutions."
+    },
+    {
+      "name": "Vertex Pharmaceuticals",
+      "board": "workday",
+      "url": "https://vrtx.wd501.myworkdayjobs.com/wday/cxs/vrtx/vertex_careers/jobs",
+      "careers_base": "https://vrtx.wd501.myworkdayjobs.com/en-US/vertex_careers",
+      "blurb": "Global biotechnology company investing in scientific innovation to create transformative medicines for serious genetic diseases."
+    },
+    {
+      "name": "Xylem",
+      "board": "workday",
+      "url": "https://xylem.wd5.myworkdayjobs.com/wday/cxs/xylem/xylem-careers/jobs",
+      "careers_base": "https://xylem.wd5.myworkdayjobs.com/en-US/xylem-careers",
+      "blurb": "Leading global water technology company developing solutions across water transport, treatment, testing, and conservation."
     }
   ],
   "criteria": {
