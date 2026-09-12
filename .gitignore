@@ -11,3 +11,4 @@ venv/
 .ollama_key_rotation.json
 docs/jobs.json
 .playwright-mcp/
+scratch/
