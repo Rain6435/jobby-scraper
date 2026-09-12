@@ -41,3 +41,70 @@ jobs:
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           script: cd /opt/job_pipeline/jobby-scraper && git pull origin main && git log --oneline -1
+
+  bump-job-pipeline-pointer:
+    name: Bump job_pipeline's jobby-scraper gitlink
+    runs-on: ubuntu-latest
+    needs: deploy
+    # job_pipeline tracks this repo as a gitlink at path jobby-scraper (mode
+    # 160000, a commit-SHA pointer — the same mechanism `git submodule` uses)
+    # but WITHOUT a .gitmodules file, so plain `git submodule update` can't
+    # touch it — it has to be moved by hand: update-index --cacheinfo,
+    # commit, push. Previously this bump was a manual step every time
+    # (chore(jobby-scraper): bump submodule to <sha> commits) — easy to
+    # forget, and it drifted stale for stretches between manual bumps even
+    # though prod itself (via the job above) was always current.
+    #
+    # Needs its own write-scoped credential: prod's own deploy key for
+    # job_pipeline (DEPLOY_SSH_KEY in that repo, used by job_pipeline's OWN
+    # deploy.yml) is deliberately read-only, so it can't be reused here.
+    # JOB_PIPELINE_PUSH_TOKEN currently holds a broad-scope `repo` OAuth
+    # token (set 2026-09-12, covers every repo on the account) rather than
+    # a fine-grained PAT scoped to just job_pipeline — GitHub has no API for
+    # creating a fine-grained PAT (browser-only, consent-gated by design),
+    # so this was the fastest path to get the automation working. Swap it
+    # for an actual fine-grained PAT (Settings > Developer settings > Fine-
+    # grained tokens, scoped to only Rain6435/job_pipeline, Contents: Read
+    # and write) when convenient — same secret name, no workflow change
+    # needed, just `gh secret set JOB_PIPELINE_PUSH_TOKEN --repo
+    # Rain6435/jobby-scraper` with the new value.
+    steps:
+      - name: Clone job_pipeline (shallow, blobless)
+        env:
+          JOB_PIPELINE_PUSH_TOKEN: ${{ secrets.JOB_PIPELINE_PUSH_TOKEN }}
+        run: |
+          git clone --depth 1 --filter=blob:none \
+            "https://x-access-token:${JOB_PIPELINE_PUSH_TOKEN}@github.com/Rain6435/job_pipeline.git" \
+            job_pipeline
+          # Never let the credentialed remote URL linger in .git/config —
+          # git push below re-supplies the token via credential.helper
+          # instead, so a stray `git remote -v` in a later step (or in this
+          # job's own logs on failure) can't leak it.
+          git -C job_pipeline remote set-url origin https://github.com/Rain6435/job_pipeline.git
+          git -C job_pipeline config credential.helper \
+            '!f() { echo "username=x-access-token"; echo "password=${JOB_PIPELINE_PUSH_TOKEN}"; }; f'
+
+      - name: Bump the jobby-scraper gitlink to this push's commit
+        working-directory: job_pipeline
+        env:
+          PUSHED_SHA: ${{ github.sha }}
+          PUSHED_MESSAGE: ${{ github.event.head_commit.message }}
+          # Re-declared here (not just in the clone step above): the
+          # credential.helper set up there reads this var at push time,
+          # which happens in THIS step's own shell, not the clone step's.
+          JOB_PIPELINE_PUSH_TOKEN: ${{ secrets.JOB_PIPELINE_PUSH_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          current=$(git ls-tree HEAD -- jobby-scraper | awk '{print $3}')
+          if [ "$current" = "$PUSHED_SHA" ]; then
+            echo "Already at $PUSHED_SHA — nothing to bump."
+            exit 0
+          fi
+
+          git update-index --add --cacheinfo 160000,"$PUSHED_SHA",jobby-scraper
+          git commit -m "chore(jobby-scraper): bump submodule to ${PUSHED_SHA:0:7}" \
+            -m "${PUSHED_MESSAGE:-<no commit message available>}" \
+            -m "Auto-bumped by jobby-scraper's deploy workflow."
+          git push origin HEAD:main
