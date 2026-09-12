@@ -31,6 +31,7 @@ from scraper.boards.paylocity import PaylocityScraper
 from scraper.boards.personio import PersonioScraper
 from scraper.boards.phenom import PhenomScraper
 from scraper.boards.pinpoint import PinpointScraper
+from scraper.boards.quebec_emploi import QuebecEmploiScraper
 from scraper.boards.recruitee import RecruiteeScraper
 from scraper.boards.reliefweb import ReliefwebScraper
 from scraper.boards.rippling import RipplingScraper
@@ -89,4 +90,6 @@ SCRAPERS = {
     JaneStreetScraper.source: JaneStreetScraper,
     GCJobsScraper.source: GCJobsScraper,
     "gcjobs": GCJobsScraper,
+    QuebecEmploiScraper.source: QuebecEmploiScraper,
+    "emploi_quebec": QuebecEmploiScraper,
 }

@@ -6096,6 +6096,11 @@
       "name": "Government of Canada",
       "board": "gc_jobs",
       "blurb": "Federal public service of Canada offering career opportunities across all federal departments, agencies, and Crown corporations."
+    },
+    {
+      "name": "Québec emploi",
+      "board": "quebec_emploi",
+      "blurb": "Official provincial employment portal of the Government of Quebec offering career opportunities across Quebec."
     }
   ],
   "criteria": {

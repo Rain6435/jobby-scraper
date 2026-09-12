@@ -231,5 +231,16 @@ class GCJobsConfig(CompanyConfig):
     fetch_details: NotRequired[bool]
 
 
+class QuebecEmploiConfig(CompanyConfig):
+    title: NotRequired[str]
+    query: NotRequired[str]
+    location: NotRequired[str]
+    region: NotRequired[str]
+    regions: NotRequired[list[str]]
+    language: NotRequired[str]
+    max_pages: NotRequired[int]
+    fetch_details: NotRequired[bool]
+
+
 class ConfigFile(TypedDict):
     companies: list[CompanyConfig]
