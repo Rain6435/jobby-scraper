@@ -39,12 +39,16 @@ Usage:
                                                       # (on by default at 120s)
 
 Env (also loadable from a .env file in the repo root — see .env.example):
-    ANTHROPIC_API_KEY    optional — enables AI role summaries for new jobs.
-                          Pipeline runs fully without it (summaries just
-                          stay blank). ANTHROPIC_AUTH_TOKEN also works.
-    OLLAMA_API_KEY        optional — fallback for AI summaries when Anthropic
-                          is unconfigured or its call fails (see --llm-provider
-                          to pin to just one instead of falling back).
+    ANTHROPIC_API_KEY    optional — used only by the separate `python -m
+                          scraper.backfill_blurbs` company-blurb tool, not by
+                          this scrape run. role_summary is no longer
+                          generated here at all — see "AI Summaries and
+                          Company Blurbs" in CLAUDE.md. ANTHROPIC_AUTH_TOKEN
+                          also works for backfill_blurbs.
+    OLLAMA_API_KEY        optional — fallback for backfill_blurbs when
+                          Anthropic is unconfigured or its call fails (see
+                          --llm-provider to pin to just one instead of
+                          falling back).
     LOG_LEVEL            DEBUG/INFO/WARNING/ERROR (default INFO); same effect as --verbose
                           when set to DEBUG
 """
@@ -71,7 +75,6 @@ from scraper.config_types import CompanyConfig, ConfigFile
 from scraper.db import load_previous, update_role_summary, write_jobs
 from scraper.models import Job
 from scraper.storage import diff
-from scraper.summarize import summarize_role
 
 ROOT = Path(__file__).resolve().parent.parent
 CONFIG_PATH = ROOT / "config.json"
@@ -114,7 +117,6 @@ class RunDeps:
 
     config_path: Path = CONFIG_PATH
     scrapers: dict[str, type[BaseScraper]] = field(default_factory=lambda: dict(SCRAPERS))
-    summarize_role: Callable[[str, str, str], str] = summarize_role
     write_jobs: Callable[..., bool] = write_jobs
     load_previous: Callable[..., dict[str, Job]] = load_previous
     update_role_summary: Callable[[str, str, str], bool] = update_role_summary
@@ -371,10 +373,9 @@ def _run_batch(
     # empty dict to the scrapers forces every posting's detail to be re-fetched
     # once, which is the whole point of a backfill run.
     #
-    # Emptying `previous` outright instead would be a bug with two expensive
-    # consequences: every job's first_seen would reset (and posted_date with
-    # it, since db.py derives it from first_seen), and diff() would report the
-    # entire pool as new — firing an AI role summary for every single job.
+    # Emptying `previous` outright instead would be a bug: every job's
+    # first_seen would reset (and posted_date with it, since db.py derives it
+    # from first_seen), and diff() would report the entire pool as new.
     scraper_previous: dict[str, Job] = {} if no_detail_cache else previous
     if no_detail_cache:
         log.info(
@@ -527,42 +528,21 @@ def _run_batch(
         log.error("Database write failed — run's results were NOT persisted")
         return 1
 
-    # AI role summaries: requested only AFTER the pool write above has
-    # already committed, one job at a time, each patched in via a narrow
-    # single-row UPDATE (update_role_summary) rather than held in memory
-    # for a second full write. Previously this ran before write_jobs(),
-    # inside the same window as the rest of the run's in-memory state —
-    # on a slow/degraded LLM provider (or, as seen in practice on prod, one
-    # that's failing every call with retries), that meant hundreds of
-    # sequential blocking HTTP round-trips extending the exact window
-    # during which the full previous+current job set sits resident in
-    # memory. Reordering doesn't reduce total run time, but it does mean a
-    # slow/failing summarize_role() can no longer delay the moment new/
-    # updated postings actually reach consumers — the write above already
-    # happened regardless of what follows here. Best-effort — summarize_role()
-    # never raises, so no failure here can abort the run; ANTHROPIC_API_KEY
-    # absent just means every summary stays "". Skipped entirely when
-    # interrupted — the operator asked this run to stop, and a summary call
-    # per new job is exactly the kind of extra network round-trip that
-    # shouldn't run after a Ctrl-C, on top of delaying this function's return.
-    summarized = 0
-    if interrupted:
-        log.info("Interrupted — skipping AI role summaries for %d new jobs", len(new_jobs))
-    else:
-        for job in new_jobs:
-            log.debug("Requesting AI role summary for %s @ %s", job.title, job.company)
-            role_summary = deps.summarize_role(job.title, job.company, job.description)
-            if role_summary:
-                summarized += 1
-                log.info(
-                    "Role summary for %s @ %s: %s",
-                    job.title,
-                    job.company,
-                    role_summary,
-                )
-                deps.update_role_summary(database, job.id, role_summary)
-        if new_jobs:
-            log.info("AI role summaries: %d of %d succeeded", summarized, len(new_jobs))
+    # AI role summaries are no longer generated here. Live per-job
+    # summarize_role() calls during scrape were the direct cause of hitting
+    # provider usage limits quickly (called for every single newly-diffed
+    # job, sequentially, with no batching/caching) and, on a degraded/failing
+    # provider, of materially extending scrape runtime (confirmed in
+    # practice on prod: hundreds of sequential blocking HTTP round-trips,
+    # each retried across two providers, on a run where both providers were
+    # failing). role_summary is now populated entirely by backlog batch
+    # inference against the parent job_pipeline's own fine-tuned model (see
+    # job_pipeline/scripts/run_kaggle_role_summary_inference.py) — jobs land
+    # here with an empty role_summary and get filled in later out-of-band.
+    # update_role_summary (scraper/db.py) and the carry-forward-for-known-
+    # jobs behavior below are unchanged — role_summary set any other way
+    # (this backlog path, or a manual patch) still isn't lost on a
+    # subsequent scrape.
 
     if interrupted:
         log.warning(
@@ -777,10 +757,11 @@ def main() -> None:
         "--llm-provider",
         choices=["anthropic", "ollama"],
         default=None,
-        help="pin AI role summaries/company blurbs (scraper/summarize.py) to "
-        "just this one provider — the other is never attempted, so a "
-        "failure returns '' instead of silently falling back. Default: try "
-        "Anthropic first, fall back to Ollama if it's unconfigured or fails.",
+        help="pin scraper/backfill_blurbs.py's AI company blurbs to just this "
+        "one provider — the other is never attempted, so a failure returns "
+        "'' instead of silently falling back. Has no effect on this scrape "
+        "run itself (role_summary is no longer generated here). Default: "
+        "try Anthropic first, fall back to Ollama if it's unconfigured or fails.",
     )
     parser.add_argument(
         "--shard-size",

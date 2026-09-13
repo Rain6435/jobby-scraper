@@ -51,18 +51,6 @@ def job(
     )
 
 
-class CountingStub:
-    """A summarize_role-shaped stub that tracks how many times it was called."""
-
-    def __init__(self, return_value: str = "") -> None:
-        self.return_value = return_value
-        self.calls = 0
-
-    def __call__(self, *args: object) -> str:
-        self.calls += 1
-        return self.return_value
-
-
 class CountingWriteJobsStub:
     """A write_jobs-shaped stub that tracks how many times it was called."""
 
@@ -114,7 +102,6 @@ def setup_run(
     deps = main_module.RunDeps(
         config_path=config_path,
         scrapers={"stub": StubScraper},
-        summarize_role=lambda title, company, description: "",
     )
     return f"sqlite:///{tmp_path / 'jobs.db'}", deps
 
@@ -160,16 +147,12 @@ def test_full_run_without_database_or_limit_errors(tmp_path: Path) -> None:
         companies=[{"name": "Acme", "board": "stub"}],
         jobs_by_company={"Acme": [job("Acme", "acme:1")]},
     )
-    summarize_calls = CountingStub()
-    deps.summarize_role = summarize_calls
-
     result = main_module.run(deps=deps)  # no database=, no limit=
 
     # --database is the only sink now — without it (and without --limit,
     # which exempts the smoke-test path) there'd be nowhere to write the
     # results, so this must fail fast rather than silently scrape for nothing.
     assert result == 1
-    assert summarize_calls.calls == 0
 
 
 def test_company_scoped_run_merges_into_existing_snapshot(tmp_path: Path) -> None:
@@ -346,8 +329,6 @@ def test_interrupted_run_saves_completed_companies_and_keeps_others_unchanged(
             return super().fetch_jobs()
 
     deps.scrapers = {"stub": InterruptingScraper}
-    summarize_calls = CountingStub()
-    deps.summarize_role = summarize_calls
     # concurrency=1 makes ordering deterministic: Acme completes, then
     # Beta's KeyboardInterrupt fires before Zeta is ever submitted.
     result = main_module.run(database=db_url, concurrency=1, deps=deps)
@@ -359,7 +340,6 @@ def test_interrupted_run_saves_completed_companies_and_keeps_others_unchanged(
     # Beta's own scrape raised before producing a job, so nothing new to
     # carry for it either way — this assertion documents that, not a
     # requirement that beta:1 must be absent.
-    assert summarize_calls.calls == 0  # skipped entirely once interrupted
 
 
 def test_concurrency_flag_is_accepted_and_threaded_through(tmp_path: Path) -> None:
@@ -397,20 +377,21 @@ def test_concurrency_flag_defaults_when_omitted(tmp_path: Path) -> None:
 def test_llm_provider_flag_sets_env_for_summarize(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    """--llm-provider still sets LLM_PROVIDER — kept for
+    scraper/backfill_blurbs.py's separate one-time company-blurb path
+    (scraper/summarize.py), even though main.py's own scrape no longer
+    calls summarize_role() per job."""
     db_url, deps = setup_run(
         tmp_path,
         companies=[{"name": "Acme", "board": "stub"}],
         jobs_by_company={"Acme": [job("Acme", "acme:1")]},
     )
     monkeypatch.delenv("LLM_PROVIDER", raising=False)
-    summarize_calls = CountingStub()
-    deps.summarize_role = summarize_calls
 
     result = main_module.run(llm_provider="ollama", database=db_url, deps=deps)
 
     assert result == 0
     assert os.environ["LLM_PROVIDER"] == "ollama"
-    assert summarize_calls.calls == 1
 
 
 def test_llm_provider_omitted_leaves_env_untouched(
@@ -430,37 +411,34 @@ def test_llm_provider_omitted_leaves_env_untouched(
 
 
 def test_role_summary_carried_over_for_already_known_job(tmp_path: Path) -> None:
-    """Every board scraper builds a fresh Job() each run (role_summary=""
-    by dataclass default), and the summarize step only runs for genuinely
-    new jobs — without carrying the previous run's role_summary forward for
-    already-known jobs, their real summary would be silently overwritten
-    with "" on every subsequent run, even though summarize_role is
-    correctly never re-called for them."""
+    """role_summary is no longer generated during scrape (see main.py's run())
+    — it's populated out-of-band by job_pipeline's backlog batch inference,
+    patched in directly via update_role_summary. Every board scraper builds
+    a fresh Job() each run (role_summary="" by dataclass default), so
+    without carrying the previous run's role_summary forward for
+    already-known jobs, that out-of-band value would be silently overwritten
+    with "" on every subsequent scrape."""
     db_url, deps = setup_run(
         tmp_path,
         companies=[{"name": "Acme", "board": "stub"}],
         jobs_by_company={"Acme": [job("Acme", "acme:1")]},
     )
-    first_summarize_calls = CountingStub("Builds great things.")
-    deps.summarize_role = first_summarize_calls
 
     assert main_module.run(database=db_url, deps=deps) == 0
 
+    # Simulates job_pipeline's backlog inference patching in a summary
+    # out-of-band, the same way it happens against the real database.
+    deps.update_role_summary(db_url, "acme:1", "Builds great things.")
     assert db_role_summary(db_url, "acme:1") == "Builds great things."
-    assert first_summarize_calls.calls == 1
 
     # Second run: same job id, but a FRESH Job object (role_summary="" by
     # default) — exactly what every real board scraper produces, since none
     # of them read role_summary back from anywhere.
     jobs_by_company_state["Acme"] = [job("Acme", "acme:1")]
-    second_summarize_calls = CountingStub()
-    deps.summarize_role = second_summarize_calls
 
     assert main_module.run(database=db_url, deps=deps) == 0
 
-    # Not re-requested (correct, unchanged behavior) — and critically, the
-    # real summary from run 1 must survive, not get overwritten with "".
-    assert second_summarize_calls.calls == 0
+    # The out-of-band summary must survive, not get overwritten with "".
     assert db_role_summary(db_url, "acme:1") == "Builds great things."
 
 
