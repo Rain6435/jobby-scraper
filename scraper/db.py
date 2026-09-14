@@ -204,6 +204,30 @@ def get_engine(database_url: str) -> Engine:
     return engine
 
 
+def checkpoint_wal(database_url: str) -> None:
+    """Best-effort PASSIVE WAL checkpoint after a write, for sqlite URLs only
+    (a no-op for other backends). PASSIVE checkpoints as much of the WAL as
+    it can without blocking or forcing out concurrent readers/writers —
+    unlike wal_autocheckpoint (set from job_pipeline's Node side, see
+    jobby/classes/DB.ts), which can't run to completion while any
+    transaction is still open, this runs after write_jobs() has already
+    closed its own transactions, so it's a direct backstop against the WAL
+    growing unbounded (387MB observed in prod before this existed) rather
+    than relying solely on auto-checkpoint's opportunistic timing. Failure
+    here (e.g. another writer briefly holding the file) is logged and
+    swallowed — it's cleanup, not part of the write's own success/failure
+    contract.
+    """
+    if make_url(database_url).get_backend_name() != "sqlite":
+        return
+    try:
+        engine = get_engine(database_url)
+        with engine.connect() as conn:
+            conn.exec_driver_sql("PRAGMA wal_checkpoint(PASSIVE)")
+    except Exception:
+        log.warning("WAL checkpoint failed for %s (non-fatal)", _redacted(database_url))
+
+
 def load_previous(database_url: str, company_names: set[str] | None = None) -> dict[str, Job]:
     """The last run's full job set, keyed by Job.id — main.py's `previous`
     for diffing/first_seen-carryover/detail-fetch-caching, read from
@@ -426,6 +450,24 @@ def get_or_create_locations(conn: Connection, names: set[str]) -> dict[str, int]
     return {name: existing_by_key[parsed.normalized_key] for name, parsed in parsed_by_name.items()}
 
 
+# Row count per chunked insert transaction (jobs_table / job_locations_table
+# in write_jobs()). Keeps each transaction's writer-lock hold to a fraction
+# of a second to a couple seconds instead of one transaction spanning the
+# full multi-thousand-row write — see write_jobs()'s docstring for why this
+# replaced a single whole-write transaction.
+_WRITE_CHUNK_SIZE = 750
+
+
+def _insert_in_chunks(engine: Engine, table: Table, rows: list[dict]) -> None:
+    """Insert `rows` into `table` across multiple short transactions of up
+    to _WRITE_CHUNK_SIZE rows each, instead of one transaction for the whole
+    list — see write_jobs()'s docstring."""
+    for start in range(0, len(rows), _WRITE_CHUNK_SIZE):
+        chunk = rows[start : start + _WRITE_CHUNK_SIZE]
+        with engine.begin() as conn:
+            conn.execute(table.insert(), chunk)
+
+
 def write_jobs(
     database_url: str,
     jobs: list[Job],
@@ -452,6 +494,23 @@ def write_jobs(
     deleted with nothing to replace them, same "job leaves the pool once a
     scrape no longer lists it" contract as the whole-pool path.
 
+    The delete, the company/source/location lookups, and the jobs/
+    job_locations inserts each run in their own short transaction rather
+    than one transaction spanning the whole write (the inserts are further
+    split into _WRITE_CHUNK_SIZE-row batches, each its own transaction) —
+    a full unscoped write is tens of thousands of rows, and holding a
+    single SQLite writer lock for the whole thing (multi-minute, confirmed
+    in prod) starved concurrent readers on other tables in the same file
+    (data/app.db) hard enough to fail their queries outright (see
+    job_pipeline's jobby/utils/db/busy-retry-wrap.ts, GitHub issue #38).
+    This trades strict all-or-nothing atomicity for bounded per-transaction
+    lock hold: a concurrent reader can now observe a transiently smaller
+    pool mid-write (old rows already deleted, new rows not all inserted
+    yet) instead of an instantaneous swap — acceptable since every known
+    reader (job_pipeline's JobScraperFetcher, the Node pool reads) already
+    tolerates "pool between scrape runs" as a normal state, and this is a
+    strict improvement over a multi-minute exclusive lock.
+
     Returns True on success, False on failure — the caller (scraper/main.py's
     run()) must check this and fail the run's exit code accordingly. This
     used to swallow every failure and return None, matching the "best-effort,
@@ -464,12 +523,19 @@ def write_jobs(
     exactly this — main.py's --jobscraper-pipeline saw exit code 0 and
     proceeded to ingest/parse against unchanged data for over a week.
 
+    Since the write is no longer one transaction, a failure partway through
+    (e.g. mid-chunk) leaves whatever chunks already committed in place
+    rather than rolling back the entire write, unlike before — the
+    exception log below reports how far the write got so this partial
+    state is distinguishable from "wrote nothing."
+
     A handful of boards occasionally produce a non-unique Job.id (their
     upstream requisition label collides across postings) — last one wins,
     same as `jobs` dict-keyed by id would behave, rather than letting the
     table's primary key reject the whole batch.
     """
     start = time.monotonic()
+    stage = "setup"
     try:
         engine = get_engine(database_url)
         by_id = {job.id: job for job in jobs}
@@ -480,6 +546,7 @@ def write_jobs(
             )
         unique_jobs = list(by_id.values())
 
+        stage = "delete"
         with engine.begin() as conn:
             # Child-to-parent delete order (job_locations -> jobs[-> locations/
             # companies/sources when unscoped]) to respect FK constraints on
@@ -506,6 +573,8 @@ def write_jobs(
                     jobs_table.delete().where(jobs_table.c.company_id.in_(scoped_company_ids))
                 )
 
+        stage = "lookups"
+        with engine.begin() as conn:
             company_blurbs = {job.company: job.company_blurb for job in unique_jobs}
             company_ids = _get_or_create_ids(conn, companies_table, set(company_blurbs))
             for name, blurb in company_blurbs.items():
@@ -518,35 +587,36 @@ def write_jobs(
             source_ids = _get_or_create_ids(
                 conn, sources_table, {job.source for job in unique_jobs}
             )
+            location_names = {loc for job in unique_jobs for loc in job.locations}
+            location_ids = get_or_create_locations(conn, location_names)
 
-            if unique_jobs:
-                conn.execute(
-                    jobs_table.insert(),
-                    [
-                        {
-                            "id": job.id,
-                            "company_id": company_ids[job.company],
-                            "source_id": source_ids[job.source],
-                            "title": job.title,
-                            "url": job.url,
-                            "posted_date": _posted_date(job),
-                            "first_seen": job.first_seen,
-                            "description": job.description,
-                            "role_summary": job.role_summary,
-                            "is_new": job.id in new_ids,
-                        }
-                        for job in unique_jobs
-                    ],
-                )
-                location_names = {loc for job in unique_jobs for loc in job.locations}
-                location_ids = get_or_create_locations(conn, location_names)
-                location_rows = [
-                    {"job_id": job.id, "location_id": location_ids[loc], "ordinal": i}
-                    for job in unique_jobs
-                    for i, loc in enumerate(job.locations)
-                ]
-                if location_rows:
-                    conn.execute(job_locations_table.insert(), location_rows)
+        stage = "insert jobs"
+        if unique_jobs:
+            job_rows = [
+                {
+                    "id": job.id,
+                    "company_id": company_ids[job.company],
+                    "source_id": source_ids[job.source],
+                    "title": job.title,
+                    "url": job.url,
+                    "posted_date": _posted_date(job),
+                    "first_seen": job.first_seen,
+                    "description": job.description,
+                    "role_summary": job.role_summary,
+                    "is_new": job.id in new_ids,
+                }
+                for job in unique_jobs
+            ]
+            _insert_in_chunks(engine, jobs_table, job_rows)
+
+            stage = "insert job_locations"
+            location_rows = [
+                {"job_id": job.id, "location_id": location_ids[loc], "ordinal": i}
+                for job in unique_jobs
+                for i, loc in enumerate(job.locations)
+            ]
+            if location_rows:
+                _insert_in_chunks(engine, job_locations_table, location_rows)
 
         elapsed = time.monotonic() - start
         log.info(
@@ -558,7 +628,14 @@ def write_jobs(
         return True
     except Exception:
         elapsed = time.monotonic() - start
-        log.exception("Database write failed for %s after %.2fs", _redacted(database_url), elapsed)
+        log.exception(
+            "Database write failed for %s during '%s' after %.2fs — any earlier "
+            "stage/chunk already committed remains in place (writes are no "
+            "longer a single all-or-nothing transaction, see write_jobs() docstring)",
+            _redacted(database_url),
+            stage,
+            elapsed,
+        )
         return False
 
 

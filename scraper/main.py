@@ -72,7 +72,7 @@ from dotenv import load_dotenv
 from scraper.boards import SCRAPERS
 from scraper.boards.base import BaseScraper
 from scraper.config_types import CompanyConfig, ConfigFile
-from scraper.db import load_previous, update_role_summary, write_jobs
+from scraper.db import checkpoint_wal, load_previous, update_role_summary, write_jobs
 from scraper.models import Job
 from scraper.storage import diff
 
@@ -120,6 +120,7 @@ class RunDeps:
     write_jobs: Callable[..., bool] = write_jobs
     load_previous: Callable[..., dict[str, Job]] = load_previous
     update_role_summary: Callable[[str, str, str], bool] = update_role_summary
+    checkpoint_wal: Callable[[str], None] = checkpoint_wal
 
 
 def _configure_log_level(verbose: bool) -> None:
@@ -527,6 +528,12 @@ def _run_batch(
     if not write_succeeded:
         log.error("Database write failed — run's results were NOT persisted")
         return 1
+
+    # Passive WAL checkpoint after the write's own transactions have closed —
+    # backstop against the WAL growing unbounded (see checkpoint_wal()'s
+    # docstring). Best-effort: failure here doesn't fail the run, since the
+    # write itself already succeeded.
+    deps.checkpoint_wal(database)
 
     # AI role summaries are no longer generated here. Live per-job
     # summarize_role() calls during scrape were the direct cause of hitting
