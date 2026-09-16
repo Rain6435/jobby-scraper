@@ -209,7 +209,21 @@ def get_engine(database_url: str) -> Engine:
     connect_args = {"timeout": 60} if make_url(database_url).get_backend_name() == "sqlite" else {}
     engine = create_engine(database_url, connect_args=connect_args)
     metadata.create_all(engine)
+    _ensure_companies_group_name_column(engine)
     return engine
+
+
+def _ensure_companies_group_name_column(engine: Engine) -> None:
+    """metadata.create_all() only creates missing tables, never alters an
+    existing one — so a `companies` table from before group_name existed
+    (e.g. prod's live scraper.db) needs this explicit backfill or every
+    read/write against that column below would fail with "no such column."
+    """
+    inspector = inspect(engine)
+    existing = {col["name"] for col in inspector.get_columns("companies")}
+    if "group_name" not in existing:
+        with engine.begin() as conn:
+            conn.execute(text("ALTER TABLE companies ADD COLUMN group_name VARCHAR NOT NULL DEFAULT ''"))
 
 
 def checkpoint_wal(database_url: str) -> None:

@@ -28,6 +28,7 @@ def job(
     first_seen: str = "2026-07-28T06:16:49+00:00",
     source: str = "workday",
     company_blurb: str = "",
+    company_group: str = "",
 ) -> Job:
     return Job(
         id=jid,
@@ -41,6 +42,7 @@ def job(
         first_seen=first_seen,
         source=source,
         company_blurb=company_blurb,
+        company_group=company_group,
     )
 
 
@@ -113,6 +115,38 @@ def test_write_jobs_stores_company_blurb_on_companies_table(tmp_path: Path) -> N
         ).scalar_one()
 
     assert blurb == "Makes anvils."
+
+
+def test_write_jobs_stores_company_group_on_companies_table(tmp_path: Path) -> None:
+    url = f"sqlite:///{tmp_path / 'jobs.db'}"
+    jobs = [
+        job("gc:1", company="Royal Canadian Mounted Police", company_group="Government of Canada"),
+        job("gc:2", company="Health Canada", company_group="Government of Canada"),
+    ]
+
+    write_jobs(url, jobs, new_ids=set())
+
+    engine = create_engine(url)
+    with engine.connect() as conn:
+        groups = {
+            r.name: r.group_name
+            for r in conn.execute(select(companies_table.c.name, companies_table.c.group_name))
+        }
+
+    assert groups == {
+        "Royal Canadian Mounted Police": "Government of Canada",
+        "Health Canada": "Government of Canada",
+    }
+
+
+def test_load_previous_round_trips_company_group(tmp_path: Path) -> None:
+    url = f"sqlite:///{tmp_path / 'jobs.db'}"
+    jobs = [job("gc:1", company="Royal Canadian Mounted Police", company_group="Government of Canada")]
+
+    write_jobs(url, jobs, new_ids={"gc:1"})
+    previous = load_previous(url)
+
+    assert previous["gc:1"].company_group == "Government of Canada"
 
 
 def test_write_jobs_expands_locations_into_child_table_preserving_order(

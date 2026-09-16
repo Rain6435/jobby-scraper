@@ -138,6 +138,7 @@ def test_fetch_jobs_success() -> None:
     j1 = jobs[0]
     assert j1.id == "government-of-canada:2459537"
     assert j1.company == "Royal Canadian Mounted Police"
+    assert j1.company_group == "Government of Canada"
     assert j1.title == "Administrative and Operational Support"
     assert j1.location == "Calgary (Alberta)"
     assert j1.locations == ["Calgary (Alberta)", "Edmonton (Alberta)"]
@@ -153,6 +154,7 @@ def test_fetch_jobs_success() -> None:
     assert (
         j2.company == "Parks Canada - Lake Louise, Yoho & Kootenay Field Unit – Visitor Experience"
     )
+    assert j2.company_group == "Government of Canada"
     assert j2.title == "Head Lifeguard"
     assert j2.location == "Radium Hot Springs (British Columbia)"
     assert j2.locations == ["Radium Hot Springs (British Columbia)"]
