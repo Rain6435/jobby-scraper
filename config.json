@@ -6522,6 +6522,167 @@
       "tenant": "fa-evmr-saasfaprod1.fa.ocs.oraclecloud.com",
       "site_number": "CX_1",
       "blurb": "Global leader in telecommunications equipment, 5G mobile networks, cloud infrastructure, and optical networking technologies."
+    },
+    {
+      "name": "JPMorgan Chase",
+      "board": "oraclecloud",
+      "tenant": "jpmc.fa.oraclecloud.com",
+      "site_number": "CX_1001",
+      "blurb": "Largest financial institution in the United States, providing investment banking, asset management, and consumer finance worldwide."
+    },
+    {
+      "name": "Marriott International",
+      "board": "oraclecloud",
+      "tenant": "ejwl.fa.us2.oraclecloud.com",
+      "site_number": "CX",
+      "blurb": "World largest hotel and hospitality company, operating thousands of properties across iconic luxury and lifestyle brands."
+    },
+    {
+      "name": "Hilton Worldwide",
+      "board": "oraclecloud",
+      "tenant": "efet.fa.us2.oraclecloud.com",
+      "site_number": "CX_1",
+      "blurb": "Global hospitality leader comprising extraordinary hotel brands across luxury, full-service, and extended-stay properties."
+    },
+    {
+      "name": "Ford Motor Company",
+      "board": "oraclecloud",
+      "tenant": "efds.fa.em5.oraclecloud.com",
+      "site_number": "CX_1",
+      "blurb": "Historic multinational automaker designing, manufacturing, and servicing cars, commercial trucks, and electric vehicles globally."
+    },
+    {
+      "name": "Fortinet",
+      "board": "oraclecloud",
+      "tenant": "edel.fa.us2.oraclecloud.com",
+      "site_number": "CX_2001",
+      "blurb": "Global cybersecurity leader providing enterprise network security, firewalls, and secure access service edge solutions."
+    },
+    {
+      "name": "Honeywell",
+      "board": "oraclecloud",
+      "tenant": "ibqbjb.fa.ocs.oraclecloud.com",
+      "site_number": "Honeywell",
+      "blurb": "Multinational conglomerate operating across aerospace technologies, building automation, industrial automation, and energy solutions."
+    },
+    {
+      "name": "First Solar",
+      "board": "oraclecloud",
+      "tenant": "fa-esbv-saasfaprod1.fa.ocs.oraclecloud.com",
+      "site_number": "CX_1",
+      "blurb": "American manufacturer of advanced thin-film photovoltaic solar modules, providing utility-scale clean energy technologies."
+    },
+    {
+      "name": "Howmet Aerospace",
+      "board": "oraclecloud",
+      "tenant": "fa-exty-saasfaprod1.fa.ocs.oraclecloud.com",
+      "site_number": "CX_1",
+      "blurb": "Provider of advanced engineered solutions for the aerospace, defense, and commercial transportation industries."
+    },
+    {
+      "name": "Hormel Foods",
+      "board": "oraclecloud",
+      "tenant": "ekkh.fa.us2.oraclecloud.com",
+      "site_number": "CX_2002",
+      "blurb": "Global-branded food company manufacturing meat, deli, shelf-stable grocery items, and refrigerated consumer food brands."
+    },
+    {
+      "name": "International Paper",
+      "board": "oraclecloud",
+      "tenant": "iazbqy.fa.ocs.oraclecloud.com",
+      "site_number": "CX_1",
+      "blurb": "Global producer of sustainable fiber-based packaging, pulp, and paper products for industrial and consumer packaging."
+    },
+    {
+      "name": "ON Semiconductor",
+      "board": "oraclecloud",
+      "tenant": "hctz.fa.us2.oraclecloud.com",
+      "site_number": "CX_1001",
+      "blurb": "Semiconductor supplier providing intelligent sensing and power semiconductor solutions for automotive and industrial markets."
+    },
+    {
+      "name": "BNY Mellon",
+      "board": "oraclecloud",
+      "tenant": "eofe.fa.us2.oraclecloud.com",
+      "site_number": "BNY",
+      "blurb": "Americas oldest financial corporation providing asset servicing, investment management, wealth management, and treasury services."
+    },
+    {
+      "name": "BXP, Inc.",
+      "board": "oraclecloud",
+      "tenant": "edxn.fa.us2.oraclecloud.com",
+      "site_number": "CX_4001",
+      "blurb": "Largest publicly traded developer, owner, and manager of premier modern workplace workplaces and life sciences facilities in the United States."
+    },
+    {
+      "name": "Chubb Limited",
+      "board": "oraclecloud",
+      "tenant": "fa-ewgu-saasfaprod1.fa.ocs.oraclecloud.com",
+      "site_number": "CX_2001",
+      "blurb": "World largest publicly traded property and casualty insurance company, serving multinational businesses and private individuals."
+    },
+    {
+      "name": "Cummins",
+      "board": "oraclecloud",
+      "tenant": "fa-espx-saasfaprod1.fa.ocs.oraclecloud.com",
+      "site_number": "CX_1",
+      "blurb": "Global power leader designing, manufacturing, and distributing diesel, natural gas, electric, and hybrid powertrain technologies."
+    },
+    {
+      "name": "Emerson Electric",
+      "board": "oraclecloud",
+      "tenant": "hdjq.fa.us2.oraclecloud.com",
+      "site_number": "CX_1",
+      "blurb": "Global industrial automation technology and software company optimizing industrial manufacturing and process operations."
+    },
+    {
+      "name": "Verisk Analytics",
+      "board": "oraclecloud",
+      "tenant": "fa-ewmy-saasfaprod1.fa.ocs.oraclecloud.com",
+      "site_number": "CX_1",
+      "blurb": "Strategic data analytics and risk assessment provider delivering predictive analytics and decision-support tools for insurance."
+    },
+    {
+      "name": "Vertiv",
+      "board": "oraclecloud",
+      "tenant": "egup.fa.us2.oraclecloud.com",
+      "site_number": "CX",
+      "blurb": "Global provider of critical digital infrastructure and continuity solutions for data centers, communication networks, and industrial facilities."
+    },
+    {
+      "name": "Waste Management",
+      "board": "oraclecloud",
+      "tenant": "emcm.fa.us2.oraclecloud.com",
+      "site_number": "WMCareers",
+      "blurb": "Comprehensive environmental services company providing waste collection, transfer, recycling, and renewable natural gas recovery across North America."
+    },
+    {
+      "name": "Bank of America",
+      "board": "workday",
+      "url": "https://ghr.wd1.myworkdayjobs.com/wday/cxs/ghr/lateral-us/jobs",
+      "careers_base": "https://ghr.wd1.myworkdayjobs.com/en-US/lateral-us",
+      "blurb": "Global banking institution serving individual consumers, small businesses, and large corporations with full-scale financial services."
+    },
+    {
+      "name": "Air Products",
+      "board": "workday",
+      "url": "https://airproducts.wd5.myworkdayjobs.com/wday/cxs/airproducts/AP0001/jobs",
+      "careers_base": "https://airproducts.wd5.myworkdayjobs.com/en-US/AP0001",
+      "blurb": "World-leading industrial gas company providing atmospheric gases, process gases, and equipment for manufacturing, energy, and tech."
+    },
+    {
+      "name": "Ares Management",
+      "board": "workday",
+      "url": "https://aresmgmt.wd1.myworkdayjobs.com/wday/cxs/aresmgmt/External/jobs",
+      "careers_base": "https://aresmgmt.wd1.myworkdayjobs.com/en-US/External",
+      "blurb": "Global alternative investment manager offering clients complementary investment solutions across credit, private equity, and real assets."
+    },
+    {
+      "name": "Constellation Brands",
+      "board": "workday",
+      "url": "https://cbrands.wd5.myworkdayjobs.com/wday/cxs/cbrands/CBI_External_Careers/jobs",
+      "careers_base": "https://cbrands.wd5.myworkdayjobs.com/en-US/CBI_External_Careers",
+      "blurb": "International producer and marketer of iconic beer, wine, and spirits brands with leading operations in North America."
     }
   ],
   "criteria": {
