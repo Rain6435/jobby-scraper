@@ -60,7 +60,9 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
     create_engine,
+    inspect,
     select,
+    text,
 )
 from sqlalchemy.engine import Connection, Engine, make_url
 
@@ -77,6 +79,11 @@ companies_table = Table(
     Column("id", Integer, primary_key=True, autoincrement=True),
     Column("name", String, nullable=False, unique=True),
     Column("blurb", Text, nullable=False, server_default=""),
+    # Umbrella label (e.g. "Government of Canada") for a company row whose
+    # `name` is actually a narrower entity a board maps per-posting (e.g.
+    # gc_jobs.py's per-department company names) — "" when `name` needs no
+    # broader grouping. See Job.company_group.
+    Column("group_name", String, nullable=False, server_default=""),
 )
 
 sources_table = Table(
@@ -307,6 +314,7 @@ def load_previous(database_url: str, company_names: set[str] | None = None) -> d
                     description=row.description,
                     role_summary=row.role_summary,
                     company_blurb=company.blurb if company else "",
+                    company_group=company.group_name if company else "",
                 )
         return previous
     except Exception:
@@ -577,6 +585,7 @@ def write_jobs(
         stage = "lookups"
         with engine.begin() as conn:
             company_blurbs = {job.company: job.company_blurb for job in unique_jobs}
+            company_groups = {job.company: job.company_group for job in unique_jobs}
             company_ids = _get_or_create_ids(conn, companies_table, set(company_blurbs))
             for name, blurb in company_blurbs.items():
                 if blurb:
@@ -584,6 +593,13 @@ def write_jobs(
                         companies_table.update()
                         .where(companies_table.c.id == company_ids[name])
                         .values(blurb=blurb)
+                    )
+            for name, group in company_groups.items():
+                if group:
+                    conn.execute(
+                        companies_table.update()
+                        .where(companies_table.c.id == company_ids[name])
+                        .values(group_name=group)
                     )
             source_ids = _get_or_create_ids(
                 conn, sources_table, {job.source for job in unique_jobs}

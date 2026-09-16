@@ -217,6 +217,11 @@ class GCJobsScraper(BaseScraper):
                     posted_on=f"Closing: {closing_date}" if closing_date else "",
                     source=self.source,
                     description=description,
+                    # company is the department (dept or self.name fallback
+                    # above); company_group is always the config entry's own
+                    # name so every department's jobs can still be found
+                    # under one "Government of Canada" umbrella downstream.
+                    company_group=self.name,
                 )
             )
 

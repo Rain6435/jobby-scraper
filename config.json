@@ -6683,6 +6683,52 @@
       "url": "https://cbrands.wd5.myworkdayjobs.com/wday/cxs/cbrands/CBI_External_Careers/jobs",
       "careers_base": "https://cbrands.wd5.myworkdayjobs.com/en-US/CBI_External_Careers",
       "blurb": "International producer and marketer of iconic beer, wine, and spirits brands with leading operations in North America."
+    },
+    {
+      "name": "Mitel",
+      "board": "workday",
+      "url": "https://mitel.wd3.myworkdayjobs.com/wday/cxs/mitel/mitelcareers/jobs",
+      "careers_base": "https://mitel.wd3.myworkdayjobs.com/en-US/mitelcareers",
+      "blurb": "Ottawa-headquartered (Kanata) global business communications and telecommunications leader providing VoIP, unified communications, and cloud contact center platforms."
+    },
+    {
+      "name": "Nordion",
+      "board": "workday",
+      "url": "https://soterahealth.wd501.myworkdayjobs.com/wday/cxs/soterahealth/External/jobs",
+      "careers_base": "https://soterahealth.wd501.myworkdayjobs.com/en-US/External",
+      "blurb": "Ottawa-headquartered (Kanata) global leader in medical radioisotopes and sterilization technologies used for cancer therapies and medical device sterilization, operating within Sotera Health."
+    },
+    {
+      "name": "Pythian",
+      "board": "rippling",
+      "board_id": "pythian",
+      "blurb": "Ottawa-headquartered multinational data systems, database administration, cloud architecture, and analytics services consultancy."
+    },
+    {
+      "name": "Enghouse Systems",
+      "board": "bamboohr",
+      "company": "enghouse",
+      "blurb": "Publicly traded Canadian enterprise software provider (TSX: ENGH) with major operations in Kanata/Ottawa specializing in telecom networks, customer experience, and transit software."
+    },
+    {
+      "name": "Linamar",
+      "board": "oraclecloud",
+      "tenant": "fa-epmd-saasfaprod1.fa.ocs.oraclecloud.com",
+      "site_number": "CX_3001",
+      "blurb": "Major Canadian diversified advanced manufacturing and industrial technology corporation producing precision powertrain, mobility, and industrial access systems."
+    },
+    {
+      "name": "Descartes Systems Group",
+      "board": "successfactors",
+      "company": "descartes",
+      "domain": "jobs.descartes.com",
+      "blurb": "Canadian global logistics technology and supply chain management software leader (TSX: DSG) operating cloud platforms for freight, routing, and global trade intelligence."
+    },
+    {
+      "name": "Sophos",
+      "board": "lever",
+      "company": "sophos",
+      "blurb": "Global cybersecurity and endpoint protection provider with substantial Canadian engineering, security operations, and threat intelligence centers in Ottawa and Vancouver."
     }
   ],
   "criteria": {
