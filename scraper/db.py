@@ -45,6 +45,7 @@ from __future__ import annotations
 
 import logging
 import time
+from collections.abc import Mapping, Sequence
 from datetime import datetime, timedelta
 
 from sqlalchemy import (
@@ -458,7 +459,7 @@ def get_or_create_locations(conn: Connection, names: set[str]) -> dict[str, int]
 _WRITE_CHUNK_SIZE = 750
 
 
-def _insert_in_chunks(engine: Engine, table: Table, rows: list[dict]) -> None:
+def _insert_in_chunks(engine: Engine, table: Table, rows: Sequence[Mapping[str, object]]) -> None:
     """Insert `rows` into `table` across multiple short transactions of up
     to _WRITE_CHUNK_SIZE rows each, instead of one transaction for the whole
     list — see write_jobs()'s docstring."""

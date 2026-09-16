@@ -6515,6 +6515,13 @@
       "url": "https://xylem.wd5.myworkdayjobs.com/wday/cxs/xylem/xylem-careers/jobs",
       "careers_base": "https://xylem.wd5.myworkdayjobs.com/en-US/xylem-careers",
       "blurb": "Leading global water technology company developing solutions across water transport, treatment, testing, and conservation."
+    },
+    {
+      "name": "Nokia",
+      "board": "oraclecloud",
+      "tenant": "fa-evmr-saasfaprod1.fa.ocs.oraclecloud.com",
+      "site_number": "CX_1",
+      "blurb": "Global leader in telecommunications equipment, 5G mobile networks, cloud infrastructure, and optical networking technologies."
     }
   ],
   "criteria": {
