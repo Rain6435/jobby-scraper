@@ -242,5 +242,12 @@ class QuebecEmploiConfig(CompanyConfig):
     fetch_details: NotRequired[bool]
 
 
+class BloombergConfig(CompanyConfig):
+    url: NotRequired[str]
+    query: NotRequired[str]
+    location: NotRequired[str]
+    max_pages: NotRequired[int]
+
+
 class ConfigFile(TypedDict):
     companies: list[CompanyConfig]

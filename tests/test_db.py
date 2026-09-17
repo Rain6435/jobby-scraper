@@ -141,7 +141,9 @@ def test_write_jobs_stores_company_group_on_companies_table(tmp_path: Path) -> N
 
 def test_load_previous_round_trips_company_group(tmp_path: Path) -> None:
     url = f"sqlite:///{tmp_path / 'jobs.db'}"
-    jobs = [job("gc:1", company="Royal Canadian Mounted Police", company_group="Government of Canada")]
+    jobs = [
+        job("gc:1", company="Royal Canadian Mounted Police", company_group="Government of Canada")
+    ]
 
     write_jobs(url, jobs, new_ids={"gc:1"})
     previous = load_previous(url)

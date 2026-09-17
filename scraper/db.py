@@ -223,7 +223,9 @@ def _ensure_companies_group_name_column(engine: Engine) -> None:
     existing = {col["name"] for col in inspector.get_columns("companies")}
     if "group_name" not in existing:
         with engine.begin() as conn:
-            conn.execute(text("ALTER TABLE companies ADD COLUMN group_name VARCHAR NOT NULL DEFAULT ''"))
+            conn.execute(
+                text("ALTER TABLE companies ADD COLUMN group_name VARCHAR NOT NULL DEFAULT ''")
+            )
 
 
 def checkpoint_wal(database_url: str) -> None:

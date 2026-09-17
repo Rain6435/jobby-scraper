@@ -6,6 +6,7 @@ from scraper.boards.apple import AppleScraper
 from scraper.boards.ashby import AshbyScraper
 from scraper.boards.atlassian import AtlassianScraper
 from scraper.boards.bamboohr import BambooHRScraper
+from scraper.boards.bloomberg import BloombergScraper
 from scraper.boards.breezy import BreezyScraper
 from scraper.boards.cip_planning import CipPlanningScraper
 from scraper.boards.climatebase import ClimatebaseScraper
@@ -92,4 +93,7 @@ SCRAPERS = {
     "gcjobs": GCJobsScraper,
     QuebecEmploiScraper.source: QuebecEmploiScraper,
     "emploi_quebec": QuebecEmploiScraper,
+    BloombergScraper.source: BloombergScraper,
+    "bloomberg": BloombergScraper,
+    "avature": BloombergScraper,
 }

@@ -6729,6 +6729,80 @@
       "board": "lever",
       "company": "sophos",
       "blurb": "Global cybersecurity and endpoint protection provider with substantial Canadian engineering, security operations, and threat intelligence centers in Ottawa and Vancouver."
+    },
+    {
+      "name": "Bloomberg",
+      "board": "bloomberg",
+      "blurb": "Global business and financial information and news leader providing market data, analytics, trading tools, and journalism."
+    },
+    {
+      "name": "Two Sigma",
+      "board": "bloomberg",
+      "url": "https://careers.twosigma.com/careers/OpenRoles",
+      "blurb": "Financial sciences company applying data science, machine learning, and advanced computing to investment management and market making."
+    },
+    {
+      "name": "City of Ottawa",
+      "board": "successfactors",
+      "company": "ottawa",
+      "domain": "jobs-emplois.ottawa.ca",
+      "blurb": "Municipal government administration delivering public transit, emergency services, infrastructure, recreation, and community programs for Canada's capital city."
+    },
+    {
+      "name": "Lennar",
+      "board": "workday",
+      "url": "https://lennar.wd1.myworkdayjobs.com/wday/cxs/lennar/lennar_jobs/jobs",
+      "careers_base": "https://lennar.wd1.myworkdayjobs.com/en-US/lennar_jobs",
+      "blurb": "One of America's leading homebuilders delivering quality residential construction, financial services, and multifamily communities nationwide."
+    },
+    {
+      "name": "Chevron",
+      "board": "workday",
+      "url": "https://chevron.wd5.myworkdayjobs.com/wday/cxs/chevron/jobs/jobs",
+      "careers_base": "https://chevron.wd5.myworkdayjobs.com/en-US/jobs",
+      "blurb": "Integrated multinational energy corporation operating worldwide exploration, production, refining, and renewable power infrastructure."
+    },
+    {
+      "name": "Insulet",
+      "board": "workday",
+      "url": "https://insulet.wd5.myworkdayjobs.com/wday/cxs/insulet/insuletCareers/jobs",
+      "careers_base": "https://insulet.wd5.myworkdayjobs.com/en-US/insuletCareers",
+      "blurb": "Innovative medical device company dedicated to simplifying life for people with diabetes through its tubeless Omnipod insulin delivery system."
+    },
+    {
+      "name": "FMC Corporation",
+      "board": "workday",
+      "url": "https://fmc.wd12.myworkdayjobs.com/wday/cxs/fmc/fmc/jobs",
+      "careers_base": "https://fmc.wd12.myworkdayjobs.com/en-US/fmc",
+      "blurb": "Global agricultural sciences company advancing crop protection, plant health, and professional pest and turf management solutions."
+    },
+    {
+      "name": "Dominion Energy",
+      "board": "successfactors",
+      "company": "dominionenergy",
+      "domain": "careers.dominionenergy.com",
+      "blurb": "Major American energy company providing clean, reliable electricity and natural gas across the mid-Atlantic and southeast United States."
+    },
+    {
+      "name": "DTE Energy",
+      "board": "successfactors",
+      "company": "dteenergy",
+      "domain": "careers.dteenergy.com",
+      "blurb": "Diversified energy company developing renewable energy, electric utility distribution, and natural gas storage and transmission across the Midwest."
+    },
+    {
+      "name": "Ball Corporation",
+      "board": "successfactors",
+      "company": "ball",
+      "domain": "jobs.ball.com",
+      "blurb": "Global supplier of innovative, sustainable aluminum packaging solutions for beverage, personal care, and household products."
+    },
+    {
+      "name": "A. O. Smith",
+      "board": "successfactors",
+      "company": "aosmith",
+      "domain": "jobs.aosmith.com",
+      "blurb": "Global leader in water technology and manufacturer of commercial and residential water heaters, boilers, and water treatment products."
     }
   ],
   "criteria": {
