@@ -23,10 +23,16 @@ fi
 export PYTHONPATH="$REPO_ROOT:${PYTHONPATH:-}"
 
 echo "=== 1. Running Tests (pytest) ==="
-"$PYTHON" -m pytest -q
+if "$PYTHON" -m pytest -n auto --help &>/dev/null; then
+    "$PYTHON" -m pytest -n auto -q
+else
+    "$PYTHON" -m pytest -q
+fi
 
 echo "=== 2. Type Checking (pyright --strict) ==="
-if command -v pyright &>/dev/null; then
+if [ -f "$REPO_ROOT/.venv/bin/pyright" ]; then
+    "$REPO_ROOT/.venv/bin/pyright"
+elif command -v pyright &>/dev/null; then
     pyright
 elif [ -f "$HOME/.local/bin/pyright" ]; then
     "$HOME/.local/bin/pyright"
@@ -45,21 +51,18 @@ if grep -rn 'type: ignore\|pyright: ignore' scraper tests; then
 fi
 
 echo "=== 4. Code Formatting (ruff format --check) ==="
-if command -v ruff &>/dev/null; then
-    ruff format --check .
+if [ -f "$REPO_ROOT/.venv/bin/ruff" ]; then
+    RUFF="$REPO_ROOT/.venv/bin/ruff"
+elif command -v ruff &>/dev/null; then
+    RUFF="ruff"
 elif [ -f "$HOME/.local/bin/ruff" ]; then
-    "$HOME/.local/bin/ruff" format --check .
+    RUFF="$HOME/.local/bin/ruff"
 else
-    "$PYTHON" -m ruff format --check .
+    RUFF="$PYTHON -m ruff"
 fi
+$RUFF format --check .
 
 echo "=== 5. Linting (ruff check) ==="
-if command -v ruff &>/dev/null; then
-    ruff check .
-elif [ -f "$HOME/.local/bin/ruff" ]; then
-    "$HOME/.local/bin/ruff" check .
-else
-    "$PYTHON" -m ruff check .
-fi
+$RUFF check .
 
 echo " All CI checks passed successfully!"

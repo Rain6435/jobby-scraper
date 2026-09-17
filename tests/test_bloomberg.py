@@ -272,3 +272,50 @@ def test_fetch_jobs_network_error() -> None:
     scraper = BloombergScraper(company)
     jobs = scraper.fetch_jobs()
     assert jobs == []
+
+
+@responses.activate
+def test_fetch_jobs_lululemon_style() -> None:
+    html = """
+    <div class="results">
+      <article class="article article--result">
+        <div class="article__header">
+          <div class="article__header__text">
+            <h3 class="article__header__text__title">
+              <a href="https://careers.lululemon.com/en_US/careers/JobDetail/Guest-Experience-Lead/63919">
+                Guest Experience Lead
+              </a>
+            </h3>
+            <div class="article__header__text__subtitle">
+              <span>Boston, Massachusetts, United States</span>
+            </div>
+          </div>
+        </div>
+      </article>
+    </div>
+    """
+    responses.get(
+        "https://careers.lululemon.com/en_US/careers/SearchJobs?jobOffset=0",
+        body=html,
+        status=200,
+        content_type="text/html",
+    )
+    responses.get(
+        "https://careers.lululemon.com/en_US/careers/SearchJobs?jobOffset=1",
+        body=SAMPLE_EMPTY_HTML,
+        status=200,
+        content_type="text/html",
+    )
+
+    company: BloombergConfig = {
+        "name": "Lululemon",
+        "board": "bloomberg",
+        "url": "https://careers.lululemon.com/en_US/careers/SearchJobs",
+    }
+    scraper = BloombergScraper(company)
+    jobs = scraper.fetch_jobs()
+
+    assert len(jobs) == 1
+    assert jobs[0].id == "lululemon:63919"
+    assert jobs[0].title == "Guest Experience Lead"
+    assert jobs[0].location == "Boston, Massachusetts, United States"

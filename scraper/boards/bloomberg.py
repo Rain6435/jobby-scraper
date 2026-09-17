@@ -61,21 +61,25 @@ class _AvatureHTMLParser(HTMLParser):
             self.in_article = True
             self.current_job = _ParsedAvatureJob()
         elif self.in_article:
-            if tag == "a" and "link" in classes:
-                href = attr_dict.get("href", "")
+            href = attr_dict.get("href", "")
+            if tag == "a" and ("/JobDetail/" in href or "link" in classes):
                 m = re.search(r"/(\d+)(?:[/?#]|$)", href)
                 if m and self.current_job:
                     self.current_job.url = urljoin(self.base_url, href)
                     self.current_job.job_id = m.group(1)
                     self.in_title = True
                     self.text_buf = []
-            elif "list-item-location" in classes or (
-                "paragraph_inner-span" in classes
-                and self.current_job
-                and not self.current_job.location
+            elif any(
+                c in classes
+                for c in [
+                    "list-item-location",
+                    "article__header__text__subtitle",
+                    "paragraph_inner-span",
+                ]
             ):
-                self.in_location = True
-                self.text_buf = []
+                if self.current_job and not self.current_job.location:
+                    self.in_location = True
+                    self.text_buf = []
 
     def handle_data(self, data: str) -> None:
         if self.in_title or self.in_location:

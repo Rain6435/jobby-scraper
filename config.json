@@ -6803,6 +6803,54 @@
       "company": "aosmith",
       "domain": "jobs.aosmith.com",
       "blurb": "Global leader in water technology and manufacturer of commercial and residential water heaters, boilers, and water treatment products."
+    },
+    {
+      "name": "Lululemon",
+      "board": "bloomberg",
+      "url": "https://careers.lululemon.com/en_US/careers/SearchJobs",
+      "blurb": "Global technical athletic apparel and lifestyle brand founded in Vancouver, designing products for yoga, running, training, and wellness."
+    },
+    {
+      "name": "CPKC",
+      "board": "successfactors",
+      "company": "cpkc",
+      "domain": "careers.cpr.ca",
+      "blurb": "First single-line transnational railway connecting Canada, the United States, and Mexico with comprehensive freight transportation networks."
+    },
+    {
+      "name": "McDonald's",
+      "board": "successfactors",
+      "company": "mcdonalds",
+      "domain": "jobs.mcdonalds.com",
+      "blurb": "Leading global foodservice retailer operating thousands of franchised and company-owned restaurants worldwide."
+    },
+    {
+      "name": "McCormick & Company",
+      "board": "successfactors",
+      "company": "mccormick",
+      "domain": "careers.mccormick.com",
+      "blurb": "Global leader in flavor, manufacturing spices, seasoning mixes, condiments, and other flavoring products."
+    },
+    {
+      "name": "Public Service Enterprise Group",
+      "board": "successfactors",
+      "company": "pseg",
+      "domain": "jobs.pseg.com",
+      "blurb": "Diversified energy company operating public electric and gas transmission, distribution, and nuclear generation facilities in the Mid-Atlantic."
+    },
+    {
+      "name": "WEC Energy Group",
+      "board": "successfactors",
+      "company": "wecenergygroup",
+      "domain": "careers.wecenergygroup.com",
+      "blurb": "Major Midwest electric and natural gas utility holding company delivering reliable energy infrastructure across Wisconsin, Illinois, and Michigan."
+    },
+    {
+      "name": "CenterPoint Energy",
+      "board": "successfactors",
+      "company": "centerpointenergy",
+      "domain": "careers.centerpointenergy.com",
+      "blurb": "Domestic energy delivery company providing electric transmission, distribution, and natural gas services across multiple US states."
     }
   ],
   "criteria": {

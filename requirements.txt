@@ -5,6 +5,8 @@ sqlalchemy>=2.0
 
 # dev
 pytest>=8.0
+pytest-xdist>=3.5
 responses>=0.25
 pyright>=1.1.400
 ruff>=0.16
+beautifulsoup4>=4.12
