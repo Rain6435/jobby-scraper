@@ -33,6 +33,7 @@ from scraper.models import Job
 FEED_URL = (
     "https://idcanada.org/?feed=job_feed"
     "&job_types=contract%2Cfreelance%2Cfull-time%2Cinternship%2Cpart-time%2Ctemporary"
+    "&posts_per_page=100"
 )
 TIMEOUT = 30
 

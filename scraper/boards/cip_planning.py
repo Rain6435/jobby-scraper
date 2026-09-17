@@ -40,6 +40,7 @@ FEED_URL = (
     "https://www.cip-icu.ca/?feed=job_feed"
     "&job_types=consultancy%2Ccontract%2Cfull-time%2Cinternship%2Cpart-time"
     "%2Crequest-for-proposals-rfp%2Cstudent-co-op-position%2Ctemporary"
+    "&posts_per_page=100"
 )
 TIMEOUT = 30
 
