@@ -1,6 +1,6 @@
 ---
 name: expand-companies
-description: Autonomous cross-industry company and job board discovery workflow for Jobby-Scraper. Use when the user requests adding or finding new companies, expanding specific regions (e.g. Seattle, Austin, Europe, UK, APAC), researching ATS boards (Greenhouse, Ashby, Lever, BambooHR, SmartRecruiters, Workday, Rippling, Recruitee, Workable, Breezy, Personio, Teamtailor), or verifying and updating config.json.
+description: Autonomous cross-industry company and job board discovery workflow for Jobby-Scraper with uv-accelerated probing and CI. Use when the user requests adding or finding new companies, expanding specific regions (e.g. Seattle, Austin, Europe, UK, APAC), researching ATS boards (Greenhouse, Ashby, Lever, BambooHR, SmartRecruiters, Workday, Avature/Bloomberg, Rippling, Recruitee, Workable, Breezy, Personio, Teamtailor), or verifying and updating config.json.
 ---
 
 # Cross-Industry Job Board Expansion Skill
@@ -35,7 +35,7 @@ When expanding any geographic region, metropolitan area, or thematic target, the
 
 ## 2. Supported ATS Platforms & Config Schemas
 
-Every entry in `config.json` must strictly conform to [scraper/config_types.py](file:///home/brosi/job_pipeline/jobby-scraper/scraper/config_types.py). All ATS platforms are supported equally:
+Every entry in `config.json` must strictly conform to [scraper/config_types.py](file:///root/jobby-scraper/scraper/config_types.py). All ATS platforms are supported equally:
 
 | Board | Required Config Key(s) | Public Endpoint Pattern | Config JSON Example |
 | :--- | :--- | :--- | :--- |
@@ -62,6 +62,7 @@ Every entry in `config.json` must strictly conform to [scraper/config_types.py](
 | **Paylocity** | `guid` | `recruiting.paylocity.com/recruiting/v2/api/feed/jobs/{guid}` | `{"name": "Apex Healthcare", "board": "paylocity", "guid": "..."}` |
 | **iCIMS** | `tenant`, `domain` | `{tenant}.icims.com/jobs/search?pr={page}&in_iframe=1` | `{"name": "Pacific Transit", "board": "icims", "tenant": "careers-pacifictransit"}` |
 | **Jibe** | `tenant` or `url` | `{base_url}/api/jobs?page={page}&limit={limit}` | `{"name": "GitHub", "board": "jibe", "tenant": "githubinc"}` |
+| **Avature / Bloomberg** | `company` or `query` (optional `url`) | `{company}.avature.net/careers/SearchJobs` or custom tenant URL | `{"name": "Bloomberg", "board": "bloomberg", "query": "..."}` |
 
 ---
 
@@ -70,30 +71,46 @@ Every entry in `config.json` must strictly conform to [scraper/config_types.py](
 
 When researching or expanding any target region or theme:
 
+### Step 0: High-Performance Environment Setup with `uv`
+The repository uses **`uv`** for near-instant package installation, virtual environment management, and high-performance execution.
+
+```bash
+# Verify uv availability or install
+uv --version || curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Initialize or synchronize virtual environment
+uv venv
+uv pip install -r requirements.txt
+
+# Run scripts directly with uv (environment is automatically resolved)
+uv run python scripts/discover_companies.py ...
+```
+
 ### Step 1: Broad Cross-Field Candidate Identification
 1. Review the **Industry Coverage Matrix** and build a diversified candidate employer list across healthcare, education, utilities, retail, construction, manufacturing, finance, non-profit, culture, and tech.
 2. Compile candidate identifiers (corporate names, web domains, and candidate slug variations).
 
 ### Step 2: Multi-ATS Probing
-Execute [scripts/discover_companies.py](file:///home/brosi/job_pipeline/jobby-scraper/scripts/discover_companies.py) to probe all supported ATS platforms concurrently:
+Execute [scripts/discover_companies.py](file:///root/jobby-scraper/scripts/discover_companies.py) to probe all supported ATS platforms concurrently (use `uv run` for instant execution):
 
 ```bash
 # Probe single company across all ATS engines
-PYTHONPATH=. /usr/bin/python3 scripts/discover_companies.py --company "Company Name"
+uv run python scripts/discover_companies.py --company "Company Name"
 
 # Probe candidate slugs across all ATS engines
-PYTHONPATH=. /usr/bin/python3 scripts/discover_companies.py --company "Company Name" --slug "slug1,slug2,slug3"
+uv run python scripts/discover_companies.py --company "Company Name" --slug "slug1,slug2,slug3"
 
 # Batch probe a diversified list of companies across all fields
-PYTHONPATH=. /usr/bin/python3 scripts/discover_companies.py --file regional_employers.txt
+uv run python scripts/discover_companies.py --file regional_employers.txt
 
 # Automatically append verified entries into config.json and test
-PYTHONPATH=. /usr/bin/python3 scripts/discover_companies.py --file regional_employers.txt --apply --test
+uv run python scripts/discover_companies.py --file regional_employers.txt --apply --test
 ```
+*(Fallback without `uv`: `PYTHONPATH=. /usr/bin/python3 scripts/discover_companies.py ...`)*
 
 ### Step 3: Web Research for Custom/Complex Endpoints
 For institutions with custom domains or enterprise portals:
-1. Search the web for `"[Employer Name]" ("greenhouse.io" OR "ashbyhq.com" OR "lever.co" OR "bamboohr.com" OR "smartrecruiters.com" OR "myworkdayjobs.com" OR "workable.com" OR "rippling.com")`.
+1. Search the web for `"[Employer Name]" ("greenhouse.io" OR "ashbyhq.com" OR "lever.co" OR "bamboohr.com" OR "smartrecruiters.com" OR "myworkdayjobs.com" OR "workable.com" OR "rippling.com" OR "avature.net")`.
 2. Extract the canonical identifier or API endpoint.
 3. Validate using `discover_companies.py` or by running the board's scraper class directly.
 
@@ -101,20 +118,21 @@ For institutions with custom domains or enterprise portals:
 1. **Deduplication**: Verify the company or endpoint signature does not already exist in `config.json`.
 2. **Live Scraper Validation**: Execute a live smoke test to confirm jobs parse cleanly:
    ```bash
-   PYTHONPATH=. /usr/bin/python3 -m scraper.main --company "<Employer Name>" --limit 1 --verbose
+   uv run python -m scraper.main --company "<Employer Name>" --limit 1 --verbose
    ```
+   *(Fallback: `PYTHONPATH=. /usr/bin/python3 -m scraper.main --company "<Employer Name>" --limit 1 --verbose`)*
 
 ### Step 5: Mandatory Pre-Commit & Pre-Push CI Verification
 **CRITICAL**: Every agent MUST run and verify the full local CI pipeline before creating any git commit or pushing to remote. Never push without passing CI checks locally.
 
-Execute the CI runner:
+Execute the CI runner (which auto-detects `uv`/`.venv` and parallelizes tests across all cores using `pytest-xdist`):
 ```bash
 ./scripts/ci.sh
 ```
 
-Or execute each check individually (all must pass with exit code `0`):
-1. **Test Suite**: `python -m pytest -q` (all 230+ tests must pass)
-2. **Type Checking**: `python -m pyright` (strict mode, 0 errors, 0 warnings)
+Or execute each check individually via `uv run` (all must pass with exit code `0`):
+1. **Parallel Test Suite**: `uv run pytest -n auto -q` (all 369+ tests must pass)
+2. **Type Checking**: `uv run pyright` (strict mode, 0 errors, 0 warnings)
 3. **Strict Type Audit**:
    ```bash
    if grep -rn '\bAny\b' scraper tests; then echo "Found 'Any'" && exit 1; fi
@@ -122,10 +140,10 @@ Or execute each check individually (all must pass with exit code `0`):
    ```
 4. **Code Formatting & Linting**:
    ```bash
-   python -m ruff format --check .
-   python -m ruff check .
+   uv run ruff format --check .
+   uv run ruff check .
    ```
-   *If formatting or linting errors are found, run `python -m ruff format .` and `python -m ruff check --fix .`, re-verify with `./scripts/ci.sh`, and only then proceed.*
+   *If formatting or linting errors are found, run `uv run ruff format .` and `uv run ruff check --fix .`, re-verify with `./scripts/ci.sh`, and only then proceed.*
 
 ### Step 6: Presentation & Version Control
 1. Present the discovered companies cleanly grouped by their specific **industry sector** with active job counts and ATS engine.
