@@ -17,6 +17,7 @@ place" (see get_or_create_locations in db.py).
 
 from __future__ import annotations
 
+import functools
 import re
 import unicodedata
 from dataclasses import dataclass
@@ -947,6 +948,20 @@ def _matches_word(normalized: str, phrase: str) -> bool:
     return re.search(rf"(?:^|[^a-z]){escaped}(?:[^a-z]|$)", normalized) is not None
 
 
+_LOCATION_ALIASES_COMBINED_RE = re.compile(
+    r"(?:^|[^a-z])(?:"
+    + "|".join(re.escape(alias) for alias in LOCATION_ALIASES)
+    + r")(?:[^a-z]|$)",
+    re.IGNORECASE,
+)
+_COUNTRY_NAMES_COMBINED_RE = re.compile(
+    r"(?:^|[^a-z])(?:"
+    + "|".join(re.escape(name.lower()) for name in COUNTRY_NAMES.values())
+    + r")(?:[^a-z]|$)",
+    re.IGNORECASE,
+)
+
+
 def resolve_country_from_location(location: str | None) -> str | None:
     """Resolve a free-text job location string to an ISO alpha-2 country
     code. Returns None — never a guess — when nothing confidently matches;
@@ -1027,12 +1042,14 @@ def resolve_country_from_location(location: str | None) -> str | None:
         if code:
             return code
 
-    for alias, code in LOCATION_ALIASES.items():
-        if _matches_word(without_parens, alias):
-            return code
-    for code, name in COUNTRY_NAMES.items():
-        if _matches_word(without_parens, name.lower()):
-            return code
+    if _LOCATION_ALIASES_COMBINED_RE.search(without_parens) is not None:
+        for alias, code in LOCATION_ALIASES.items():
+            if _matches_word(without_parens, alias):
+                return code
+    if _COUNTRY_NAMES_COMBINED_RE.search(without_parens) is not None:
+        for code, name in COUNTRY_NAMES.items():
+            if _matches_word(without_parens, name.lower()):
+                return code
 
     trailing = _TRAILING_STATE_RE.search(without_parens.strip())
     if trailing:
@@ -1090,6 +1107,7 @@ def _normalize_key(raw: str) -> str:
     return _WHITESPACE_RE.sub(" ", raw.strip()).casefold()
 
 
+@functools.lru_cache(maxsize=16384)
 def parse_location(raw: str) -> ParsedLocation:
     """Best-effort structural parse of a raw scraped location string. Only
     `normalized_key` feeds row identity (see get_or_create_locations);

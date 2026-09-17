@@ -6,14 +6,19 @@ from scraper.gazetteer import load_towns
 from scraper.location_resolver import parse_location
 from scraper.town_resolver import resolve_town
 
+_shared_conn: Connection | None = None
+
 
 def _conn_with_gazetteer() -> Connection:
-    engine = create_engine("sqlite:///:memory:")
-    metadata.create_all(engine)
-    conn = engine.connect()
-    load_towns(conn)
-    conn.commit()
-    return conn
+    global _shared_conn
+    if _shared_conn is None:
+        engine = create_engine("sqlite:///:memory:")
+        metadata.create_all(engine)
+        conn = engine.connect()
+        load_towns(conn)
+        conn.commit()
+        _shared_conn = conn
+    return _shared_conn
 
 
 def _town_id(

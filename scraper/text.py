@@ -8,6 +8,8 @@ from html import unescape
 _TAG_RE = re.compile(r"<[^>]+>")
 _WS_RE = re.compile(r"[ \t]+")
 _BLANK_LINES_RE = re.compile(r"\n{3,}")
+_BLOCK_CLOSE_RE = re.compile(r"</(?:p|div|li|h[1-6])>", re.IGNORECASE)
+_BR_RE = re.compile(r"<br\s*/?>", re.IGNORECASE)
 
 
 def html_to_text(html: str, max_chars: int | None = None) -> str:
@@ -29,8 +31,8 @@ def html_to_text(html: str, max_chars: int | None = None) -> str:
     """
     if not html:
         return ""
-    text = re.sub(r"(?i)</(p|div|li|h[1-6])>", "\n", html)
-    text = re.sub(r"(?i)<br\s*/?>", "\n", text)
+    text = _BLOCK_CLOSE_RE.sub("\n", html)
+    text = _BR_RE.sub("\n", text)
     text = _TAG_RE.sub("", text)
     text = unescape(text)
     text = _WS_RE.sub(" ", text)

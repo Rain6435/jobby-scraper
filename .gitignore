@@ -4,6 +4,7 @@ __pycache__/
 venv/
 .pytest_cache/
 .env
+uv.lock
 
 # Ollama key rotation state (standalone-run fallback path — see
 # scraper/ollama_keys.py; the normal nested-checkout path writes to

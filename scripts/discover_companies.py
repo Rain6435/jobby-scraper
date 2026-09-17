@@ -29,16 +29,55 @@ import json
 import re
 import subprocess
 import sys
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any
+from typing import TypedDict, cast
 
 import requests
+from requests.adapters import HTTPAdapter
+
+from scraper.config_types import CompanyConfig
 
 CONFIG_PATH = Path(__file__).resolve().parent.parent / "config.json"
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
     "Accept": "application/json, text/plain, */*",
 }
+
+
+class ProbeResult(TypedDict, total=False):
+    name: str
+    board: str
+    token: str
+    slug: str
+    company: str
+    company_id: str
+    board_id: str
+    agency: str
+    tenant: str
+    site_number: str
+    domain: str
+    url: str
+    careers_base: str
+    query: str
+    count: int
+    sample: str
+    location: str
+
+
+_PROBE_SESSION: requests.Session | None = None
+
+
+def get_probe_session() -> requests.Session:
+    global _PROBE_SESSION
+    if _PROBE_SESSION is None:
+        session = requests.Session()
+        adapter = HTTPAdapter(pool_connections=20, pool_maxsize=20)
+        session.mount("https://", adapter)
+        session.mount("http://", adapter)
+        session.headers.update(HEADERS)
+        _PROBE_SESSION = session
+    return _PROBE_SESSION
 
 
 def slugify(text: str) -> list[str]:
@@ -71,11 +110,10 @@ def slugify(text: str) -> list[str]:
     return list(dict.fromkeys(candidates))
 
 
-def probe_greenhouse(slug: str, timeout: float = 3.0) -> dict[str, Any] | None:
+def probe_greenhouse(slug: str, timeout: float = 3.0) -> ProbeResult | None:
     try:
-        r = requests.get(
+        r = get_probe_session().get(
             f"https://boards-api.greenhouse.io/v1/boards/{slug}/jobs",
-            headers=HEADERS,
             timeout=timeout,
         )
         if r.status_code == 200:
@@ -96,12 +134,11 @@ def probe_greenhouse(slug: str, timeout: float = 3.0) -> dict[str, Any] | None:
     return None
 
 
-def probe_ashby(slug: str, timeout: float = 3.0) -> dict[str, Any] | None:
+def probe_ashby(slug: str, timeout: float = 3.0) -> ProbeResult | None:
     try:
-        r = requests.get(
+        r = get_probe_session().get(
             f"https://api.ashbyhq.com/posting-api/job-board/{slug}",
             params={"includeCompensation": "true"},
-            headers=HEADERS,
             timeout=timeout,
         )
         if r.status_code == 200:
@@ -122,10 +159,11 @@ def probe_ashby(slug: str, timeout: float = 3.0) -> dict[str, Any] | None:
     return None
 
 
-def probe_lever(slug: str, timeout: float = 3.0) -> dict[str, Any] | None:
+def probe_lever(slug: str, timeout: float = 3.0) -> ProbeResult | None:
     try:
-        r = requests.get(
-            f"https://api.lever.co/v0/postings/{slug}?mode=json", headers=HEADERS, timeout=timeout
+        r = get_probe_session().get(
+            f"https://api.lever.co/v0/postings/{slug}?mode=json",
+            timeout=timeout,
         )
         if r.status_code == 200:
             data = r.json()
@@ -144,10 +182,11 @@ def probe_lever(slug: str, timeout: float = 3.0) -> dict[str, Any] | None:
     return None
 
 
-def probe_bamboohr(slug: str, timeout: float = 3.0) -> dict[str, Any] | None:
+def probe_bamboohr(slug: str, timeout: float = 3.0) -> ProbeResult | None:
     try:
-        r = requests.get(
-            f"https://{slug}.bamboohr.com/careers/list", headers=HEADERS, timeout=timeout
+        r = get_probe_session().get(
+            f"https://{slug}.bamboohr.com/careers/list",
+            timeout=timeout,
         )
         if r.status_code == 200:
             data = r.json()
@@ -169,11 +208,10 @@ def probe_bamboohr(slug: str, timeout: float = 3.0) -> dict[str, Any] | None:
     return None
 
 
-def probe_smartrecruiters(slug: str, timeout: float = 3.0) -> dict[str, Any] | None:
+def probe_smartrecruiters(slug: str, timeout: float = 3.0) -> ProbeResult | None:
     try:
-        r = requests.get(
+        r = get_probe_session().get(
             f"https://api.smartrecruiters.com/v1/companies/{slug}/postings?limit=1",
-            headers=HEADERS,
             timeout=timeout,
         )
         if r.status_code == 200:
@@ -195,10 +233,11 @@ def probe_smartrecruiters(slug: str, timeout: float = 3.0) -> dict[str, Any] | N
     return None
 
 
-def probe_rippling(slug: str, timeout: float = 3.0) -> dict[str, Any] | None:
+def probe_rippling(slug: str, timeout: float = 3.0) -> ProbeResult | None:
     try:
-        r = requests.get(
-            f"https://ats.rippling.com/api/v2/board/{slug}/jobs", headers=HEADERS, timeout=timeout
+        r = get_probe_session().get(
+            f"https://ats.rippling.com/api/v2/board/{slug}/jobs",
+            timeout=timeout,
         )
         if r.status_code == 200:
             data = r.json()
@@ -219,10 +258,11 @@ def probe_rippling(slug: str, timeout: float = 3.0) -> dict[str, Any] | None:
     return None
 
 
-def probe_recruitee(slug: str, timeout: float = 3.0) -> dict[str, Any] | None:
+def probe_recruitee(slug: str, timeout: float = 3.0) -> ProbeResult | None:
     try:
-        r = requests.get(
-            f"https://{slug}.recruitee.com/api/offers", headers=HEADERS, timeout=timeout
+        r = get_probe_session().get(
+            f"https://{slug}.recruitee.com/api/offers",
+            timeout=timeout,
         )
         if r.status_code == 200:
             data = r.json()
@@ -244,11 +284,10 @@ def probe_recruitee(slug: str, timeout: float = 3.0) -> dict[str, Any] | None:
     return None
 
 
-def probe_workable(slug: str, timeout: float = 3.0) -> dict[str, Any] | None:
+def probe_workable(slug: str, timeout: float = 3.0) -> ProbeResult | None:
     try:
-        r = requests.get(
+        r = get_probe_session().get(
             f"https://apply.workable.com/api/v3/accounts/{slug}/jobs",
-            headers=HEADERS,
             timeout=timeout,
         )
         if r.status_code == 200:
@@ -272,9 +311,12 @@ def probe_workable(slug: str, timeout: float = 3.0) -> dict[str, Any] | None:
     return None
 
 
-def probe_breezy(slug: str, timeout: float = 3.0) -> dict[str, Any] | None:
+def probe_breezy(slug: str, timeout: float = 3.0) -> ProbeResult | None:
     try:
-        r = requests.get(f"https://{slug}.breezy.hr/json", headers=HEADERS, timeout=timeout)
+        r = get_probe_session().get(
+            f"https://{slug}.breezy.hr/json",
+            timeout=timeout,
+        )
         if r.status_code == 200:
             data = r.json()
             if isinstance(data, list) and data:
@@ -292,9 +334,12 @@ def probe_breezy(slug: str, timeout: float = 3.0) -> dict[str, Any] | None:
     return None
 
 
-def probe_personio(slug: str, timeout: float = 3.0) -> dict[str, Any] | None:
+def probe_personio(slug: str, timeout: float = 3.0) -> ProbeResult | None:
     try:
-        r = requests.get(f"https://{slug}.jobs.personio.de/xml", headers=HEADERS, timeout=timeout)
+        r = get_probe_session().get(
+            f"https://{slug}.jobs.personio.de/xml",
+            timeout=timeout,
+        )
         if r.status_code == 200:
             import xml.etree.ElementTree as ET
 
@@ -315,10 +360,11 @@ def probe_personio(slug: str, timeout: float = 3.0) -> dict[str, Any] | None:
     return None
 
 
-def probe_teamtailor(slug: str, timeout: float = 3.0) -> dict[str, Any] | None:
+def probe_teamtailor(slug: str, timeout: float = 3.0) -> ProbeResult | None:
     try:
-        r = requests.get(
-            f"https://{slug}.teamtailor.com/jobs.json", headers=HEADERS, timeout=timeout
+        r = get_probe_session().get(
+            f"https://{slug}.teamtailor.com/jobs.json",
+            timeout=timeout,
         )
         if r.status_code == 200:
             data = r.json()
@@ -337,10 +383,11 @@ def probe_teamtailor(slug: str, timeout: float = 3.0) -> dict[str, Any] | None:
     return None
 
 
-def probe_pinpoint(slug: str, timeout: float = 3.0) -> dict[str, Any] | None:
+def probe_pinpoint(slug: str, timeout: float = 3.0) -> ProbeResult | None:
     try:
-        r = requests.get(
-            f"https://{slug}.pinpointhq.com/postings.json", headers=HEADERS, timeout=timeout
+        r = get_probe_session().get(
+            f"https://{slug}.pinpointhq.com/postings.json",
+            timeout=timeout,
         )
         if r.status_code == 200:
             data = r.json()
@@ -362,11 +409,10 @@ def probe_pinpoint(slug: str, timeout: float = 3.0) -> dict[str, Any] | None:
     return None
 
 
-def probe_jobvite(slug: str, timeout: float = 3.0) -> dict[str, Any] | None:
+def probe_jobvite(slug: str, timeout: float = 3.0) -> ProbeResult | None:
     try:
-        r = requests.get(
+        r = get_probe_session().get(
             f"https://app.jobvite.com/CompanyJobs/Xml.aspx?c={slug}",
-            headers=HEADERS,
             timeout=timeout,
         )
         if r.status_code == 200 and b"<job>" in r.content:
@@ -389,10 +435,11 @@ def probe_jobvite(slug: str, timeout: float = 3.0) -> dict[str, Any] | None:
     return None
 
 
-def probe_jazzhr(slug: str, timeout: float = 3.0) -> dict[str, Any] | None:
+def probe_jazzhr(slug: str, timeout: float = 3.0) -> ProbeResult | None:
     try:
-        r = requests.get(
-            f"https://app.jazz.co/feeds/export/jobs/{slug}", headers=HEADERS, timeout=timeout
+        r = get_probe_session().get(
+            f"https://app.jazz.co/feeds/export/jobs/{slug}",
+            timeout=timeout,
         )
         if r.status_code == 200 and b"<job>" in r.content:
             import xml.etree.ElementTree as ET
@@ -416,16 +463,13 @@ def probe_jazzhr(slug: str, timeout: float = 3.0) -> dict[str, Any] | None:
     return None
 
 
-def probe_governmentjobs(slug: str, timeout: float = 3.0) -> dict[str, Any] | None:
+def probe_governmentjobs(slug: str, timeout: float = 3.0) -> ProbeResult | None:
     try:
-        r = requests.get(
+        r = get_probe_session().get(
             f"https://agency.governmentjobs.com/jobfeed_v2.cfm?agency={slug}",
-            headers=HEADERS,
             timeout=timeout,
         )
         if r.status_code == 200 and (b"<item" in r.content or b"<job" in r.content):
-            import re
-
             items = re.findall(r"<item\b.*?>(.*?)</item>", r.text, re.DOTALL)
             if items:
                 title_m = re.search(r"<title\b.*?>(.*?)</title>", items[0], re.DOTALL)
@@ -442,17 +486,14 @@ def probe_governmentjobs(slug: str, timeout: float = 3.0) -> dict[str, Any] | No
     return None
 
 
-def probe_successfactors(slug: str, timeout: float = 3.0) -> dict[str, Any] | None:
+def probe_successfactors(slug: str, timeout: float = 3.0) -> ProbeResult | None:
     for domain in (f"jobs.{slug}.com", f"{slug}.jobs", f"careers.{slug}.com"):
         try:
-            r = requests.get(
+            r = get_probe_session().get(
                 f"https://{domain}/services/rss/job/?locale=en_US",
-                headers=HEADERS,
                 timeout=timeout,
             )
             if r.status_code == 200 and (b"<rss" in r.content or b"<item" in r.content):
-                import re
-
                 items = re.findall(r"<item\b.*?>(.*?)</item>", r.text, re.DOTALL)
                 if items:
                     title_m = re.search(r"<title\b.*?>(.*?)</title>", items[0], re.DOTALL)
@@ -470,12 +511,11 @@ def probe_successfactors(slug: str, timeout: float = 3.0) -> dict[str, Any] | No
     return None
 
 
-def probe_oraclecloud(slug: str, timeout: float = 3.0) -> dict[str, Any] | None:
+def probe_oraclecloud(slug: str, timeout: float = 3.0) -> ProbeResult | None:
     for site in ("CX", "CX_1", "CX_1001"):
         try:
-            r = requests.get(
+            r = get_probe_session().get(
                 f"https://{slug}.oraclecloud.com/hcmRestApi/resources/latest/recruitingCEJobRequisitions?finder=findReqs;siteNumber={site}&limit=1&onlyData=true",
-                headers=HEADERS,
                 timeout=timeout,
             )
             if r.status_code == 200:
@@ -497,7 +537,7 @@ def probe_oraclecloud(slug: str, timeout: float = 3.0) -> dict[str, Any] | None:
     return None
 
 
-PROBERS = {
+PROBERS: dict[str, Callable[[str], ProbeResult | None]] = {
     "greenhouse": probe_greenhouse,
     "ashby": probe_ashby,
     "lever": probe_lever,
@@ -518,50 +558,48 @@ PROBERS = {
 }
 
 
-def load_existing_config() -> tuple[list[dict[str, Any]], set[str]]:
+def load_existing_config() -> tuple[list[CompanyConfig], set[str]]:
     """Load config.json and build lookup keys for deduplication."""
     if not CONFIG_PATH.exists():
         return [], set()
 
     with open(CONFIG_PATH, encoding="utf-8") as f:
-        data = json.load(f)
+        data = cast(dict[str, list[CompanyConfig]], json.load(f))
 
-    companies = data.get("companies", [])
-    signatures = set()
+    companies: list[CompanyConfig] = data.get("companies", [])
+    signatures: set[str] = set()
 
     for c in companies:
         signatures.add(c.get("name", "").lower())
-        board = c.get("board", "")
+        board = str(c.get("board", ""))
         if "token" in c:
-            signatures.add(f"greenhouse:{c['token'].lower()}")
+            signatures.add(f"greenhouse:{str(c['token']).lower()}")
         if "slug" in c:
-            signatures.add(f"ashby:{c['slug'].lower()}")
+            signatures.add(f"ashby:{str(c['slug']).lower()}")
         if "company" in c:
-            signatures.add(f"{board}:{c['company'].lower()}")
+            signatures.add(f"{board}:{str(c['company']).lower()}")
         if "company_id" in c:
-            signatures.add(f"jobvite:{c['company_id'].lower()}")
+            signatures.add(f"jobvite:{str(c['company_id']).lower()}")
         if "agency" in c:
-            signatures.add(f"governmentjobs:{c['agency'].lower()}")
+            signatures.add(f"governmentjobs:{str(c['agency']).lower()}")
         if "tenant" in c:
-            signatures.add(f"{board}:{c['tenant'].lower()}")
+            signatures.add(f"{board}:{str(c['tenant']).lower()}")
         if "cid" in c:
-            signatures.add(f"adp:{c['cid'].lower()}")
+            signatures.add(f"adp:{str(c['cid']).lower()}")
         if "guid" in c:
-            signatures.add(f"paylocity:{c['guid'].lower()}")
+            signatures.add(f"paylocity:{str(c['guid']).lower()}")
         if "board_id" in c:
-            signatures.add(f"rippling:{c['board_id'].lower()}")
+            signatures.add(f"rippling:{str(c['board_id']).lower()}")
         if "url" in c:
-            signatures.add(f"workday:{c['url'].lower()}")
+            signatures.add(f"workday:{str(c['url']).lower()}")
 
     return companies, signatures
 
 
-def probe_candidate_slug(
-    slug: str, allowed_boards: list[str] | None = None
-) -> list[dict[str, Any]]:
+def probe_candidate_slug(slug: str, allowed_boards: list[str] | None = None) -> list[ProbeResult]:
     """Probe all supported boards for a given slug."""
     boards_to_test = allowed_boards if allowed_boards else list(PROBERS.keys())
-    matches = []
+    matches: list[ProbeResult] = []
     for b in boards_to_test:
         fn = PROBERS.get(b)
         if fn:
@@ -575,136 +613,170 @@ def probe_company(
     name: str,
     explicit_slugs: list[str] | None = None,
     allowed_boards: list[str] | None = None,
-) -> list[dict[str, Any]]:
+) -> list[ProbeResult]:
     """Generate candidate slugs for a company and probe ATS endpoints."""
     candidate_slugs = set(explicit_slugs or [])
     for s in slugify(name):
         candidate_slugs.add(s)
 
-    results = []
+    results: list[ProbeResult] = []
     for slug in candidate_slugs:
         matches = probe_candidate_slug(slug, allowed_boards=allowed_boards)
         for m in matches:
-            res = {"name": name, **m}
+            res: ProbeResult = dict(m)
+            res["name"] = name
             results.append(res)
     return results
 
 
-def verify_live_scraper(cfg: dict[str, Any]) -> tuple[bool, int, str]:
+def verify_live_scraper(cfg: ProbeResult) -> tuple[bool, int, str]:
     """Verify live scraping using jobby-scraper's native board scraper."""
     board = cfg.get("board")
-    clean_cfg = {k: v for k, v in cfg.items() if k not in ("count", "sample", "location")}
+    clean_cfg: CompanyConfig = cast(
+        CompanyConfig,
+        {k: v for k, v in cfg.items() if k not in ("count", "sample", "location")},
+    )
 
     try:
+        jobs = []
         if board == "greenhouse":
             from scraper.boards.greenhouse import GreenhouseScraper
+            from scraper.config_types import GreenhouseConfig
 
-            scraper = GreenhouseScraper(clean_cfg)
+            jobs = GreenhouseScraper(cast(GreenhouseConfig, clean_cfg)).fetch_jobs()
         elif board == "ashby":
             from scraper.boards.ashby import AshbyScraper
+            from scraper.config_types import AshbyConfig
 
-            scraper = AshbyScraper(clean_cfg)
+            jobs = AshbyScraper(cast(AshbyConfig, clean_cfg)).fetch_jobs()
         elif board == "lever":
             from scraper.boards.lever import LeverScraper
+            from scraper.config_types import LeverConfig
 
-            scraper = LeverScraper(clean_cfg)
+            jobs = LeverScraper(cast(LeverConfig, clean_cfg)).fetch_jobs()
         elif board == "bamboohr":
             from scraper.boards.bamboohr import BambooHRScraper
+            from scraper.config_types import BambooHrConfig
 
-            scraper = BambooHRScraper(clean_cfg)
+            jobs = BambooHRScraper(cast(BambooHrConfig, clean_cfg)).fetch_jobs()
         elif board == "smartrecruiters":
             from scraper.boards.smartrecruiters import SmartRecruitersScraper
+            from scraper.config_types import SmartRecruitersConfig
 
-            scraper = SmartRecruitersScraper(clean_cfg)
+            jobs = SmartRecruitersScraper(cast(SmartRecruitersConfig, clean_cfg)).fetch_jobs()
         elif board == "rippling":
             from scraper.boards.rippling import RipplingScraper
+            from scraper.config_types import RipplingConfig
 
-            scraper = RipplingScraper(clean_cfg)
+            jobs = RipplingScraper(cast(RipplingConfig, clean_cfg)).fetch_jobs()
         elif board == "recruitee":
             from scraper.boards.recruitee import RecruiteeScraper
+            from scraper.config_types import RecruiteeConfig
 
-            scraper = RecruiteeScraper(clean_cfg)
+            jobs = RecruiteeScraper(cast(RecruiteeConfig, clean_cfg)).fetch_jobs()
         elif board == "workable":
             from scraper.boards.workable import WorkableScraper
+            from scraper.config_types import WorkableConfig
 
-            scraper = WorkableScraper(clean_cfg)
+            jobs = WorkableScraper(cast(WorkableConfig, clean_cfg)).fetch_jobs()
         elif board == "breezy":
             from scraper.boards.breezy import BreezyScraper
+            from scraper.config_types import BreezyConfig
 
-            scraper = BreezyScraper(clean_cfg)
+            jobs = BreezyScraper(cast(BreezyConfig, clean_cfg)).fetch_jobs()
         elif board == "workday":
             from scraper.boards.workday import WorkdayScraper
+            from scraper.config_types import WorkdayConfig
 
-            scraper = WorkdayScraper(clean_cfg)
+            jobs = WorkdayScraper(cast(WorkdayConfig, clean_cfg)).fetch_jobs()
         elif board == "pinpoint":
             from scraper.boards.pinpoint import PinpointScraper
+            from scraper.config_types import PinpointConfig
 
-            scraper = PinpointScraper(clean_cfg)
+            jobs = PinpointScraper(cast(PinpointConfig, clean_cfg)).fetch_jobs()
         elif board == "jobvite":
             from scraper.boards.jobvite import JobviteScraper
+            from scraper.config_types import JobviteConfig
 
-            scraper = JobviteScraper(clean_cfg)
+            jobs = JobviteScraper(cast(JobviteConfig, clean_cfg)).fetch_jobs()
         elif board == "jazzhr":
             from scraper.boards.jazzhr import JazzHrScraper
+            from scraper.config_types import JazzHrConfig
 
-            scraper = JazzHrScraper(clean_cfg)
+            jobs = JazzHrScraper(cast(JazzHrConfig, clean_cfg)).fetch_jobs()
         elif board == "governmentjobs":
             from scraper.boards.governmentjobs import GovernmentJobsScraper
+            from scraper.config_types import GovernmentJobsConfig
 
-            scraper = GovernmentJobsScraper(clean_cfg)
+            jobs = GovernmentJobsScraper(cast(GovernmentJobsConfig, clean_cfg)).fetch_jobs()
         elif board == "reliefweb":
             from scraper.boards.reliefweb import ReliefwebScraper
+            from scraper.config_types import ReliefwebConfig
 
-            scraper = ReliefwebScraper(clean_cfg)
+            jobs = ReliefwebScraper(cast(ReliefwebConfig, clean_cfg)).fetch_jobs()
         elif board == "oraclecloud":
             from scraper.boards.oraclecloud import OracleCloudScraper
+            from scraper.config_types import OracleCloudConfig
 
-            scraper = OracleCloudScraper(clean_cfg)
+            jobs = OracleCloudScraper(cast(OracleCloudConfig, clean_cfg)).fetch_jobs()
         elif board == "successfactors":
             from scraper.boards.successfactors import SuccessFactorsScraper
+            from scraper.config_types import SuccessFactorsConfig
 
-            scraper = SuccessFactorsScraper(clean_cfg)
+            jobs = SuccessFactorsScraper(cast(SuccessFactorsConfig, clean_cfg)).fetch_jobs()
         elif board == "adp":
             from scraper.boards.adp import AdpScraper
+            from scraper.config_types import AdpConfig
 
-            scraper = AdpScraper(clean_cfg)
+            jobs = AdpScraper(cast(AdpConfig, clean_cfg)).fetch_jobs()
         elif board == "paylocity":
             from scraper.boards.paylocity import PaylocityScraper
+            from scraper.config_types import PaylocityConfig
 
-            scraper = PaylocityScraper(clean_cfg)
+            jobs = PaylocityScraper(cast(PaylocityConfig, clean_cfg)).fetch_jobs()
         elif board == "icims":
             from scraper.boards.icims import IcimsScraper
+            from scraper.config_types import IcimsConfig
 
-            scraper = IcimsScraper(clean_cfg)
+            jobs = IcimsScraper(cast(IcimsConfig, clean_cfg)).fetch_jobs()
         elif board == "personio":
             from scraper.boards.personio import PersonioScraper
+            from scraper.config_types import PersonioConfig
 
-            scraper = PersonioScraper(clean_cfg)
+            jobs = PersonioScraper(cast(PersonioConfig, clean_cfg)).fetch_jobs()
         elif board == "teamtailor":
             from scraper.boards.teamtailor import TeamtailorScraper
+            from scraper.config_types import TeamtailorConfig
 
-            scraper = TeamtailorScraper(clean_cfg)
+            jobs = TeamtailorScraper(cast(TeamtailorConfig, clean_cfg)).fetch_jobs()
+        elif board == "bloomberg":
+            from scraper.boards.bloomberg import BloombergScraper
+            from scraper.config_types import BloombergConfig
+
+            jobs = BloombergScraper(cast(BloombergConfig, clean_cfg)).fetch_jobs()
         else:
             return False, 0, f"Unsupported board {board}"
 
-        jobs = scraper.fetch_jobs()
         sample = jobs[0].title if jobs else "No jobs"
         return True, len(jobs), sample
     except Exception as e:
         return False, 0, str(e)
 
 
-def append_to_config(new_configs: list[dict[str, Any]]) -> int:
+def append_to_config(new_configs: list[ProbeResult]) -> int:
     """Safely append new company configurations into config.json."""
     with open(CONFIG_PATH, encoding="utf-8") as f:
-        data = json.load(f)
+        data = cast(dict[str, list[CompanyConfig]], json.load(f))
 
-    existing_companies = data.get("companies", [])
+    existing_companies: list[CompanyConfig] = data.get("companies", [])
     existing_signatures = {c.get("name", "").lower() for c in existing_companies}
 
     added = 0
     for cfg in new_configs:
-        clean = {k: v for k, v in cfg.items() if k not in ("count", "sample", "location")}
+        clean: CompanyConfig = cast(
+            CompanyConfig,
+            {k: v for k, v in cfg.items() if k not in ("count", "sample", "location")},
+        )
         if clean.get("name", "").lower() not in existing_signatures:
             existing_companies.append(clean)
             existing_signatures.add(clean.get("name", "").lower())
@@ -763,7 +835,7 @@ def main():
 
     if args.workday_url:
         name = args.company or "Workday Company"
-        cfg = {
+        cfg: ProbeResult = {
             "name": name,
             "board": "workday",
             "url": args.workday_url,
@@ -811,14 +883,14 @@ def main():
         f"Probing {len(candidates)} company candidates across ATS platforms (workers={args.workers})..."
     )
 
-    discovered: list[dict[str, Any]] = []
+    discovered: list[ProbeResult] = []
 
-    def process_candidate(item: tuple[str, list[str]]) -> list[dict[str, Any]]:
+    def process_candidate(item: tuple[str, list[str]]) -> list[ProbeResult]:
         name, explicit_slugs = item
         if name.lower() in existing_signatures:
             return []
         matches = probe_company(name, explicit_slugs=explicit_slugs, allowed_boards=allowed_boards)
-        valid = []
+        valid: list[ProbeResult] = []
         for m in matches:
             board = m["board"]
             key = f"{board}:{m.get('token') or m.get('slug') or m.get('company') or m.get('board_id')}".lower()
@@ -834,9 +906,12 @@ def main():
 
     print(f"\nFound {len(discovered)} potential new job boards!")
 
-    verified_list = []
+    verified_list: list[ProbeResult] = []
     for d in discovered:
-        clean = {k: v for k, v in d.items() if k not in ("count", "sample", "location")}
+        clean: ProbeResult = dict(d)
+        clean.pop("count", None)
+        clean.pop("sample", None)
+        clean.pop("location", None)
         ok, cnt, sample = verify_live_scraper(clean)
         if ok and cnt > 0:
             print(

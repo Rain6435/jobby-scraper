@@ -22,11 +22,12 @@ Only the columns town_resolver.py actually needs are kept.
 
 from __future__ import annotations
 
+import functools
 import gzip
 from dataclasses import dataclass
 from pathlib import Path
 
-from sqlalchemy import select
+from sqlalchemy import bindparam, select
 from sqlalchemy.engine import Connection
 
 from scraper.db import towns_table
@@ -76,12 +77,10 @@ def _filter_alternate_names(raw: str, ascii_name: str) -> str:
     return ",".join(kept)
 
 
-def iter_gazetteer_rows(path: Path = GAZETTEER_PATH) -> list[GazetteerRow]:
-    """Parse the bundled dump into rows. Pure, no DB access — kept separate
-    from load_towns() so it's independently testable without a connection.
-    """
+@functools.lru_cache(maxsize=1)
+def _cached_gazetteer_rows(path_str: str) -> tuple[GazetteerRow, ...]:
     rows: list[GazetteerRow] = []
-    with gzip.open(path, "rt", encoding="utf-8") as f:
+    with gzip.open(Path(path_str), "rt", encoding="utf-8") as f:
         for line in f:
             cols = line.rstrip("\n").split("\t")
             if len(cols) < 15:
@@ -107,7 +106,14 @@ def iter_gazetteer_rows(path: Path = GAZETTEER_PATH) -> list[GazetteerRow]:
                     population=population,
                 )
             )
-    return rows
+    return tuple(rows)
+
+
+def iter_gazetteer_rows(path: Path = GAZETTEER_PATH) -> list[GazetteerRow]:
+    """Parse the bundled dump into rows. Pure, no DB access — kept separate
+    from load_towns() so it's independently testable without a connection.
+    """
+    return list(_cached_gazetteer_rows(str(path.resolve())))
 
 
 def load_towns(conn: Connection, path: Path = GAZETTEER_PATH) -> int:
@@ -149,20 +155,37 @@ def load_towns(conn: Connection, path: Path = GAZETTEER_PATH) -> int:
                 for r in to_insert
             ],
         )
-    for r in to_update:
-        conn.execute(
+    if to_update:
+        update_stmt = (
             towns_table.update()
-            .where(towns_table.c.geoname_id == r.geoname_id)
+            .where(towns_table.c.geoname_id == bindparam("b_geoname_id"))
             .values(
-                name=r.name,
-                ascii_name=r.ascii_name,
-                alternate_names=r.alternate_names,
-                country_code=r.country_code,
-                admin1_code=r.admin1_code,
-                lat=r.lat,
-                lon=r.lon,
-                population=r.population,
+                name=bindparam("b_name"),
+                ascii_name=bindparam("b_ascii_name"),
+                alternate_names=bindparam("b_alternate_names"),
+                country_code=bindparam("b_country_code"),
+                admin1_code=bindparam("b_admin1_code"),
+                lat=bindparam("b_lat"),
+                lon=bindparam("b_lon"),
+                population=bindparam("b_population"),
             )
+        )
+        conn.execute(
+            update_stmt,
+            [
+                {
+                    "b_geoname_id": r.geoname_id,
+                    "b_name": r.name,
+                    "b_ascii_name": r.ascii_name,
+                    "b_alternate_names": r.alternate_names,
+                    "b_country_code": r.country_code,
+                    "b_admin1_code": r.admin1_code,
+                    "b_lat": r.lat,
+                    "b_lon": r.lon,
+                    "b_population": r.population,
+                }
+                for r in to_update
+            ],
         )
 
     return len(gazetteer_rows)

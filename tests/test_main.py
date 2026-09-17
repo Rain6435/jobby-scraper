@@ -533,10 +533,13 @@ def test_shard_size_scopes_write_to_its_own_companies(tmp_path: Path) -> None:
     assert db_job_ids(db_url) == {"beta:1"}
 
 
-def test_shard_failure_does_not_lose_other_shards_results(tmp_path: Path) -> None:
+def test_shard_failure_does_not_lose_other_shards_results(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """The whole point of sharding: one shard's write failure must not
     discard another shard's already-committed results, unlike the original
     single-transaction-for-everything behavior."""
+    monkeypatch.setattr(time, "sleep", _noop_sleep)
     db_url, deps = setup_run(
         tmp_path,
         companies=[

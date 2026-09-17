@@ -44,6 +44,7 @@ are additive metadata, not part of row identity.
 from __future__ import annotations
 
 import logging
+import sqlite3
 import time
 from collections.abc import Mapping, Sequence
 from datetime import datetime, timedelta
@@ -60,6 +61,7 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
     create_engine,
+    event,
     inspect,
     select,
     text,
@@ -198,7 +200,14 @@ job_locations_table = Table(
 )
 
 
+_ENGINES: dict[str, Engine] = {}
+
+
 def get_engine(database_url: str) -> Engine:
+    cached = _ENGINES.get(database_url)
+    if cached is not None:
+        return cached
+
     # sqlite3's driver default busy-timeout is 5s — too short for a
     # full-replace transaction across tens of thousands of rows when the
     # same file is also written to concurrently by job_pipeline's own
@@ -206,10 +215,25 @@ def get_engine(database_url: str) -> Engine:
     # "database is locked" here used to be swallowed silently by
     # write_jobs()'s broad except — raising the timeout makes that failure
     # mode far less likely to begin with, on top of no longer hiding it.
-    connect_args = {"timeout": 60} if make_url(database_url).get_backend_name() == "sqlite" else {}
+    is_sqlite = make_url(database_url).get_backend_name() == "sqlite"
+    connect_args = {"timeout": 60} if is_sqlite else {}
     engine = create_engine(database_url, connect_args=connect_args)
+
+    if is_sqlite:
+
+        @event.listens_for(engine, "connect")
+        def _set_sqlite_pragma(dbapi_connection: object, _connection_record: object) -> None:
+            if isinstance(dbapi_connection, sqlite3.Connection):
+                cursor = dbapi_connection.cursor()
+                cursor.execute("PRAGMA journal_mode = WAL")
+                cursor.execute("PRAGMA synchronous = NORMAL")
+                cursor.execute("PRAGMA cache_size = -64000")
+                cursor.execute("PRAGMA temp_store = MEMORY")
+                cursor.close()
+
     metadata.create_all(engine)
     _ensure_companies_group_name_column(engine)
+    _ENGINES[database_url] = engine
     return engine
 
 
@@ -298,17 +322,31 @@ def load_previous(database_url: str, company_names: set[str] | None = None) -> d
                 jobs_query = jobs_query.where(jobs_table.c.company_id.in_(scoped_company_ids))
             job_rows = list(conn.execute(jobs_query))
             job_ids = {row.id for row in job_rows}
-
-            locations_by_id = {row.id: row.name for row in conn.execute(select(locations_table))}
-            locations_by_job: dict[str, list[str]] = {}
-            for row in conn.execute(
-                select(job_locations_table).order_by(job_locations_table.c.ordinal)
-            ):
-                if company_names is not None and row.job_id not in job_ids:
-                    continue
-                name = locations_by_id.get(row.location_id)
-                if name is not None:
-                    locations_by_job.setdefault(row.job_id, []).append(name)
+            if company_names is not None:
+                locations_by_job: dict[str, list[str]] = {}
+                if job_ids:
+                    loc_query = (
+                        select(job_locations_table.c.job_id, locations_table.c.name)
+                        .join(
+                            locations_table,
+                            job_locations_table.c.location_id == locations_table.c.id,
+                        )
+                        .where(job_locations_table.c.job_id.in_(job_ids))
+                        .order_by(job_locations_table.c.ordinal)
+                    )
+                    for row in conn.execute(loc_query):
+                        locations_by_job.setdefault(row.job_id, []).append(row.name)
+            else:
+                locations_by_id = {
+                    row.id: row.name for row in conn.execute(select(locations_table))
+                }
+                locations_by_job = {}
+                for row in conn.execute(
+                    select(job_locations_table).order_by(job_locations_table.c.ordinal)
+                ):
+                    name = locations_by_id.get(row.location_id)
+                    if name is not None:
+                        locations_by_job.setdefault(row.job_id, []).append(name)
 
             previous: dict[str, Job] = {}
             for row in job_rows:
