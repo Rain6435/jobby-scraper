@@ -33,12 +33,16 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import TypedDict, cast
 
+REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
 import requests
 from requests.adapters import HTTPAdapter
 
 from scraper.config_types import CompanyConfig
 
-CONFIG_PATH = Path(__file__).resolve().parent.parent / "config.json"
+CONFIG_PATH = REPO_ROOT / "config.json"
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
     "Accept": "application/json, text/plain, */*",

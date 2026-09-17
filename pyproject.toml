@@ -9,6 +9,9 @@ ignore = [
     "E501",  # line length is a formatter concern, not a lint failure
 ]
 
+[tool.ruff.lint.per-file-ignores]
+"scripts/*" = ["E402"]
+
 [tool.ruff.lint.isort]
 known-first-party = ["scraper"]
 

@@ -6851,6 +6851,182 @@
       "company": "centerpointenergy",
       "domain": "careers.centerpointenergy.com",
       "blurb": "Domestic energy delivery company providing electric transmission, distribution, and natural gas services across multiple US states."
+    },
+    {
+      "name": "AMD",
+      "board": "jibe",
+      "url": "https://careers.amd.com",
+      "blurb": "Global semiconductor leader designing high-performance computing, graphics, and visualization technologies."
+    },
+    {
+      "name": "Capital One",
+      "board": "workday",
+      "url": "https://capitalone.wd12.myworkdayjobs.com/wday/cxs/capitalone/Capital_One/jobs",
+      "careers_base": "https://capitalone.wd12.myworkdayjobs.com/en-US/Capital_One",
+      "blurb": "Diversified financial services holding company offering banking, credit cards, auto loans, and savings."
+    },
+    {
+      "name": "Akamai Technologies",
+      "board": "oraclecloud",
+      "tenant": "fa-extu-saasfaprod1.fa.ocs",
+      "site_number": "CX_1",
+      "blurb": "Global cybersecurity, cloud computing, and content delivery network (CDN) service provider."
+    },
+    {
+      "name": "Bristol Myers Squibb",
+      "board": "workday",
+      "url": "https://bristolmyerssquibb.wd5.myworkdayjobs.com/wday/cxs/bristolmyerssquibb/BMS/jobs",
+      "careers_base": "https://bristolmyerssquibb.wd5.myworkdayjobs.com/en-US/BMS",
+      "blurb": "Global biopharmaceutical leader discovering, developing, and delivering innovative medicines for patients."
+    },
+    {
+      "name": "The Coca-Cola Company",
+      "board": "workday",
+      "url": "https://coke.wd1.myworkdayjobs.com/wday/cxs/coke/coca-cola-careers/jobs",
+      "careers_base": "https://coke.wd1.myworkdayjobs.com/en-US/coca-cola-careers",
+      "blurb": "Global beverage leader offering hundreds of beverage brands sold in more than 200 countries."
+    },
+    {
+      "name": "Dell Technologies",
+      "board": "oraclecloud",
+      "tenant": "iawmqy.fa.ocs",
+      "site_number": "careers",
+      "blurb": "Multinational technology leader developing, selling, repairing, and supporting computers and related products and services."
+    },
+    {
+      "name": "Eversource Energy",
+      "board": "workday",
+      "url": "https://eversource.wd1.myworkdayjobs.com/wday/cxs/eversource/ExternalSite/jobs",
+      "careers_base": "https://eversource.wd1.myworkdayjobs.com/en-US/ExternalSite",
+      "blurb": "New England's largest energy delivery company serving electric and natural gas customers across CT, MA, and NH."
+    },
+    {
+      "name": "Constellation Energy",
+      "board": "jibe",
+      "url": "https://jobs.constellationenergy.com",
+      "blurb": "The nation's largest producer of carbon-free energy and leading supplier of clean energy solutions."
+    },
+    {
+      "name": "eBay",
+      "board": "workday",
+      "url": "https://ebay.wd5.myworkdayjobs.com/wday/cxs/ebay/apply/jobs",
+      "careers_base": "https://ebay.wd5.myworkdayjobs.com/en-US/apply",
+      "blurb": "Global commerce leader connecting millions of buyers and sellers worldwide."
+    },
+    {
+      "name": "Danaher",
+      "board": "workday",
+      "url": "https://danaher.wd1.myworkdayjobs.com/wday/cxs/danaher/DanaherJobs/jobs",
+      "careers_base": "https://danaher.wd1.myworkdayjobs.com/en-US/DanaherJobs",
+      "blurb": "Global science and technology innovator committed to helping customers solve complex challenges and improving quality of life."
+    },
+    {
+      "name": "DaVita",
+      "board": "workday",
+      "url": "https://davita.wd1.myworkdayjobs.com/wday/cxs/davita/DKC_External/jobs",
+      "careers_base": "https://davita.wd1.myworkdayjobs.com/en-US/DKC_External",
+      "blurb": "Leading provider of kidney care services committed to creating positive health outcomes through clinical quality."
+    },
+    {
+      "name": "CSX Corporation",
+      "board": "oraclecloud",
+      "tenant": "fa-eowa-saasfaprod1.fa.ocs",
+      "site_number": "CSXCareers",
+      "blurb": "Leading supplier of rail-based freight transportation across the eastern United States."
+    },
+    {
+      "name": "FactSet",
+      "board": "workday",
+      "url": "https://factset.wd108.myworkdayjobs.com/wday/cxs/factset/FactSetCareers/jobs",
+      "careers_base": "https://factset.wd108.myworkdayjobs.com/en-US/FactSetCareers",
+      "blurb": "Financial digital platform and enterprise solutions provider delivering data and analytics for investment professionals."
+    },
+    {
+      "name": "IDEXX Laboratories",
+      "board": "phenom",
+      "url": "https://careers.idexx.com/us/en",
+      "blurb": "Global leader in veterinary diagnostics, software, and water and milk testing solutions."
+    },
+    {
+      "name": "Becton Dickinson",
+      "board": "workday",
+      "url": "https://bdx.wd1.myworkdayjobs.com/wday/cxs/bdx/EXTERNAL_CAREER_SITE_USA/jobs",
+      "careers_base": "https://bdx.wd1.myworkdayjobs.com/en-US/EXTERNAL_CAREER_SITE_USA",
+      "blurb": "Global medical technology company advancing health by improving medical discovery, diagnostics, and healthcare delivery."
+    },
+    {
+      "name": "FirstEnergy",
+      "board": "oraclecloud",
+      "tenant": "fa-etjd-saasfaprod1.fa.ocs",
+      "site_number": "CX_1",
+      "blurb": "Electric utility holding company serving six million customers across Ohio, Pennsylvania, New Jersey, and West Virginia."
+    },
+    {
+      "name": "Entergy",
+      "board": "successfactors",
+      "company": "entergy",
+      "domain": "jobs.entergy.com",
+      "blurb": "Integrated energy company engaged primarily in electric power production and retail distribution operations in the Deep South."
+    },
+    {
+      "name": "CMS Energy",
+      "board": "successfactors",
+      "company": "cmsenergy",
+      "domain": "careers.consumersenergy.com",
+      "blurb": "Michigan-based public utility enterprise providing natural gas and electricity through Consumers Energy."
+    },
+    {
+      "name": "Moderna",
+      "board": "workday",
+      "url": "https://modernatx.wd1.myworkdayjobs.com/wday/cxs/modernatx/M_tx/jobs",
+      "careers_base": "https://modernatx.wd1.myworkdayjobs.com/en-US/M_tx",
+      "blurb": "Biotechnology leader pioneering messenger RNA (mRNA) therapeutics and vaccines."
+    },
+    {
+      "name": "Quest Diagnostics",
+      "board": "oraclecloud",
+      "tenant": "hdox.fa.us6",
+      "site_number": "CX_1",
+      "blurb": "World-leading provider of diagnostic information services empowering people to take actions to improve health."
+    },
+    {
+      "name": "Prologis",
+      "board": "workday",
+      "url": "https://prologis.wd5.myworkdayjobs.com/wday/cxs/prologis/Prologis_External_Careers/jobs",
+      "careers_base": "https://prologis.wd5.myworkdayjobs.com/en-US/Prologis_External_Careers",
+      "blurb": "Global leader in logistics real estate focusing on high-barrier, high-growth industrial markets."
+    },
+    {
+      "name": "Marathon Petroleum",
+      "board": "workday",
+      "url": "https://mpc.wd1.myworkdayjobs.com/wday/cxs/mpc/MPCCareers/jobs",
+      "careers_base": "https://mpc.wd1.myworkdayjobs.com/en-US/MPCCareers",
+      "blurb": "Leading integrated downstream energy company operating the largest refining system in the United States."
+    },
+    {
+      "name": "Martin Marietta Materials",
+      "board": "jobvite",
+      "company_id": "qpNaVfw1",
+      "blurb": "Leading supplier of heavy building materials including aggregates, cement, ready-mixed concrete, and asphalt."
+    },
+    {
+      "name": "The Trade Desk",
+      "board": "greenhouse",
+      "token": "thetradedesk",
+      "blurb": "Technology company providing a self-service, cloud-based platform for digital advertising campaigns."
+    },
+    {
+      "name": "Williams-Sonoma",
+      "board": "oraclecloud",
+      "tenant": "ehac.fa.us6",
+      "site_number": "CX_1",
+      "blurb": "Multi-channel specialty retailer of high-quality home products (Pottery Barn, West Elm, Williams Sonoma)."
+    },
+    {
+      "name": "Waters Corporation",
+      "board": "icims",
+      "tenant": "uscareers-waters",
+      "blurb": "Global leader in analytical laboratory instruments, chromatography, mass spectrometry, and thermal analysis software."
     }
   ],
   "criteria": {
