@@ -642,7 +642,7 @@ def test_scrape_companies_requeues_a_straggler_past_the_timeout() -> None:
             return [job("Acme", "acme:fresh")]
         return [job(cfg["name"], f"{cfg['name'].lower()}:1")]
 
-    completed, results, interrupted = main_module._scrape_companies(
+    completed, failed, results, interrupted = main_module._scrape_companies(
         [_company("Acme"), _company("Beta")],
         scrape_one,
         workers=4,
@@ -652,6 +652,7 @@ def test_scrape_companies_requeues_a_straggler_past_the_timeout() -> None:
 
     assert interrupted is False
     assert completed == {"Acme", "Beta"}
+    assert failed == set()  # the requeued attempt succeeded, so Acme isn't a failure
     ids = {j.id for r in results if r is not None for j in r}
     # The fresh requeued attempt's result counts, not the stale original's.
     assert "acme:fresh" in ids
@@ -668,7 +669,7 @@ def test_scrape_companies_gives_up_after_max_requeue_attempts() -> None:
         time.sleep(2)
         return [job(cfg["name"], "should-not-count")]
 
-    completed, results, interrupted = main_module._scrape_companies(
+    completed, failed, results, interrupted = main_module._scrape_companies(
         [_company("Acme")],
         always_stalls,
         workers=4,
@@ -677,6 +678,7 @@ def test_scrape_companies_gives_up_after_max_requeue_attempts() -> None:
 
     assert interrupted is False
     assert completed == {"Acme"}
+    assert failed == {"Acme"}
     assert results == [None]
     time.sleep(2.5)  # let the abandoned background attempts actually finish
 
@@ -709,7 +711,7 @@ def test_scrape_companies_returns_promptly_despite_a_long_abandoned_straggler() 
         return [job(cfg["name"], f"{cfg['name'].lower()}:1")]
 
     start = time.monotonic()
-    completed, results, interrupted = main_module._scrape_companies(
+    completed, failed, results, interrupted = main_module._scrape_companies(
         [_company("SlowCo"), _company("FastCo1"), _company("FastCo2")],
         scrape_one,
         workers=4,
@@ -724,16 +726,68 @@ def test_scrape_companies_returns_promptly_despite_a_long_abandoned_straggler() 
     assert elapsed < STRAGGLER_DURATION_S / 2
     assert interrupted is False
     assert completed == {"SlowCo", "FastCo1", "FastCo2"}
+    assert failed == {"SlowCo"}
     ids = {j.id for r in results if r is not None for j in r}
     assert ids == {"fastco1:1", "fastco2:1"}  # SlowCo's late/stale result never counted
     time.sleep(STRAGGLER_DURATION_S)  # let the background thread actually finish
+
+
+def test_scrape_companies_queue_wait_does_not_count_as_timeout() -> None:
+    """Regression test for the real prod bug behind Anthropic/Nokia (and
+    ~900 other companies) getting falsely requeued/abandoned on nearly
+    every scheduled run: with far more companies than worker threads, a
+    company queued behind the worker limit can sit waiting for a free slot
+    longer than per_company_timeout_s before its own scrape ever starts.
+    The timeout must be judged from when a company's scrape actually
+    started running, not from when it was submitted/queued — otherwise
+    every company queued past roughly `workers * (timeout / avg_scrape_time)`
+    gets flagged as "still running" and requeued/abandoned purely from
+    queue wait, even though its own scrape is instant once it gets a
+    worker. Confirmed live: prod runs 1294 companies through 16 workers
+    with a 120s timeout, and ~900 companies (mostly queued toward the back
+    of config.json) hit this on nearly every one of 52 consecutive runs."""
+    workers = 2
+    # Comfortably more companies than workers so several are still queued
+    # when the first two occupy every worker slot.
+    companies = [_company(f"Co{i}") for i in range(10)]
+    # Each company's own scrape is instant — only queue wait could trigger
+    # the timeout here. Held artificially longer than the polling interval
+    # so every queued company gets at least one chance to be (wrongly)
+    # evaluated against the timeout before finishing.
+    hold = threading.Event()
+
+    def scrape_one(cfg: CompanyConfig) -> list[Job] | None:
+        hold.wait(timeout=1.0)
+        return [job(cfg["name"], f"{cfg['name'].lower()}:1")]
+
+    def release_soon() -> None:
+        time.sleep(0.3)
+        hold.set()
+
+    releaser = threading.Thread(target=release_soon)
+    releaser.start()
+    _completed, failed, results, interrupted = main_module._scrape_companies(
+        companies,
+        scrape_one,
+        workers=workers,
+        # Shorter than the time a fully-queued company waits for a worker
+        # slot (there are 10 companies / 2 workers, each holding ~0.3-1s),
+        # but this must never fire just from sitting in the queue.
+        per_company_timeout_s=0.15,
+    )
+    releaser.join()
+
+    assert interrupted is False
+    assert failed == set()  # nobody's own scrape ever actually stalled
+    ids = {j.id for r in results if r is not None for j in r}
+    assert ids == {f"co{i}:1" for i in range(10)}
 
 
 def test_scrape_companies_fast_company_unaffected_by_timeout() -> None:
     def fast(cfg: CompanyConfig) -> list[Job] | None:
         return [job(cfg["name"], f"{cfg['name'].lower()}:1")]
 
-    completed, results, interrupted = main_module._scrape_companies(
+    completed, failed, results, interrupted = main_module._scrape_companies(
         [_company("Acme"), _company("Beta")],
         fast,
         workers=4,
@@ -742,6 +796,7 @@ def test_scrape_companies_fast_company_unaffected_by_timeout() -> None:
 
     assert interrupted is False
     assert completed == {"Acme", "Beta"}
+    assert failed == set()
     ids = {j.id for r in results if r is not None for j in r}
     assert ids == {"acme:1", "beta:1"}
 
@@ -750,7 +805,7 @@ def test_scrape_companies_none_timeout_preserves_original_unbounded_wait() -> No
     def fast(cfg: CompanyConfig) -> list[Job] | None:
         return [job(cfg["name"], f"{cfg['name'].lower()}:1")]
 
-    completed, results, interrupted = main_module._scrape_companies(
+    completed, failed, results, interrupted = main_module._scrape_companies(
         [_company("Acme"), _company("Beta")],
         fast,
         workers=4,
@@ -759,6 +814,7 @@ def test_scrape_companies_none_timeout_preserves_original_unbounded_wait() -> No
 
     assert interrupted is False
     assert completed == {"Acme", "Beta"}
+    assert failed == set()
     ids = {j.id for r in results if r is not None for j in r}
     assert ids == {"acme:1", "beta:1"}
 
@@ -776,6 +832,60 @@ def test_full_run_with_default_timeout_completes_normally(tmp_path: Path) -> Non
 
     assert result == 0
     assert db_job_ids(db_url) == {"acme:1"}
+
+
+def test_company_stalling_past_every_requeue_keeps_its_previous_jobs(tmp_path: Path) -> None:
+    """Regression test for the real prod bug: Anthropic (Greenhouse) and
+    Nokia (Oracle Cloud) both routinely took long enough that every requeue
+    attempt got abandoned past per_company_timeout_s, which used to make
+    that company vanish from `current` for the run entirely — and since a
+    non-interrupted run's full_current was just `current` with no
+    carry-forward for a merely-failed (as opposed to not-yet-attempted)
+    company, its previously-written rows got deleted by write_jobs' own
+    scope_companies full-replace with nothing to replace them. Two
+    consecutive runs like this hit jobs/jobscraper_pool.py's
+    MISSED_SCRAPES_BEFORE_DELISTING=2 and delisted 655 real, still-live
+    Anthropic postings; Nokia (added later) never accumulated a single
+    successful write at all. A company that stalls out on every attempt
+    must instead keep its previously-known jobs untouched, exactly like an
+    interrupted run already does for companies it never got to."""
+    db_url, deps = setup_run(
+        tmp_path,
+        companies=[
+            {"name": "Acme", "board": "stub"},
+            {"name": "StallCo", "board": "stub"},
+        ],
+        jobs_by_company={
+            "Acme": [job("Acme", "acme:1")],
+            "StallCo": [job("StallCo", "stallco:1")],
+        },
+    )
+
+    # Seed a full previous snapshot with both companies successfully scraped.
+    assert main_module.run(database=db_url, deps=deps) == 0
+    assert db_job_ids(db_url) == {"acme:1", "stallco:1"}
+
+    # Now StallCo's board hangs past every requeue attempt on the next run —
+    # exactly the shape seen live on prod — while Acme scrapes fine and even
+    # has a genuinely new posting.
+    class StallingScraper(BaseScraper):
+        def fetch_jobs(self) -> list[Job]:
+            if self.company["name"] == "StallCo":
+                time.sleep(2)
+                return [job("StallCo", "stallco:should-not-count")]
+            return jobs_by_company_state[self.company["name"]]
+
+    deps.scrapers = {"stub": StallingScraper}
+    jobs_by_company_state["Acme"] = [job("Acme", "acme:2")]
+
+    result = main_module.run(database=db_url, deps=deps, per_company_timeout_s=0.1)
+
+    assert result == 0
+    # StallCo's old job must survive untouched — not deleted, not replaced
+    # by the late "should-not-count" result. Acme's fresh listing still
+    # takes effect normally.
+    assert db_job_ids(db_url) == {"acme:2", "stallco:1"}
+    time.sleep(2.5)  # let the abandoned background attempt actually finish
 
 
 def test_main_calls_os_exit_not_sys_exit(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

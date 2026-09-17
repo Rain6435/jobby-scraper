@@ -136,7 +136,7 @@ def _scrape_companies(
     *,
     workers: int,
     per_company_timeout_s: float | None,
-) -> tuple[set[str], list[list[Job] | None], bool]:
+) -> tuple[set[str], set[str], list[list[Job] | None], bool]:
     """Run scrape_one for every company in a bounded thread pool, requeuing
     (not killing) any company that's still running past per_company_timeout_s.
 
@@ -157,25 +157,37 @@ def _scrape_companies(
     waited on with no timeout, identical to the original as_completed()
     loop this replaces.
 
-    Returns (completed_names, results, interrupted) — completed_names is
-    every company name that got at least one non-abandoned attempt
-    scheduled (used for the interrupted-run "carry forward unscraped
-    companies" path), results is one list[Job]|None per company actually
-    counted (excludes abandoned stragglers and any of their duplicate
-    late-arriving results), interrupted mirrors the original Ctrl-C
-    contract.
+    Returns (completed_names, failed_names, results, interrupted).
+    completed_names is every company name that got at least one
+    non-abandoned attempt scheduled (used for the interrupted-run "carry
+    forward unscraped companies" path). failed_names is the subset of
+    completed_names we have NO usable data for this run — scrape_one raised,
+    or every requeue attempt was abandoned past per_company_timeout_s — as
+    distinct from "scraped successfully to zero postings". Callers must
+    treat a failed company the same as an unfinished one (carry its
+    previous jobs forward, don't scope a write to delete them): a
+    per-company timeout says nothing about whether the company's postings
+    are still live, only that this run couldn't confirm them in time.
+    results is one list[Job]|None per company actually counted (excludes
+    abandoned stragglers and any of their duplicate late-arriving results),
+    interrupted mirrors the original Ctrl-C contract.
     """
     if per_company_timeout_s is None:
         # Original, unbounded behavior — no polling loop needed.
         with ThreadPoolExecutor(max_workers=workers) as pool:
             futures = {pool.submit(scrape_one, c): c for c in companies}
             completed_names: set[str] = set()
+            failed_names: set[str] = set()
             results: list[list[Job] | None] = []
             try:
                 for future in wait(futures, return_when=ALL_COMPLETED).done:
-                    completed_names.add(futures[future]["name"])
-                    results.append(future.result())
-                return completed_names, results, False
+                    name = futures[future]["name"]
+                    completed_names.add(name)
+                    result = future.result()
+                    if result is None:
+                        failed_names.add(name)
+                    results.append(result)
+                return completed_names, failed_names, results, False
             except KeyboardInterrupt:
                 log.warning(
                     "Interrupted — %d/%d companies had already finished scraping; "
@@ -185,9 +197,10 @@ def _scrape_companies(
                 )
                 for f in futures:
                     f.cancel()
-                return completed_names, results, True
+                return completed_names, failed_names, results, True
 
     completed_names = set()
+    failed_names = set()
     results = []
     # One entry per LIVE attempt (original or requeued). abandoned tracks
     # attempts whose result must be discarded when they eventually arrive —
@@ -217,13 +230,37 @@ def _scrape_companies(
     # timeouts above, and it no longer blocks this function's caller from
     # making progress on the REST of the batch/shard in the meantime.
     pool = ThreadPoolExecutor(max_workers=workers)
-    submitted_at: dict[Future[list[Job] | None], float] = {}
+    # Keyed by future and written from INSIDE the worker thread, right as
+    # scrape_one actually starts running — not by the submitting thread at
+    # pool.submit() time. With `workers` workers and len(companies) tasks
+    # submitted up front, a task queued behind more than ~workers others can
+    # sit waiting for a free slot far longer than per_company_timeout_s
+    # before its thread ever starts — confirmed live on prod: with the
+    # default 16 workers and ~1300 companies all submitted at once, most
+    # queued past roughly the first few hundred slots were still waiting for
+    # a worker when the timeout fired, so they got flagged as "still
+    # running"/requeued/abandoned purely from queue wait, never having
+    # actually started. Measuring from submit time can only ever be right
+    # when the pool is never backlogged; measuring from actual start time is
+    # right either way, and this timeout exists to catch a stuck REQUEST,
+    # not a busy pool.
+    started_at: dict[Future[list[Job] | None], float] = {}
     attempt_number: dict[Future[list[Job] | None], int] = {}
     future_company: dict[Future[list[Job] | None], CompanyConfig] = {}
 
     def submit(company_cfg: CompanyConfig, attempt: int) -> Future[list[Job] | None]:
-        f = pool.submit(scrape_one, company_cfg)
-        submitted_at[f] = time.monotonic()
+        f: Future[list[Job] | None] = Future()
+
+        def work() -> None:
+            if not f.set_running_or_notify_cancel():
+                return
+            started_at[f] = time.monotonic()
+            try:
+                f.set_result(scrape_one(company_cfg))
+            except BaseException as exc:  # pragma: no cover - scrape_one itself never raises
+                f.set_exception(exc)
+
+        pool.submit(work)
         attempt_number[f] = attempt
         future_company[f] = company_cfg
         return f
@@ -245,7 +282,7 @@ def _scrape_companies(
     # subsequent wait() call. Removing an abandoned future from `pending`
     # for good, right when it's abandoned, is what makes the loop's own
     # progress independent of how long an abandoned attempt keeps running.
-    pending = set(submitted_at)
+    pending = set(future_company)
     try:
         while pending:
             done, still_pending = wait(pending, timeout=poll_interval, return_when=FIRST_COMPLETED)
@@ -254,7 +291,10 @@ def _scrape_companies(
             for f in done:
                 company_cfg = future_company[f]
                 completed_names.add(company_cfg["name"])
-                results.append(f.result())
+                result = f.result()
+                if result is None:
+                    failed_names.add(company_cfg["name"])
+                results.append(result)
 
             # Every STILL-pending future that's now past the timeout gets a
             # fresh attempt submitted behind it, unless it's already used
@@ -266,7 +306,12 @@ def _scrape_companies(
             # never waited on again, regardless of how long it keeps
             # running (see the comment above `pending = set(...)`).
             for f in list(still_pending):
-                if now - submitted_at[f] < per_company_timeout_s:
+                start = started_at.get(f)
+                # Not yet started (still queued behind other workers) is
+                # never a timeout candidate — see started_at's own comment
+                # above for why this must be judged from actual start time,
+                # not queue/submit time.
+                if start is None or now - start < per_company_timeout_s:
                     continue
                 company_cfg = future_company[f]
                 attempt = attempt_number[f]
@@ -282,6 +327,7 @@ def _scrape_companies(
                         per_company_timeout_s,
                     )
                     completed_names.add(company_cfg["name"])
+                    failed_names.add(company_cfg["name"])
                     results.append(None)
                     continue
                 log.warning(
@@ -296,7 +342,7 @@ def _scrape_companies(
                 still_pending.add(submit(company_cfg, attempt=attempt + 1))
             pending = still_pending
         pool.shutdown(wait=False)
-        return completed_names, results, False
+        return completed_names, failed_names, results, False
     except KeyboardInterrupt:
         log.warning(
             "Interrupted — %d/%d companies had already finished scraping; "
@@ -305,7 +351,7 @@ def _scrape_companies(
             len(companies),
         )
         pool.shutdown(wait=False, cancel_futures=True)
-        return completed_names, results, True
+        return completed_names, failed_names, results, True
 
 
 def _run_batch(
@@ -405,7 +451,7 @@ def _run_batch(
 
     workers = concurrency if concurrency is not None else DEFAULT_CONCURRENCY
     scrape_started = time.monotonic()
-    completed_names, results, interrupted = _scrape_companies(
+    completed_names, failed_names, results, interrupted = _scrape_companies(
         companies, scrape_one, workers=workers, per_company_timeout_s=per_company_timeout_s
     )
     log.debug("Scrape phase took %.1fs total", time.monotonic() - scrape_started)
@@ -475,10 +521,21 @@ def _run_batch(
     # leave the rest as it was" instead of losing the whole run's progress
     # (or, if we instead wrote only `current`, silently deleting every
     # not-yet-scraped company from the pool on the next write).
+    #
+    # failed_names gets the same carry-forward treatment as an interrupted
+    # run's unfinished companies, not just interrupted's own
+    # `not in completed_names` case: a company whose every attempt
+    # timed out/raised this run is not "confirmed to have zero postings",
+    # it's "we have no idea" — carrying its previous jobs forward (and
+    # excluding it from the write's scope_companies below) means a
+    # transient stall never wipes/delists real, still-live postings just
+    # because this one run couldn't confirm them in time.
     if company is not None:
         full_current = [j for j in previous.values() if j.company != company] + current
     elif interrupted:
         full_current = [j for j in previous.values() if j.company not in completed_names] + current
+    elif failed_names:
+        full_current = [j for j in previous.values() if j.company in failed_names] + current
     else:
         full_current = current
 
@@ -507,12 +564,22 @@ def _run_batch(
     # the one starved by a concurrent Node/daemon write against the shared
     # data/app.db file, in which case a purely transient SQLITE_BUSY
     # shouldn't discard an entire run's results — see GitHub issue #38.
+    # Failed companies are excluded from the write's own scope too, not just
+    # carried forward into full_current above: write_jobs(scope_companies=...)
+    # deletes-then-reinserts exactly that scope's jobs/job_locations rows, so
+    # a failed company left in scope would have its previous rows deleted and
+    # immediately reinserted unchanged — harmless when `previous` has them,
+    # but pointless churn, and actively wrong if `previous` was ever empty
+    # for that company (e.g. its very first successful scrape hasn't landed
+    # yet), which would otherwise delete rows this run never confirmed
+    # anything about.
+    write_scope = shard_scope - failed_names if shard_scope is not None else None
     assert database is not None  # guaranteed by the --database-required check above
     write_succeeded = False
     write_attempts = 3
     for attempt in range(1, write_attempts + 1):
         write_succeeded = deps.write_jobs(
-            database, full_current, {j.id for j in new_jobs}, scope_companies=shard_scope
+            database, full_current, {j.id for j in new_jobs}, scope_companies=write_scope
         )
         if write_succeeded:
             break
