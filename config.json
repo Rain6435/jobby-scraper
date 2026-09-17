@@ -7027,6 +7027,181 @@
       "board": "icims",
       "tenant": "uscareers-waters",
       "blurb": "Global leader in analytical laboratory instruments, chromatography, mass spectrometry, and thermal analysis software."
+    },
+    {
+      "name": "American Water",
+      "board": "successfactors",
+      "company": "amwater",
+      "domain": "jobs.amwater.com",
+      "blurb": "Largest publicly traded U.S. water and wastewater utility company providing regulated drinking water and wastewater services."
+    },
+    {
+      "name": "NextEra Energy",
+      "board": "successfactors",
+      "company": "nexteraenergy",
+      "domain": "jobs.nexteraenergy.com",
+      "blurb": "Leading clean energy company and parent company of Florida Power & Light, operating extensive wind and solar energy infrastructure."
+    },
+    {
+      "name": "Southern Company",
+      "board": "oraclecloud",
+      "tenant": "emje.fa.us6",
+      "site_number": "CX_1",
+      "blurb": "Premier energy company serving millions of electric and natural gas customers across the American Southeast."
+    },
+    {
+      "name": "Vistra Corp",
+      "board": "workday",
+      "url": "https://vst.wd5.myworkdayjobs.com/wday/cxs/vst/vistra_careers/jobs",
+      "careers_base": "https://vst.wd5.myworkdayjobs.com/en-US/vistra_careers",
+      "blurb": "Leading integrated retail electricity and power generation company operating modern natural gas, nuclear, and battery storage fleets."
+    },
+    {
+      "name": "Raymond James",
+      "board": "workday",
+      "url": "https://raymondjames.wd1.myworkdayjobs.com/wday/cxs/raymondjames/RaymondJamesCareers/jobs",
+      "careers_base": "https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers",
+      "blurb": "Multinational independent financial services holding company engaged in investment banking, asset management, and wealth management."
+    },
+    {
+      "name": "Fifth Third Bank",
+      "board": "workday",
+      "url": "https://fifththird.wd5.myworkdayjobs.com/wday/cxs/fifththird/53careers/jobs",
+      "careers_base": "https://fifththird.wd5.myworkdayjobs.com/en-US/53careers",
+      "blurb": "Major regional banking corporation offering personal banking, wealth management, and commercial lending across the Midwest and Southeast."
+    },
+    {
+      "name": "Cboe Global Markets",
+      "board": "workday",
+      "url": "https://cboe.wd1.myworkdayjobs.com/wday/cxs/cboe/External_Career_CBOE/jobs",
+      "careers_base": "https://cboe.wd1.myworkdayjobs.com/en-US/External_Career_CBOE",
+      "blurb": "Leading provider of market infrastructure and tradable products, operating the Chicago Board Options Exchange and global multi-asset clearing."
+    },
+    {
+      "name": "Expeditors International",
+      "board": "smartrecruiters",
+      "company": "expeditors",
+      "blurb": "Global logistics and supply chain enterprise specializing in customs brokerage, ocean and air freight forwarding, and distribution."
+    },
+    {
+      "name": "J.B. Hunt Transport Services",
+      "board": "workday",
+      "url": "https://jbhunt.wd501.myworkdayjobs.com/wday/cxs/jbhunt/Careers/jobs",
+      "careers_base": "https://jbhunt.wd501.myworkdayjobs.com/en-US/Careers",
+      "blurb": "Major North American freight transportation and supply chain company specializing in intermodal, dedicated trucking, and final mile delivery."
+    },
+    {
+      "name": "Union Pacific",
+      "board": "successfactors",
+      "company": "unionpacific",
+      "domain": "up.jobs",
+      "blurb": "Principal transcontinental freight railroad operating across 23 western U.S. states connecting Pacific and Gulf Coast ports."
+    },
+    {
+      "name": "Regions Financial",
+      "board": "workday",
+      "url": "https://regions.wd5.myworkdayjobs.com/wday/cxs/regions/Regions_Careers/jobs",
+      "careers_base": "https://regions.wd5.myworkdayjobs.com/en-US/Regions_Careers",
+      "blurb": "Major regional bank holding company providing commercial and retail banking, wealth management, and mortgage products."
+    },
+    {
+      "name": "Sherwin-Williams",
+      "board": "oraclecloud",
+      "tenant": "ejhp.fa.us6",
+      "site_number": "CX_2",
+      "blurb": "Global leader in the manufacture, development, distribution, and sale of paints, coatings, and related industrial and commercial products."
+    },
+    {
+      "name": "Franklin Templeton",
+      "board": "phenom",
+      "url": "https://careers.franklintempleton.com/us/en",
+      "blurb": "Global investment management organization offering mutual funds, retirement solutions, and specialized asset management."
+    },
+    {
+      "name": "Charles Schwab Corporation",
+      "board": "icims",
+      "tenant": "career-schwab",
+      "blurb": "Leading financial services firm offering retail brokerage, banking, custody, and independent financial advisory services."
+    },
+    {
+      "name": "Cintas",
+      "board": "successfactors",
+      "company": "cintas",
+      "domain": "careers.cintas.com",
+      "blurb": "Leading business services corporation providing corporate identity uniforms, facility services, first aid, and safety products."
+    },
+    {
+      "name": "PPG Industries",
+      "board": "workday",
+      "url": "https://ppg.wd5.myworkdayjobs.com/wday/cxs/ppg/PPG_Careers/jobs",
+      "careers_base": "https://ppg.wd5.myworkdayjobs.com/en-US/PPG_Careers",
+      "blurb": "Global supplier of paints, coatings, and specialty materials for industrial, transportation, consumer, and construction markets."
+    },
+    {
+      "name": "Republic Services",
+      "board": "workday",
+      "url": "https://republic.wd5.myworkdayjobs.com/wday/cxs/republic/Republic/jobs",
+      "careers_base": "https://republic.wd5.myworkdayjobs.com/en-US/Republic",
+      "blurb": "Industry leader in North American environmental services including non-hazardous solid waste collection, transfer, recycling, and disposal."
+    },
+    {
+      "name": "Newmont",
+      "board": "phenom",
+      "url": "https://jobs.newmont.com/us/en",
+      "blurb": "World's leading gold mining company and producer of copper, silver, zinc, and lead with assets across the Americas, Africa, and Australia."
+    },
+    {
+      "name": "Norfolk Southern",
+      "board": "successfactors",
+      "company": "nscorp",
+      "domain": "jobs.nscorp.com",
+      "blurb": "Major Class I freight railroad operator transporting raw materials, intermediate goods, and finished products across the eastern United States."
+    },
+    {
+      "name": "Tractor Supply",
+      "board": "successfactors",
+      "company": "tractorsupply",
+      "domain": "www.tractorsupply.careers",
+      "blurb": "Largest rural lifestyle retailer in the United States serving recreational farmers, ranchers, homeowners, and tradespeople."
+    },
+    {
+      "name": "Trane Technologies",
+      "board": "workday",
+      "url": "https://tranetechnologies.wd12.myworkdayjobs.com/wday/cxs/tranetechnologies/Trane_Technologies_Careers/jobs",
+      "careers_base": "https://tranetechnologies.wd12.myworkdayjobs.com/en-US/Trane_Technologies_Careers",
+      "blurb": "Global climate innovator advancing sustainable, energy-efficient solutions for buildings, homes, and transportation through Trane and Thermo King."
+    },
+    {
+      "name": "Veralto",
+      "board": "phenom",
+      "url": "https://jobs.veralto.com/global/en",
+      "blurb": "Global leader in essential technology solutions for water quality management and product identification safeguarding everyday essentials."
+    },
+    {
+      "name": "MSCI",
+      "board": "icims",
+      "tenant": "globalcareers-msci",
+      "blurb": "Leading global provider of critical investment decision-support tools and solutions including ESG data, indices, and portfolio analytics."
+    },
+    {
+      "name": "Gartner",
+      "board": "workday",
+      "url": "https://gartner.wd5.myworkdayjobs.com/wday/cxs/gartner/Ext/jobs",
+      "careers_base": "https://gartner.wd5.myworkdayjobs.com/en-US/Ext",
+      "blurb": "World's leading technological research and consulting firm providing actionable insights and advisory services for enterprise executives."
+    },
+    {
+      "name": "W.W. Grainger",
+      "board": "successfactors",
+      "company": "grainger",
+      "domain": "jobs.grainger.com",
+      "blurb": "Broad line distributor of maintenance, repair, and operating supplies and equipment keeping facilities operating safely and efficiently."
+    },
+    {
+      "name": "Zimmer Biomet",
+      "board": "phenom",
+      "url": "https://careers.zimmerbiomet.com/us/en",
+      "blurb": "Global medical technology leader designing and manufacturing orthopedic implants and digital solutions alleviating pain and improving mobility."
     }
   ],
   "criteria": {
