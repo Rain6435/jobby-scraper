@@ -1,262 +1,387 @@
-# jobby-scraper
+# Jobby-Scraper
 
-[![CI](https://github.com/Rain6435/jobby-scraper/actions/workflows/ci.yml/badge.svg)](https://github.com/Rain6435/jobby-scraper/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/)
+[![Type Checking](https://img.shields.io/badge/pyright-strict-success.svg)](https://github.com/microsoft/pyright)
+[![Strict Types](https://img.shields.io/badge/types-zero%20Any-success.svg)](scripts/ci.sh)
+[![Linting & Formatting](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
+[![Tests](https://img.shields.io/badge/tests-360%2B%20passed-brightgreen.svg)](tests/)
 
-A job pool generator, meant to be consumed by other apps. It polls **1,102
-companies** across 37 job-board integrations, stores every currently-listed
-posting **unfiltered** in a SQL database, and gets out of the way — no
-keyword/title/location/age curation happens in this pipeline.
+**Jobby-Scraper** is a high-throughput, autonomous multi-platform job aggregation engine. It continuously discovers, scrapes, normalizes, and geocodes job listings from over **1,260+ company career sites across 44+ applicant tracking systems (ATS) and custom enterprise career portals**, persisting them into a normalized relational SQL database pool.
 
-## What this is (and isn't)
+---
 
-- **No server.** `python -m scraper.main` is a batch job: scrape, diff,
-  summarize, write. Run it on a cron, a GitHub Action, or by hand.
-- **No filtering.** Every listing every configured company currently has up
-  is stored. `config.json`'s `criteria` block (`keywords`/
-  `blacklist_keywords`) is kept only as a reference keyword bank for
-  downstream consumers — the pipeline itself never applies it.
-- **Full-replace, not a log.** `--database` is overwritten each run with
-  exactly what that run scraped. A job leaves the pool the moment a fresh
-  scrape's listing no longer includes it (closed, filled, expired) — there's
-  no history table and no soft-delete.
-- **`--database` is the only sink.** Every consumer reads the SQL database
-  this pipeline writes to — nothing else in this repo produces data.
+## Core Philosophy
 
-## How it works
+- **Unfiltered Pool Generation**: Every currently-listed posting from every configured company is scraped and stored without keyword, title, location, or age curation. Downstream consumer applications (such as [`job_pipeline`](https://github.com/Rain6435/job_pipeline)) query and filter this raw pool for custom matching, scoring, and user recommendations.
+- **Full-Replace Sync Semantics**: A job posting remains in the pool as long as fresh scrapes return it. Once a company removes a listing (filled, expired, or closed), it is dropped from the active pool. The database is a full-replace snapshot of current market reality, not an unbounded accumulating log.
+- **Differential Scraping & Caching**: Postings are tracked via stable IDs (`{company_slug}:{requisition_id}`). Detail-fetch caching avoids redundant HTTP requests for heavy boards while picking up fresh listings immediately.
+- **Relational SQL Sink**: The pipeline persists to any SQLAlchemy-compatible database (SQLite, PostgreSQL, MySQL) with normalized tables for companies, sources, jobs, locations, and GeoNames-backed canonical towns.
 
+---
+
+## Architecture Overview
+
+```mermaid
+flowchart TD
+    subgraph Input ["Configuration & Seed Data"]
+        Config["config.json\n(1,260+ companies across 44+ platforms)"]
+        Gazetteer["data/gazetteer/cities15000.txt.gz\n(GeoNames Cities Database)"]
+    end
+
+    subgraph ScraperEngine ["Scraper Engine (scraper/main.py)"]
+        WorkerPool["ThreadPoolExecutor\n(--concurrency N, default 16)"]
+        BoardScrapers["44+ Board Scrapers\n(Workday, Greenhouse, Ashby, Lever, etc.)"]
+        RetrySession["HTTPAdapter + urllib3.Retry\n(Exponential backoff, 429/5xx retry)"]
+        DiffEngine["Diff Engine & Detail Cache\n(BaseScraper._cached_detail)"]
+    end
+
+    subgraph Resolvers ["Resolution & Enrichment"]
+        LocResolver["Location Resolver\n(ISO alpha-2 country, region, city, remote flag)"]
+        TownResolver["Town Resolver\n(GeoNames geoname_id, lat, lon, population)"]
+        AIBlurbs["Company Blurbs & Summarizer\n(Anthropic / Ollama Cloud Key Rotation)"]
+    end
+
+    subgraph DatabaseSink ["Relational Database Sink (--database)"]
+        DB[(SQLAlchemy Engine:\nPostgreSQL / SQLite / MySQL)]
+        T_Companies["companies"]
+        T_Sources["sources"]
+        T_Jobs["jobs"]
+        T_Locations["locations"]
+        T_JobLocs["job_locations"]
+        T_Towns["towns"]
+    end
+
+    subgraph Downstream ["Consumers"]
+        ConsumerApp["job_pipeline Daemon\n(Downstream Matching & Scoring)"]
+    end
+
+    Config --> WorkerPool
+    WorkerPool --> BoardScrapers
+    BoardScrapers --> RetrySession
+    RetrySession --> DiffEngine
+    DiffEngine --> LocResolver
+    Gazetteer --> TownResolver
+    LocResolver --> TownResolver
+    TownResolver --> DB
+    AIBlurbs -.-> DB
+    DB --> T_Companies & T_Sources & T_Jobs & T_Locations & T_JobLocs & T_Towns
+    DB --> ConsumerApp
 ```
-load config.json (1,102 companies)
 
-        │
-        ▼
-scrape every company in parallel (ThreadPoolExecutor, --concurrency workers,
-  default 16) — one board-specific scraper class per company, failures
-  logged and skipped, never fatal to the run
-        │
-        ▼
-diff against the previous run's state, read from --database via
-  load_previous() — this is also where first_seen carryover and each
-  board's per-job detail-fetch cache pull their prior state from
-        │
-        ▼
-best-effort AI role summary for each newly-diffed job
-  (Anthropic → Ollama fallback; optional, degrades to "" with no key set)
-        │
-        ▼
-write the full current pool to --database (delete + reinsert every table;
-  retried up to 3x on transient SQLITE_BUSY)
+---
+
+## Database Schema
+
+The database sink uses SQLAlchemy with a normalized schema across 6 tables:
+
+```mermaid
+erDiagram
+    companies ||--o{ jobs : "offers"
+    sources ||--o{ jobs : "scraped_from"
+    jobs ||--o{ job_locations : "located_at"
+    locations ||--o{ job_locations : "joined_in"
+    towns ||--o{ locations : "resolves_to"
+
+    companies {
+        int id PK
+        string name UK "Company display name"
+        text blurb "Short company overview"
+        string group_name "Umbrella entity group (e.g. Government of Canada)"
+    }
+
+    sources {
+        int id PK
+        string name UK "Board identifier (e.g. workday, greenhouse)"
+    }
+
+    jobs {
+        string id PK "Diff key: {company_slug}:{requisition_id}"
+        int company_id FK
+        int source_id FK
+        string title "Normalized job title"
+        string url "Direct link to posting"
+        string posted_date "Derived absolute date (YYYY-MM-DD)"
+        string first_seen "ISO 8601 discovery timestamp"
+        text description "Full plain-text description"
+        text role_summary "AI-generated summary"
+        boolean is_new "New in current scrape run"
+    }
+
+    locations {
+        int id PK
+        string name UK "Raw location string exactly as scraped"
+        string normalized_key "Whitespace/case folded key"
+        string city "Parsed city name"
+        string region "Parsed state/province"
+        string country_code "ISO 3166-1 alpha-2 code"
+        boolean is_remote "Remote position flag"
+        int town_id FK "Reference to canonical GeoNames town"
+    }
+
+    job_locations {
+        int id PK
+        string job_id FK
+        int location_id FK
+        int ordinal "Location index (0 = primary)"
+    }
+
+    towns {
+        int id PK
+        int geoname_id UK "GeoNames permanent identifier"
+        string name "Town name"
+        string ascii_name "ASCII representation"
+        text alternate_names "Aliases and abbreviations"
+        string country_code "ISO 3166-1 alpha-2"
+        string admin1_code "State/Province code"
+        float lat "Latitude"
+        float lon "Longitude"
+        int population "Census population"
+    }
 ```
 
-`Job.id` (`"{company_slug}:{requisition_id}"`) is the stable diff key — it
-must stay stable across runs or every job looks new every time.
+---
 
-Every board scraper builds its HTTP session through a shared
-`make_session()` helper ([scraper/boards/base.py](scraper/boards/base.py))
-that retries transient failures (`429`, `5xx`, connection errors) with
-exponential backoff, so one rate-limited career-page host doesn't drop that
-company's whole scrape for the run.
+## Supported Job Boards (44+)
 
-## Supported job boards
+| Platform / Source | Board Identifier | Key Config Parameters | Dates Available? | Caches Details? |
+| :--- | :--- | :--- | :---: | :---: |
+| **Workday** | `workday` | `url`, `careers_base` | Yes (`postedOn`) | Yes |
+| **Greenhouse** | `greenhouse` | `token` | Yes (`first_published`) | List-only |
+| **Ashby** | `ashby` | `slug` | Yes (`publishedAt`) | List-only |
+| **Lever** | `lever` | `company` (slug) | Yes (`createdAt`) | List-only |
+| **BambooHR** | `bamboohr` | `company` (subdomain) | Fallback (`first_seen`) | Yes |
+| **SmartRecruiters** | `smartrecruiters` | `company` (identifier) | Yes (`releasedDate`) | Yes |
+| **Rippling** | `rippling` | `board_id` | Fallback (`first_seen`) | Yes |
+| **Workable** | `workable` | `company` (slug) | Yes (`published_on`) | List-only |
+| **Recruitee** | `recruitee` | `company` (subdomain) | Yes (`published_at`) | List-only |
+| **Breezy HR** | `breezy` | `company` (subdomain) | Yes (`published_date`) | List-only |
+| **Personio** | `personio` | `company` (subdomain) | Yes (`createdAt` XML) | List-only |
+| **Teamtailor** | `teamtailor` | `company` (subdomain) | Yes (`date_published`) | List-only |
+| **Pinpoint** | `pinpoint` | `company` (subdomain) | Yes (`created_at`) | List-only |
+| **Jobvite** | `jobvite` | `company_id` (companyEId) | Yes (`date` XML) | List-only |
+| **JazzHR** | `jazzhr` | `company` (subdomain) | Fallback (`first_seen`) | List-only |
+| **Oracle Cloud CX** | `oraclecloud` | `tenant`, `site_number` | Yes (`PostedDate`) | List-only |
+| **SAP SuccessFactors**| `successfactors` | `company`, `domain` | Yes (`pubDate` RSS) | List-only |
+| **ADP** | `adp` | `cid`, `cc_id` | Yes (`postDate`) | List-only |
+| **Paylocity** | `paylocity` | `guid` | Yes (`postedDate`) | List-only |
+| **iCIMS** | `icims` | `tenant`, `domain` | Yes (`Posted Date`) | List-only |
+| **Phenom TXP** | `phenom` | `url`, `max_pages` | Yes (`postedDate`) | List-only |
+| **Jibe** | `jibe` | `tenant` or `url` | Yes (`create_date`) | List-only |
+| **Amazon** | `amazon` | `category`, `country` | Yes | List-only |
+| **Apple** | `apple` | `search`, `location` | Yes | List-only |
+| **Google** | `google` | `query`, `location` | Yes | List-only |
+| **Microsoft** | `microsoft` | `query`, `location` | Yes | List-only |
+| **Meta** | `meta` | `query` | Yes | List-only |
+| **Netflix** | `netflix` | `query`, `location` | Yes | List-only |
+| **Atlassian** | `atlassian` | `category`, `location` | Yes (`updatedDate`) | List-only |
+| **Shopify** | `shopify` | `location`, `keyword` | Yes | Yes |
+| **IBM** | `ibm` | N/A | Yes | List-only |
+| **Electronic Arts** | `ea` | `search`, `max_pages` | Yes | List-only |
+| **Valve** | `valve` | N/A | Fallback | List-only |
+| **Jane Street** | `janestreet` | `location` | Fallback | List-only |
+| **TikTok** | `tiktok` | `keyword`, `max_pages` | Yes | List-only |
+| **GovernmentJobs** | `governmentjobs` | `agency` (slug) | Yes (`pubDate` RSS) | List-only |
+| **USAJobs** | `usajobs` | API Key in `.env` | Yes | List-only |
+| **ReliefWeb** | `reliefweb` | N/A | Yes (`date.created`) | List-only |
+| **GC Jobs (Canada)**| `gc_jobs` | `department`, `location` | Yes | List-only |
+| **Québec Emploi** | `quebec_emploi` | `region`, `query` | Yes | List-only |
+| **Bloomberg / Avature**| `bloomberg` | `url`, `query` | Yes | List-only |
+| **Climatebase** | `climatebase` | `keywords` | Yes | List-only |
+| **CMA Heritage** | `cma_heritage` | N/A | Yes | List-only |
+| **CIP Planning** | `cip_planning` | N/A | Yes | List-only |
+| **IDC Career Centre**| `idc_career_centre` | N/A | Yes | List-only |
 
-| Board | Config fields | Notes |
-|---|---|---|
-| `workday` | `url`, `careers_base` | Real posting date; one detail GET per job (description + multi-location expansion) |
-| `greenhouse` | `token` | List-only; real posting date from `first_published` |
-| `rippling` | `board_id` | List-only; **date-less** (`posted_days=None`) |
-| `bamboohr` | `company` (subdomain) | List-only; **date-less** |
-| `ashby` | `slug` | List-only; real posting date from `publishedAt` |
-| `breezy` | `company` (subdomain) | List-only; real posting date from `published_date` |
-| `lever` | `company` (slug) | List-only; real posting date from `createdAt` |
-| `smartrecruiters` | `company` (identifier) | One detail GET per job (list endpoint has no description/URL); real posting date from `releasedDate` |
-| `recruitee` | `company` (subdomain) | List-only; real posting date from `published_at` |
-| `personio` | `company` (subdomain) | List-only; **XML feed**, not JSON; real posting date from `createdAt` |
-| `workable` | `company` (account slug) | List-only; real posting date from `published_on` |
-| `teamtailor` | `company` (subdomain slug) | List-only; real posting date from `date_published` |
-| `pinpoint` | `company` (subdomain) | List-only; real posting date from `created_at`/`updated_at` |
-| `jobvite` | `company_id` (companyEId) | List-only XML feed; real posting date from `date` |
-| `jazzhr` | `company` (subdomain) | List-only XML feed; **date-less** (`posted_days=None`) |
-| `governmentjobs` | `agency` (agency slug) | List-only RSS feed; real posting date from `pubDate` |
-| `usajobs` | none (needs `USAJOBS_API_KEY`/`USAJOBS_USER_AGENT`) | Nationwide, not per-employer — `Job.company` comes from each posting's own hiring agency |
-| `reliefweb` | none (open API) | Global humanitarian, not per-employer — `Job.company` comes from each posting's own source organization |
-| `oraclecloud` | `tenant` (subdomain or full host), `site_number` (optional) | List-only; keyless Candidate Experience REST API, real posting date from `PostedDate` |
-| `successfactors` | `company` (company slug), `domain` (optional) | List-only; Career Site Builder RSS feed, real posting date from `pubDate` |
-| `adp` | `cid` (Client ID), `cc_id` (optional) | List-only; static requisition JSON API, real posting date from `postDate` |
-| `paylocity` | `guid` (integration GUID) | List-only; public Job Feed V2 JSON API, real posting date from `postedDate` |
-| `icims` | `tenant` (subdomain), `domain` (optional) | List-only; streaming candidate search portal HTML, real posting date from `Posted Date` |
-| `atlassian` | none (or `category`, `location`, `keyword`) | Single unauthenticated JSON listings endpoint; full descriptions, real posting date from `updatedDate` |
-| `shopify` | none (or `location`, `keyword`) | React Router list + `.data` detail routes; real posting date, full descriptions |
-| `phenom` | `url` | Server-rendered `phApp.ddo` JSON; real posting date from `postedDate`, used by OpenText, Bell Canada, Air Canada, NASA JPL |
-| `jibe` | `tenant` (subdomain) or `url` (base URL) | List-only public JSON search API; full HTML descriptions, real posting date from `create_date`, used by GitHub, PepsiCo, Costco, FedEx |
-| `climatebase`, `cma_heritage`, `idc_career_centre`, `cip_planning`, `wp_job_manager` | site-specific | Small one-off integrations for individual job sites |
+---
 
-Current distribution: 296 Greenhouse, 185 Workday, 142 Ashby, 92 BambooHR,
-90 SAP SuccessFactors, 74 SmartRecruiters, 50 Lever, 20 GovernmentJobs, 18 Rippling,
-15 Phenom, 10 Teamtailor, 10 Pinpoint, 8 Breezy, 8 Workable, 8 Recruitee, 7 JazzHR,
-5 Jibe, 4 Oracle Cloud, 4 Personio, custom tech platforms (Google, Amazon, Apple, Microsoft,
-Netflix, IBM, TikTok, Atlassian, EA, Valve, Shopify), plus USAJobs, ReliefWeb,
-and one-off site integrations.
+## Installation & Setup
 
-Descriptions are **never truncated** — downstream consumers parse them for
-skills/requirements, and content routinely runs past what an older 1500-char
-cap used to allow.
+### Prerequisites
+- **Python 3.12+**
+- Virtual environment manager (`venv` or `uv`)
 
-
-## Getting started
-
+### 1. Clone & Install Dependencies
 ```bash
 git clone https://github.com/Rain6435/jobby-scraper.git
 cd jobby-scraper
+
+# Using standard venv
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env   # optional — see Environment variables below
+```
+
+### 2. Configure Environment (.env)
+Copy [.env.example](.env.example) to `.env` and supply optional credentials:
+
+```bash
+cp .env.example .env
+```
+
+| Variable | Description | Default / Requirement |
+| :--- | :--- | :--- |
+| `ANTHROPIC_API_KEY` | Anthropic Claude API key for company blurbs (`scraper.backfill_blurbs`) | Optional |
+| `ANTHROPIC_AUTH_TOKEN`| Claude Code OAuth token (alternative to API key) | Optional |
+| `OLLAMA_API_KEY` | Ollama Cloud API key(s). Supports comma-separated keys for auto-rotation | Optional |
+| `LLM_PROVIDER` | Pin AI provider: `anthropic` or `ollama` | Optional (`auto` fallback) |
+| `USAJOBS_API_KEY` | Key from developer.usajobs.gov (needed only for `usajobs` board) | Optional |
+| `USAJOBS_USER_AGENT` | Registered email for USAJobs API access | Optional |
+| `LOG_LEVEL` | Logging verbosity (`DEBUG`, `INFO`, `WARNING`, `ERROR`) | `INFO` |
+
+---
+
+## CLI Usage
+
+### 1. Full Production Scrape
+Runs all configured companies, diffs against existing database state, and performs a full-replace write:
+
+```bash
+# SQLite
 python -m scraper.main --database "sqlite:///jobs.db"
+
+# PostgreSQL (ensure psycopg2 is installed)
+python -m scraper.main --database "postgresql+psycopg2://user:password@localhost:5432/jobs"
 ```
 
-A full run scrapes every configured company and writes the result to the
-SQLite file `jobs.db` (created automatically — no schema setup needed;
-`write_jobs()` runs `metadata.create_all()` on every invocation).
-
-### Environment variables
-
-All optional — the pipeline runs fully without any of them; missing keys
-just mean AI summaries/blurbs stay `""`.
-
-| Variable | Purpose |
-|---|---|
-| `ANTHROPIC_API_KEY` | Enables AI role summaries and company blurbs. |
-| `ANTHROPIC_AUTH_TOKEN` | Alternative to `ANTHROPIC_API_KEY` (e.g. a Claude Code OAuth token). `ANTHROPIC_API_KEY` wins if both are set. |
-| `OLLAMA_API_KEY` | Second fallback for AI summaries (free-tier Ollama Cloud), tried when Anthropic is unconfigured or its call fails. May hold several comma-separated keys for rotation past the hourly usage limit. |
-| `USAJOBS_API_KEY` / `USAJOBS_USER_AGENT` | Required only for the `usajobs` board (free key from developer.usajobs.gov). Every other board works without it. |
-| `LOG_LEVEL` | `DEBUG`/`INFO`/`WARNING`/`ERROR` (default `INFO`). Same effect as `--verbose` when set to `DEBUG`. |
-
-## CLI usage
+### 2. On-Demand Single Company Refresh
+Refreshes a single company's jobs and merges them into the existing database pool:
 
 ```bash
-# Full run — scrapes every company, writes to the database
-python -m scraper.main --database "sqlite:///jobs.db"
-
-# Any SQLAlchemy URL works — dialect picks the backend, no adapter code needed
-python -m scraper.main --database "postgresql+psycopg2://user:pass@host/db"
-
-# On-demand refresh of just one company: scrapes it fresh and merges the
-# result into the previous run's full job set (everyone else passes through
-# unchanged) — requires --database, both as merge source and sink
-python -m scraper.main --company "Acme" --database "sqlite:///jobs.db"
-
-# Smoke test: scrape one job, full DEBUG logging, skip the database
-# entirely (read and write) — --limit is the one case --database isn't required
-python -m scraper.main --company "Acme" --limit 1 --verbose
-
-# Scrape more companies in parallel (default 16)
-python -m scraper.main --database "sqlite:///jobs.db" --concurrency 24
-
-# One-time backfill: re-fetch every posting's detail page instead of reusing
-# a cached description (e.g. after raising/removing a truncation cap)
-python -m scraper.main --database "sqlite:///jobs.db" --no-detail-cache
-
-# Pin AI summaries to just one provider instead of the default
-# Anthropic-then-Ollama fallback
-python -m scraper.main --database "sqlite:///jobs.db" --llm-provider ollama
+python -m scraper.main --company "Stripe" --database "sqlite:///jobs.db"
 ```
 
-| Flag | Effect |
-|---|---|
-| `--database "<SQLAlchemy URL>"` | **Required** for a real run — the only place results are written, and the source of "previous run" state (diff, `first_seen`, detail-fetch cache). Exempt only when `--limit` is set. |
-| `--company "Name"` | Scope the run to one company (must match a `name` in `config.json`); merges its fresh jobs into the existing snapshot instead of rescraping everything. |
-| `--limit N` | Cap the scraped list to the first N jobs before diff/summarize; skips the database read *and* write (smoke test — a truncated list isn't a valid full snapshot). |
-| `--verbose` | DEBUG-level logging: per-request/per-page detail, AI summary attempts, stage timing. |
-| `--concurrency N` | Number of companies scraped in parallel (default 16). Safe to raise — most companies hit distinct hosts, and every board retries transient failures (429/5xx) with backoff. |
-| `--no-detail-cache` | Force every posting's detail page to be re-fetched instead of reusing a cached description. One-time backfill tool, not for routine runs — roughly one extra HTTP request per known job on the four detail-fetch boards. |
-| `--llm-provider {anthropic,ollama}` | Pin AI summaries/blurbs to just one provider; the other is never attempted, so a failure returns `""` instead of falling back. |
-
-## Database schema
-
-Normalized across several tables rather than one flat table — see
-[`scraper/db.py`](scraper/db.py) for the full SQLAlchemy definitions.
-
-- **`companies`** (`id`, `name` unique, `blurb`) — one row per company;
-  `blurb` is generated once by `scraper/backfill_blurbs.py` and denormalized
-  onto every one of that company's jobs at write time (consumers only ever
-  read `--database`, never `config.json`).
-- **`sources`** (`id`, `name` unique) — one row per board type.
-- **`jobs`** (`id`, `company_id` FK, `source_id` FK, `title`, `url`,
-  `posted_date`, `first_seen`, `description`, `role_summary`, `is_new`) —
-  `posted_date` is an absolute `"YYYY-MM-DD"` derived once from `first_seen`
-  minus `posted_days` at write time (NULL for date-less boards like
-  rippling/bamboohr, where consumers fall back to `first_seen`).
-- **`locations`** (`id`, `name` unique, `normalized_key`, `city`, `region`,
-  `country_code`, `is_remote`, `town_id` FK) — raw location text exactly as
-  scraped is the row's identity (spelling/format variants are deliberately
-  never merged); structured fields are additive metadata parsed via
-  `scraper.location_resolver.parse_location()`.
-- **`towns`** — canonical geographic identity sourced from GeoNames
-  (`scraper/gazetteer.py`), keyed by `geoname_id`. Kept separate from
-  `locations` so multiple raw location strings for the same real place
-  ("San Francisco", "San Francisco, CA") can all resolve to one `towns` row
-  without touching `locations`' own "never guess, never merge" identity.
-- **`job_locations`** — join table (`job_id`, `location_id`, `ordinal`),
-  preserving each job's original location order.
-
-Each run does a full delete + reinsert of every table (full-replace
-semantics, not an incremental upsert); companies/sources/locations are
-looked-up-or-inserted by their unique key so repeated values don't
-duplicate rows. Write failures are retried up to 3 times to absorb
-transient `SQLITE_BUSY` from a concurrent process sharing the same file.
-
-**SQLite** needs no driver install. **Postgres/MySQL/etc.** need their
-driver package installed separately, e.g.:
+### 3. Smoke Test (No Database Writes)
+Scrapes a single job or company with debug logging, skipping database writes entirely:
 
 ```bash
-pip install psycopg2-binary
-python -m scraper.main --database "postgresql+psycopg2://user:pass@host/db"
+python -m scraper.main --company "Figma" --limit 1 --verbose
 ```
 
-## Adding companies and job boards
-
-**Company already on Workday** → config only, no code. Add an entry to
-`companies` in [config.json](config.json). To find a company's URL: open
-their careers page → F12 → Network → XHR → click "show more jobs" → copy
-the POST URL (pattern: `…/wday/cxs/<company>/<tenant>/jobs`).
-
-**Different job board entirely** → one new file in
-[scraper/boards/](scraper/boards/): subclass `BaseScraper`, implement
-`fetch_jobs()`, register in `SCRAPERS` in
-[scraper/boards/\_\_init\_\_.py](scraper/boards/__init__.py). `main.py`
-never imports concrete scrapers.
-
-**Adding a company blurb**: after adding a company entry, run
-`python -m scraper.backfill_blurbs` (only touches entries missing a
-`"blurb"`, safe to re-run) or hand-write one directly into the entry.
-
-Full details, including per-board gotchas and the Workday API shape, live in
-[CLAUDE.md](CLAUDE.md).
-
-## Testing
+### 4. Concurrency, Sharding & Timeout Tuning
+Control parallel execution, memory limits, and straggler resilience:
 
 ```bash
-python -m pytest                       # run all tests
-python -m pytest tests/test_workday.py # run one test file
+# Scrape 32 companies concurrently, split into 100-company database transaction shards
+python -m scraper.main \
+  --database "sqlite:///jobs.db" \
+  --concurrency 32 \
+  --shard-size 100 \
+  --per-company-timeout 90
 ```
 
-## Project layout
+- `--concurrency N` (default `16`): Parallel worker threads.
+- `--shard-size N` (default unset/all): Splits run into independent shards to bound memory and isolate database transactions.
+- `--per-company-timeout N` (default `120s`): Abandons and requeues slow stragglers so the thread pool does not stall.
+- `--no-detail-cache`: Forces detail pages to re-fetch even if the job ID is already known.
 
+### 5. Company Blurb Backfill
+Generates or updates 1-2 sentence AI company overviews in `config.json`:
+
+```bash
+python -m scraper.backfill_blurbs
 ```
-scraper/
-  main.py           orchestrator: scrape → diff → summarize → write
-  db.py             SQLAlchemy schema + load_previous()/write_jobs()
-  storage.py        diff() — new-job detection against previous state
-  summarize.py      AI role summaries + company blurbs (Anthropic/Ollama)
-  backfill_blurbs.py  one-time script: fills missing company blurbs into config.json
-  location_resolver.py / town_resolver.py / gazetteer.py
-                     location parsing + GeoNames-backed town resolution
-  models.py          Job dataclass
-  config_types.py    TypedDicts for config.json's shape
-  boards/            one scraper class per job board (base.py has the
-                     shared BaseScraper + make_session() retry/backoff logic)
-tests/               pytest suite, one file per board/module
-config.json           809 companies + criteria keyword bank (reference only)
+
+---
+
+## Adding Companies & Discovery
+
+### Autonomous Company Discovery
+Use the built-in probing utility to find which ATS a company uses and auto-verify it:
+
+```bash
+# Probe across Greenhouse, Ashby, Lever, Workday, BambooHR, SmartRecruiters, etc.
+python scripts/discover_companies.py --query "Databricks" --probe
 ```
+
+### S&P 500 Multi-ATS Scout
+Automated scanner for large multinationals:
+
+```bash
+python scripts/scout_sp500.py --sector "Information Technology" --limit 20
+```
+
+### Manual Configuration
+Add an entry to `companies` in [config.json](config.json):
+
+```json
+{
+  "name": "Anthropic",
+  "board": "lever",
+  "company": "anthropic",
+  "blurb": "Anthropic is an AI safety and research company building reliable, interpretable steering systems."
+}
+```
+
+For **Workday**, inspect the company's careers portal via browser DevTools (Network tab -> XHR -> filter for `jobs`):
+```json
+{
+  "name": "Salesforce",
+  "board": "workday",
+  "url": "https://salesforce.wd12.myworkdayjobs.com/wday/cxs/salesforce/External_Career_Site/jobs",
+  "careers_base": "https://salesforce.wd12.myworkdayjobs.com/en-US/External_Career_Site"
+}
+```
+
+---
+
+## Developing New Scrapers
+
+All scrapers inherit from `BaseScraper` in `scraper/boards/base.py`.
+
+```python
+from scraper.boards.base import BaseScraper
+from scraper.models import Job
+
+
+class CustomScraper(BaseScraper):
+    source = "custom"
+
+    def fetch_jobs(self) -> list[Job]:
+        # self.session provides built-in exponential backoff and retry
+        resp = self.session.get("https://api.example.com/jobs", timeout=15)
+        resp.raise_for_status()
+
+        jobs: list[Job] = []
+        for item in resp.json()["data"]:
+            jobs.append(
+                Job(
+                    id=f"{self.slug}:{item['id']}",
+                    company=self.name,
+                    title=item["title"],
+                    location=item["location"],
+                    url=item["apply_url"],
+                    posted_on=item["posted_at"],
+                    source=self.source,
+                )
+            )
+        return jobs
+```
+
+Register the new scraper class in `SCRAPERS` in `scraper/boards/__init__.py` and define its TypedDict config in `scraper/config_types.py`.
+
+---
+
+## Code Quality & Engineering Standards
+
+This repository maintains rigorous quality gates enforced via CI:
+
+- **Strict Type Checking**: Pyright in strict mode (`pyright --strict`).
+- **Zero `Any` Policy**: CI runs an automated audit verifying zero occurrences of `Any` in `scraper` and `tests`.
+- **Zero Suppression Comments**: No `type: ignore` or `pyright: ignore` comments are allowed.
+- **Ruff Linting & Formatting**: Strict linting rules (`E`, `F`, `I`, `UP`) and 100-char line limit.
+- **Comprehensive Test Suite**: Over 360+ tests with mock HTTP fixtures (`responses`).
+
+To run all quality gates locally:
+```bash
+bash scripts/ci.sh
+```
+
+To run tests only:
+```bash
+pytest -n auto
+```
+
+---
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
