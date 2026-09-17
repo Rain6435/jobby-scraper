@@ -47,6 +47,7 @@ class SuccessFactorsScraper(BaseScraper):
         cfg: SuccessFactorsConfig = cast(SuccessFactorsConfig, self.company)
         company = cfg["company"]
         domain = cfg.get("domain") or f"jobs.{company}.com"
+        rows = cfg.get("rows", 2000)
 
         url = f"https://{domain}/services/rss/job/?locale=en_US"
 
@@ -58,8 +59,8 @@ class SuccessFactorsScraper(BaseScraper):
             }
         )
 
-        log.debug("%s: fetching RSS feed from %s", self.name, url)
-        resp = session.get(url, timeout=TIMEOUT)
+        log.debug("%s: fetching RSS feed from %s (rows=%d)", self.name, url, rows)
+        resp = session.get(url, params={"rows": rows}, timeout=TIMEOUT)
         resp.raise_for_status()
 
         jobs: list[Job] = []

@@ -9,7 +9,7 @@ COMPANY: SuccessFactorsConfig = {
     "company": "globalsap",
     "domain": "jobs.globalsap.com",
 }
-FEED_URL = "https://jobs.globalsap.com/services/rss/job/?locale=en_US"
+FEED_URL = "https://jobs.globalsap.com/services/rss/job/?locale=en_US&rows=2000"
 
 XML_FEED = """<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0">
@@ -74,6 +74,22 @@ def test_maps_successfactors_rss_jobs() -> None:
     assert j3.id == "global-sap-co:1408073900"
     assert j3.title == "Channel Manager"
     assert j3.location == "Shanghai, CN"
+
+
+@responses.activate
+def test_custom_rows_parameter() -> None:
+    custom_company: SuccessFactorsConfig = {
+        "name": "Custom SAP Co",
+        "board": "successfactors",
+        "company": "customsap",
+        "domain": "jobs.customsap.com",
+        "rows": 500,
+    }
+    custom_url = "https://jobs.customsap.com/services/rss/job/?locale=en_US&rows=500"
+    responses.get(custom_url, body=XML_FEED, content_type="application/rss+xml")
+
+    jobs = SuccessFactorsScraper(custom_company).fetch_jobs()
+    assert len(jobs) == 3
 
 
 @responses.activate

@@ -117,6 +117,7 @@ class OracleCloudConfig(CompanyConfig):
 class SuccessFactorsConfig(CompanyConfig):
     company: str
     domain: NotRequired[str]
+    rows: NotRequired[int]
 
 
 class AdpConfig(CompanyConfig):
