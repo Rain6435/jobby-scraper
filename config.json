@@ -86,7 +86,7 @@
       "blurb": "Canada's largest airline and flag carrier operating domestic, cross-border, and international flight operations."
     },
     {
-      "name": "Hydro-Qu\u00e9bec",
+      "name": "Hydro-Québec",
       "board": "successfactors",
       "company": "hydroquebec",
       "domain": "emploi.hydroquebec.com",
@@ -1145,7 +1145,7 @@
       "careers_base": "https://standard.wd1.myworkdayjobs.com/en-US/Search"
     },
     {
-      "name": "AtkinsR\u00e9alis",
+      "name": "AtkinsRéalis",
       "board": "workday",
       "url": "https://slihrms.wd3.myworkdayjobs.com/wday/cxs/slihrms/Careers/jobs",
       "careers_base": "https://slihrms.wd3.myworkdayjobs.com/en-US/Careers"
@@ -3156,7 +3156,7 @@
       "company": "larian"
     },
     {
-      "name": "Vid\u00e9otron",
+      "name": "Vidéotron",
       "board": "smartrecruiters",
       "company": "videotron"
     },
@@ -3829,7 +3829,7 @@
       "company": "korem"
     },
     {
-      "name": "CF Montr\u00e9al",
+      "name": "CF Montréal",
       "board": "smartrecruiters",
       "company": "cfmontreal"
     },
@@ -4651,7 +4651,7 @@
       "blurb": "Global enterprise software leader specializing in enterprise resource planning (ERP), cloud applications, and business AI solutions."
     },
     {
-      "name": "Nestl\u00e9",
+      "name": "Nestlé",
       "board": "successfactors",
       "company": "nestle",
       "domain": "jobdetails.nestle.com",
@@ -5111,7 +5111,7 @@
       "company": "vanier"
     },
     {
-      "name": "Bixi Montr\u00e9al",
+      "name": "Bixi Montréal",
       "board": "recruitee",
       "company": "biximontreal"
     },
@@ -5141,7 +5141,7 @@
       "company": "squeezestudio"
     },
     {
-      "name": "Jam City Montr\u00e9al",
+      "name": "Jam City Montréal",
       "board": "lever",
       "company": "jamcity"
     },
@@ -5758,7 +5758,7 @@
       "name": "Nintendo",
       "board": "greenhouse",
       "token": "nintendo",
-      "blurb": "Worldwide pioneer in interactive entertainment and video games, creator of legendary franchises including Mario, Zelda, and Pok\u00e9mon."
+      "blurb": "Worldwide pioneer in interactive entertainment and video games, creator of legendary franchises including Mario, Zelda, and Pokémon."
     },
     {
       "name": "Naughty Dog",
@@ -6092,7 +6092,7 @@
       "blurb": "Federal public service of Canada offering career opportunities across all federal departments, agencies, and Crown corporations."
     },
     {
-      "name": "Qu\u00e9bec emploi",
+      "name": "Québec emploi",
       "board": "quebec_emploi",
       "blurb": "Official provincial employment portal of the Government of Quebec offering career opportunities across Quebec."
     },
@@ -7202,6 +7202,143 @@
       "board": "phenom",
       "url": "https://careers.zimmerbiomet.com/us/en",
       "blurb": "Global medical technology leader designing and manufacturing orthopedic implants and digital solutions alleviating pain and improving mobility."
+    },
+    {
+      "name": "Illumina",
+      "board": "workday",
+      "url": "https://illumina.wd1.myworkdayjobs.com/wday/cxs/illumina/illumina-careers/jobs",
+      "careers_base": "https://illumina.wd1.myworkdayjobs.com/en-US/illumina-careers"
+    },
+    {
+      "name": "Recursion Pharmaceuticals",
+      "board": "greenhouse",
+      "token": "recursionpharmaceuticals"
+    },
+    {
+      "name": "Relay Therapeutics",
+      "board": "greenhouse",
+      "token": "relaytherapeutics"
+    },
+    {
+      "name": "GeneDx",
+      "board": "greenhouse",
+      "token": "genedx"
+    },
+    {
+      "name": "Ultima Genomics",
+      "board": "greenhouse",
+      "token": "ultimagenomics"
+    },
+    {
+      "name": "Turner & Townsend",
+      "board": "smartrecruiters",
+      "company": "turnertownsend"
+    },
+    {
+      "name": "John Deere",
+      "board": "successfactors",
+      "company": "deere",
+      "domain": "jobs.deere.com"
+    },
+    {
+      "name": "Ametek",
+      "board": "successfactors",
+      "company": "ametek",
+      "domain": "jobs.ametek.com"
+    },
+    {
+      "name": "FedEx",
+      "board": "jibe",
+      "tenant": "fedex"
+    },
+    {
+      "name": "Royal Caribbean Group",
+      "board": "successfactors",
+      "company": "royalcaribbean",
+      "domain": "jobs.royalcaribbeangroup.com"
+    },
+    {
+      "name": "Fidelity Canada",
+      "board": "workday",
+      "url": "https://fil.wd3.myworkdayjobs.com/wday/cxs/fil/fidelitycanada/jobs",
+      "careers_base": "https://fil.wd3.myworkdayjobs.com/en-US/fidelitycanada"
+    },
+    {
+      "name": "ExxonMobil",
+      "board": "successfactors",
+      "company": "exxonmobil",
+      "domain": "jobs.exxonmobil.com"
+    },
+    {
+      "name": "Halliburton",
+      "board": "successfactors",
+      "company": "halliburton",
+      "domain": "jobs.halliburton.com"
+    },
+    {
+      "name": "Expand Energy",
+      "board": "successfactors",
+      "company": "expandenergy",
+      "domain": "jobs.expandenergy.com"
+    },
+    {
+      "name": "Nucor",
+      "board": "successfactors",
+      "company": "nucor",
+      "domain": "jobs.nucor.com"
+    },
+    {
+      "name": "Palantir Technologies",
+      "board": "lever",
+      "company": "palantir"
+    },
+    {
+      "name": "Perplexity",
+      "board": "ashby",
+      "slug": "perplexity"
+    },
+    {
+      "name": "Writer",
+      "board": "ashby",
+      "slug": "writer"
+    },
+    {
+      "name": "Physical Intelligence",
+      "board": "ashby",
+      "slug": "physicalintelligence"
+    },
+    {
+      "name": "Together AI",
+      "board": "greenhouse",
+      "token": "togetherai"
+    },
+    {
+      "name": "AssemblyAI",
+      "board": "greenhouse",
+      "token": "assemblyai"
+    },
+    {
+      "name": "Zapier",
+      "board": "ashby",
+      "slug": "zapier"
+    },
+    {
+      "name": "NetApp",
+      "board": "successfactors",
+      "company": "netapp",
+      "domain": "jobs.netapp.com"
+    },
+    {
+      "name": "Supermicro",
+      "board": "successfactors",
+      "company": "supermicro",
+      "domain": "jobs.supermicro.com"
+    },
+    {
+      "name": "Teradyne",
+      "board": "successfactors",
+      "company": "teradyne",
+      "domain": "jobs.teradyne.com"
     }
   ],
   "criteria": {
@@ -7280,35 +7417,35 @@
       "leadership program",
       "stagiaire",
       "stage",
-      "\u00e9tudiant",
-      "\u00e9tudiante",
-      "dipl\u00f4m\u00e9",
-      "dipl\u00f4m\u00e9e",
-      "d\u00e9butant",
-      "d\u00e9butante",
+      "étudiant",
+      "étudiante",
+      "diplômé",
+      "diplômée",
+      "débutant",
+      "débutante",
       "junior",
       "alternance",
       "alternant",
       "alternante",
-      "associ\u00e9",
-      "associ\u00e9e",
-      "d\u00e9veloppeur",
-      "d\u00e9veloppeuse",
+      "associé",
+      "associée",
+      "développeur",
+      "développeuse",
       "programmeur",
       "programmeuse",
-      "g\u00e9nie logiciel",
-      "ing\u00e9nieur logiciel",
-      "ing\u00e9nieure logiciel",
-      "d\u00e9veloppement logiciel",
-      "g\u00e9nie informatique",
-      "analyste de donn\u00e9es",
-      "scientifique de donn\u00e9es",
-      "science des donn\u00e9es",
+      "génie logiciel",
+      "ingénieur logiciel",
+      "ingénieure logiciel",
+      "développement logiciel",
+      "génie informatique",
+      "analyste de données",
+      "scientifique de données",
+      "science des données",
       "analyste d'affaires",
-      "analyste syst\u00e8me",
-      "analyste de syst\u00e8mes",
-      "ing\u00e9nieur r\u00e9seau",
-      "s\u00e9curit\u00e9 informatique",
+      "analyste système",
+      "analyste de systèmes",
+      "ingénieur réseau",
+      "sécurité informatique",
       "soutien informatique",
       "apprentissage automatique",
       "intelligence artificielle",
@@ -7332,12 +7469,12 @@
       "bookkeeper",
       "payroll",
       "analyste financier",
-      "analyste financi\u00e8re",
+      "analyste financière",
       "comptable",
-      "comptabilit\u00e9",
-      "v\u00e9rificateur",
-      "v\u00e9rificatrice",
-      "analyste de cr\u00e9dit",
+      "comptabilité",
+      "vérificateur",
+      "vérificatrice",
+      "analyste de crédit",
       "analyste des risques",
       "actuariat",
       "actuaire",
@@ -7357,15 +7494,15 @@
       "project coordinator",
       "program coordinator",
       "customer success",
-      "d\u00e9veloppement des affaires",
-      "analyste des op\u00e9rations",
+      "développement des affaires",
+      "analyste des opérations",
       "coordonnateur marketing",
       "coordonnatrice marketing",
-      "repr\u00e9sentant des ventes",
-      "repr\u00e9sentante des ventes",
-      "charg\u00e9 de compte",
-      "charg\u00e9e de compte",
-      "cha\u00eene d'approvisionnement",
+      "représentant des ventes",
+      "représentante des ventes",
+      "chargé de compte",
+      "chargée de compte",
+      "chaîne d'approvisionnement",
       "coordonnateur de projet",
       "coordonnatrice de projet",
       "success client",
@@ -7396,21 +7533,21 @@
       "quality engineer",
       "design engineer",
       "engineer in training",
-      "ing\u00e9nieur m\u00e9canique",
-      "ing\u00e9nieure m\u00e9canique",
-      "ing\u00e9nieur \u00e9lectrique",
-      "ing\u00e9nieure \u00e9lectrique",
-      "ing\u00e9nieur civil",
-      "ing\u00e9nieure civile",
-      "ing\u00e9nieur a\u00e9rospatial",
-      "ing\u00e9nieure a\u00e9rospatiale",
-      "ing\u00e9nieur industriel",
-      "ing\u00e9nieure industrielle",
-      "ing\u00e9nieur de fabrication",
-      "ing\u00e9nieur qualit\u00e9",
-      "ing\u00e9nieure qualit\u00e9",
-      "ing\u00e9nieur en formation",
-      "ing\u00e9nieure en formation"
+      "ingénieur mécanique",
+      "ingénieure mécanique",
+      "ingénieur électrique",
+      "ingénieure électrique",
+      "ingénieur civil",
+      "ingénieure civile",
+      "ingénieur aérospatial",
+      "ingénieure aérospatiale",
+      "ingénieur industriel",
+      "ingénieure industrielle",
+      "ingénieur de fabrication",
+      "ingénieur qualité",
+      "ingénieure qualité",
+      "ingénieur en formation",
+      "ingénieure en formation"
     ],
     "blacklist_keywords": [
       "senior",
@@ -7424,14 +7561,14 @@
       "head of",
       "chief",
       "architect",
-      "s\u00e9nior",
+      "sénior",
       "directeur",
       "directrice",
       "gestionnaire",
       "chef",
       "responsable",
-      "exp\u00e9riment\u00e9",
-      "exp\u00e9riment\u00e9e"
+      "expérimenté",
+      "expérimentée"
     ]
   }
 }
