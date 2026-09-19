@@ -1,10 +1,21 @@
-"""Loads the bundled GeoNames `cities15000` dump (towns with population
->= 15,000 worldwide) into the `towns` table, giving job locations a
+"""Loads the bundled GeoNames `cities1000` dump (towns with population
+>= 1,000 worldwide) into the `towns` table, giving job locations a
 canonical geographic identity that scraped strings alone don't have — see
 scraper/town_resolver.py for why that's a separate concern from the
 free-text parsing in location_resolver.py.
 
-The bundled file (data/gazetteer/cities15000.txt.gz) is GeoNames' own
+Upgraded from `cities15000` (2026-09-19, ~34k rows) to `cities1000`
+(~171k rows) — the 15,000-population cutoff was excluding real, common
+job-posting locations: small-to-mid US/CA towns (Hershey PA ~14k,
+Warren RI ~11k, Cabazon CA ~2.5k) made up roughly 80% of the town_id
+match failures on postings whose city/country had already resolved
+correctly, confirmed against a snapshot of prod's `locations` table
+before the swap. `_BARE_CITY_NAME_TO_COUNTRY` in location_resolver.py
+was derived from `cities15000` at authoring time but has no runtime
+dependency on which gazetteer file is loaded — it does not need
+re-deriving just because this file grew.
+
+The bundled file (data/gazetteer/cities1000.txt.gz) is GeoNames' own
 tab-delimited export, kept byte-for-byte as downloaded (just gzipped) rather
 than pre-trimmed to only the columns this project uses — that way refreshing
 it (scripts/refresh_gazetteer.py) is a straight file replace, never a
@@ -33,7 +44,7 @@ from sqlalchemy.engine import Connection
 from scraper.db import towns_table
 
 GAZETTEER_PATH = (
-    Path(__file__).resolve().parent.parent / "data" / "gazetteer" / "cities15000.txt.gz"
+    Path(__file__).resolve().parent.parent / "data" / "gazetteer" / "cities1000.txt.gz"
 )
 
 # GeoNames' alternatenames column is a single comma-joined field mixing

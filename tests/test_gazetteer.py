@@ -14,7 +14,7 @@ def test_load_towns_populates_table_from_bundled_gazetteer():
     engine = _engine()
     with engine.begin() as conn:
         n = load_towns(conn)
-        assert n > 1000  # sanity: bundled cities15000 has ~34k rows
+        assert n > 100_000  # sanity: bundled cities1000 has ~171k rows
         count = conn.execute(select(towns_table)).fetchall()
         assert len(count) == n
 
