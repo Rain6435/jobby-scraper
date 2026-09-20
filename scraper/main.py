@@ -492,6 +492,16 @@ def _run_batch(
     for job in current:
         job.company_blurb = blurbs.get(job.company, "")
 
+    # Denormalize each company's optional "default_country" (config.json) —
+    # a fallback parse_location() applies only when a job's location string
+    # itself carries no country signal at all, never overriding a country
+    # the string did resolve. Reserved for a confirmed single-country
+    # employer where the ATS's own location text omits the country
+    # entirely (e.g. DaVita's "00146 - Puyallup Dialysis" is always US).
+    default_countries = {c["name"]: c.get("default_country", "") for c in config["companies"]}
+    for job in current:
+        job.default_country = default_countries.get(job.company, "")
+
     # Carry over first_seen and role_summary for jobs we already knew about;
     # stamp first_seen for jobs we're seeing for the first time. Every board
     # scraper builds a fresh Job() each run (first_seen="" and role_summary=""

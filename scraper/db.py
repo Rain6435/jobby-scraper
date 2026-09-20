@@ -431,7 +431,9 @@ def _get_or_create_ids(conn: Connection, table: Table, names: set[str]) -> dict[
     return existing
 
 
-def get_or_create_locations(conn: Connection, names: set[str]) -> dict[str, int]:
+def get_or_create_locations(
+    conn: Connection, names: dict[str, str | None]
+) -> dict[str, int]:
     """Look up existing `locations` rows by normalized_key (trim+casefold+
     collapse-whitespace of the raw string — see location_resolver.py), not
     by raw `name`, so "Toronto, Ontario, Canada" and "TORONTO, Ontario,
@@ -450,6 +452,20 @@ def get_or_create_locations(conn: Connection, names: set[str]) -> dict[str, int]
     scraper.town_resolver.resolve_town), just for this one new row instead
     of the whole table.
 
+    `names` maps each raw location string to a `default_country` (or None)
+    — see parse_location's own docstring for what this does and doesn't
+    override. Since a `locations` row is shared across every company whose
+    jobs happen to use the identical raw string (row identity is per-
+    string, not per-company), the SAME raw string could in principle arrive
+    here with two different companies' defaults; whichever happens to be
+    present in this dict wins for that string (the caller, write_jobs(),
+    resolves that ambiguity by building this dict in job iteration order
+    and never overwriting an existing key — first company wins, the same
+    tie-break already used elsewhere in this module for a duplicate Job.id
+    or company_blurb). Only matters for a default_country actually being
+    set for more than one company on an identical raw string, an edge case
+    expected to be rare.
+
     Returns {raw_name: id} for every input name, keyed by the exact raw
     string passed in (mirrors _get_or_create_ids' return shape) — so callers
     joining against job.locations (raw strings) don't need to know which raw
@@ -458,7 +474,10 @@ def get_or_create_locations(conn: Connection, names: set[str]) -> dict[str, int]
     if not names:
         return {}
 
-    parsed_by_name = {name: parse_location(name) for name in names}
+    parsed_by_name = {
+        name: parse_location(name, default_country=default_country)
+        for name, default_country in names.items()
+    }
     keys = {p.normalized_key for p in parsed_by_name.values()}
 
     existing_by_key: dict[str, int] = {
@@ -658,7 +677,19 @@ def write_jobs(
             source_ids = _get_or_create_ids(
                 conn, sources_table, {job.source for job in unique_jobs}
             )
-            location_names = {loc for job in unique_jobs for loc in job.locations}
+            # Dict, not set: carries each name's default_country through to
+            # get_or_create_locations() (see that function's own docstring
+            # for the first-company-wins tie-break when the same raw string
+            # arrives with two different companies' defaults). Built by
+            # iterating unique_jobs in order and never overwriting an
+            # existing key, so the first job encountered for a given raw
+            # string is the one whose default_country wins — same
+            # convention already used for by_id/company_blurbs above.
+            location_names: dict[str, str | None] = {}
+            for job in unique_jobs:
+                for loc in job.locations:
+                    if loc not in location_names:
+                        location_names[loc] = job.default_country or None
             location_ids = get_or_create_locations(conn, location_names)
 
         stage = "insert jobs"

@@ -183,7 +183,8 @@
       "board": "workday",
       "url": "https://homedepot.wd5.myworkdayjobs.com/wday/cxs/homedepot/CareerDepot/jobs",
       "careers_base": "https://homedepot.wd5.myworkdayjobs.com/en-US/CareerDepot",
-      "blurb": "World's largest home improvement specialty retailer supplying tools, construction products, and services across the United States."
+      "blurb": "World's largest home improvement specialty retailer supplying tools, construction products, and services across the United States.",
+      "default_country": "US"
     },
     {
       "name": "Lowe's",
@@ -221,7 +222,8 @@
       "board": "workday",
       "url": "https://wegmans.wd1.myworkdayjobs.com/wday/cxs/wegmans/Wegmans/jobs",
       "careers_base": "https://wegmans.wd1.myworkdayjobs.com/en-US/Wegmans",
-      "blurb": "Celebrated regional supermarket chain renowned for extensive fresh produce, bakeries, and gourmet grocery selections across the Eastern US."
+      "blurb": "Celebrated regional supermarket chain renowned for extensive fresh produce, bakeries, and gourmet grocery selections across the Eastern US.",
+      "default_country": "US"
     },
     {
       "name": "Nordstrom",
@@ -284,13 +286,15 @@
       "name": "BDC",
       "board": "workday",
       "url": "https://bdc.wd10.myworkdayjobs.com/wday/cxs/bdc/BDC_Careers/jobs",
-      "careers_base": "https://bdc.wd10.myworkdayjobs.com/en-US/BDC_Careers"
+      "careers_base": "https://bdc.wd10.myworkdayjobs.com/en-US/BDC_Careers",
+      "default_country": "CA"
     },
     {
       "name": "McGill University",
       "board": "workday",
       "url": "https://mcgill.wd3.myworkdayjobs.com/wday/cxs/mcgill/McGill_Careers/jobs",
-      "careers_base": "https://mcgill.wd3.myworkdayjobs.com/en-US/McGill_Careers"
+      "careers_base": "https://mcgill.wd3.myworkdayjobs.com/en-US/McGill_Careers",
+      "default_country": "CA"
     },
     {
       "name": "Canadian Tire",
@@ -308,7 +312,8 @@
       "name": "BDO Canada",
       "board": "workday",
       "url": "https://bdo.wd3.myworkdayjobs.com/wday/cxs/bdo/BDO/jobs",
-      "careers_base": "https://bdo.wd3.myworkdayjobs.com/en-US/BDO"
+      "careers_base": "https://bdo.wd3.myworkdayjobs.com/en-US/BDO",
+      "default_country": "CA"
     },
     {
       "name": "TiMi Montreal",
@@ -628,7 +633,8 @@
       "name": "Desjardins",
       "board": "workday",
       "url": "https://desjardins.wd10.myworkdayjobs.com/wday/cxs/desjardins/Desjardins/jobs",
-      "careers_base": "https://desjardins.wd10.myworkdayjobs.com/en-US/Desjardins"
+      "careers_base": "https://desjardins.wd10.myworkdayjobs.com/en-US/Desjardins",
+      "default_country": "CA"
     },
     {
       "name": "Teledyne FLIR",
@@ -658,7 +664,8 @@
       "name": "Home Depot Canada",
       "board": "workday",
       "url": "https://homedepot.wd5.myworkdayjobs.com/wday/cxs/homedepot/CareerDepotCanada/jobs",
-      "careers_base": "https://homedepot.wd5.myworkdayjobs.com/en-US/CareerDepotCanada"
+      "careers_base": "https://homedepot.wd5.myworkdayjobs.com/en-US/CareerDepotCanada",
+      "default_country": "CA"
     },
     {
       "name": "Interac",
@@ -6925,7 +6932,8 @@
       "board": "workday",
       "url": "https://davita.wd1.myworkdayjobs.com/wday/cxs/davita/DKC_External/jobs",
       "careers_base": "https://davita.wd1.myworkdayjobs.com/en-US/DKC_External",
-      "blurb": "Leading provider of kidney care services committed to creating positive health outcomes through clinical quality."
+      "blurb": "Leading provider of kidney care services committed to creating positive health outcomes through clinical quality.",
+      "default_country": "US"
     },
     {
       "name": "CSX Corporation",

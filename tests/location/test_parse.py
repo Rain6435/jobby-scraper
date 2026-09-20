@@ -1494,3 +1494,27 @@ def test_round_7_improvements():
     assert resolve_country_from_location("Brive-la-Gaillarde") == "FR"
 
 
+
+
+# --- default_country fallback (opt-in, only fills a truly unresolved
+# --- country_code — never overrides a country the string itself resolved) ---
+
+
+def test_parse_location_default_country_fills_unresolved_country_code():
+    parsed = parse_location("00146 - Puyallup Dialysis", default_country="US")
+    assert parsed.country_code == "US"
+
+
+def test_parse_location_default_country_never_overrides_resolved_country():
+    parsed = parse_location("Berlin, DE", default_country="FR")
+    assert parsed.country_code == "DE"
+
+
+def test_parse_location_default_country_absent_by_default():
+    parsed = parse_location("00146 - Puyallup Dialysis")
+    assert parsed.country_code is None
+
+
+def test_parse_location_default_country_none_is_a_noop():
+    parsed = parse_location("00146 - Puyallup Dialysis", default_country=None)
+    assert parsed.country_code is None

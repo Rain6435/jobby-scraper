@@ -51,11 +51,21 @@ class ParsedLocation:
 
 
 @functools.lru_cache(maxsize=16384)
-def parse_location(raw: str) -> ParsedLocation:
+def parse_location(raw: str, *, default_country: str | None = None) -> ParsedLocation:
     """Best-effort structural parse of a raw scraped location string. Only
     `normalized_key` feeds row identity (see get_or_create_locations);
     city/region/country_code/is_remote are additive metadata for filtering,
     not used to decide whether two rows represent the same place.
+
+    `default_country` is an opt-in fallback applied only when the string
+    itself carries no country signal at all (country_code would otherwise
+    stay None) — it never overrides a country the string DID resolve, so
+    this doesn't weaken the "never guess from the string" contract every
+    other tier in this function follows. Meant for a caller with context
+    the string itself lacks — e.g. config.json's per-company
+    default_country for a confirmed single-country employer (DaVita,
+    Home Depot Canada), applied by db.py's get_or_create_locations() —
+    not for guessing at the parser level.
     """
     # normalized_key (row identity — see get_or_create_locations) is always
     # derived from the untouched raw string, never the cleaned one: cleaning
@@ -491,6 +501,9 @@ def parse_location(raw: str) -> ParsedLocation:
             # had been the matched code).
             country_code = corrected_country
             region = None
+
+    if country_code is None and default_country is not None:
+        country_code = default_country
 
     return ParsedLocation(
         raw=raw,
