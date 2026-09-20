@@ -11,26 +11,54 @@ import unicodedata
 
 from scraper.location.cleaning import matches_word
 from scraper.location.data import (
-    CA_PROVINCE_TOKENS,
-    COUNTRY_NAMES,
-    LOCATION_ALIASES,
-    US_STATE_TOKENS,
     ALPHA3_TO_ALPHA2,
     BARE_ALPHA2_CODE_TO_COUNTRY,
     BARE_CITY_NAME_TO_COUNTRY,
+    CA_PROVINCE_TOKENS,
+    COUNTRY_NAMES,
     ISO_NAME_TO_CODE,
+    LOCATION_ALIASES,
     LOCATION_ALIASES_AMBIGUOUS_WITH_US_CA_CITY,
+    SUB_NATIONAL_REGION_TO_COUNTRY,
+    US_STATE_TOKENS,
 )
 from scraper.location.regexes import (
     COUNTRY_NAMES_COMBINED_RE,
+    DESJARDINS_RE,
+    DNU_PREFIX_RE,
+    FOUR_SEASONS_PREFIX_RE,
+    FRENCH_STREET_ADDRESS_PREFIX_RE,
+    HOME_OFFICE_STORE_RE,
+    HUB_SUFFIX_RE,
     LEADING_ISO2_DOT_RE,
     LEADING_ISO2_REGION_DASH_RE,
-    LEADING_ISO3_DASH_RE,
+    LEADING_ISO3_RE,
+    LEADING_REMOTE_DASH_RE,
+    LEADING_WORD_REMOTE_SUFFIX_RE,
     LOCATION_ALIASES_COMBINED_RE,
+    LOWES_PREFIX_RE,
+    METRO_AREA_RE,
+    NGR_STORE_RE,
+    OFFICE_SUFFIX_RE,
     PAREN_RE,
+    STORE_ID_PREFIX_RE,
+    STREET_ADDRESS_PREFIX_RE,
+    SYSCO_PREFIX_RE,
+    TRAILING_ADDRESS_RE,
     TRAILING_ALPHA3_RE,
+    TRAILING_ATTENDANCE_POLICY_RE,
+    TRAILING_CA_POSTAL_CODE_RE,
+    TRAILING_CITY_ADDRESS_RE,
+    TRAILING_FACILITY_NO_DASH_RE,
+    TRAILING_MORE_RE,
+    TRAILING_SHORT_CODE_RE,
     TRAILING_STATE_RE,
+    TRAILING_STORE_SUFFIX_RE,
+    TRAILING_UK_POSTAL_CODE_RE,
+    TRAILING_ZIP_RE,
+    UNIQLO_PREFIX_RE,
 )
+
 
 def resolve_country_from_location(location: str | None) -> str | None:
     """Resolve a free-text job location string to an ISO alpha-2 country
@@ -42,6 +70,48 @@ def resolve_country_from_location(location: str | None) -> str | None:
     """
     if not location or not location.strip():
         return None
+
+    if DESJARDINS_RE.search(location):
+        return "CA"
+    m_uniqlo = UNIQLO_PREFIX_RE.match(location)
+    if m_uniqlo and m_uniqlo.group(1).lower() in US_STATE_TOKENS:
+        return "US"
+
+    location = TRAILING_MORE_RE.sub("", location)
+    location = HUB_SUFFIX_RE.sub(r", \1", location)
+    location = METRO_AREA_RE.sub("", location)
+    location = FOUR_SEASONS_PREFIX_RE.sub("", location)
+    location = SYSCO_PREFIX_RE.sub("", location)
+    location = STORE_ID_PREFIX_RE.sub("", location)
+    m_rem = LEADING_REMOTE_DASH_RE.match(location)
+    if m_rem:
+        location = str(m_rem.group(1)).strip()
+    m_ho = HOME_OFFICE_STORE_RE.match(location)
+    if m_ho:
+        location = f"{m_ho.group(1)}, {m_ho.group(2)}, US"
+    location = OFFICE_SUFFIX_RE.sub(r", \1", location)
+    location = LOWES_PREFIX_RE.sub("", location)
+    location = TRAILING_FACILITY_NO_DASH_RE.sub("", location)
+    location = NGR_STORE_RE.sub("", location)
+    location = TRAILING_UK_POSTAL_CODE_RE.sub(r", GB", location)
+    location = TRAILING_ZIP_RE.sub("", location)
+    location = TRAILING_CA_POSTAL_CODE_RE.sub("", location)
+    location = TRAILING_SHORT_CODE_RE.sub("", location)
+    location = TRAILING_ATTENDANCE_POLICY_RE.sub("", location)
+    location = TRAILING_ADDRESS_RE.sub("", location)
+    location = TRAILING_CITY_ADDRESS_RE.sub("", location)
+    location = STREET_ADDRESS_PREFIX_RE.sub("", location)
+    location = FRENCH_STREET_ADDRESS_PREFIX_RE.sub("", location)
+    location = DNU_PREFIX_RE.sub("", location)
+    location = TRAILING_STORE_SUFFIX_RE.sub("", location)
+
+    remote_suffix = LEADING_WORD_REMOTE_SUFFIX_RE.match(location)
+    if remote_suffix and remote_suffix.group(1).strip().lower() in (
+        US_STATE_TOKENS | CA_PROVINCE_TOKENS
+    ):
+        state_segment = str(remote_suffix.group(1)).strip()
+        rest = location[remote_suffix.start(2) :]
+        location = f"{state_segment}, {rest}"
 
     # "<ISO2>-<REGION>-<City>-..." vendor shape (e.g. "CA-QC-LONGUEUIL-J01")
     # is the one check that needs the ORIGINAL case (see
@@ -55,21 +125,23 @@ def resolve_country_from_location(location: str | None) -> str | None:
     # NFD-decompose then drop combining marks: folds "québec"/"montréal"/
     # "münchen" to their unaccented ASCII form so they match
     # CA_PROVINCE_TOKENS/ISO_NAME_TO_CODE/LOCATION_ALIASES, whose keys are
-    # all plain ASCII. Safe here specifically because this function only
-    # extracts a country *signal* from the string — unlike parse_location's
-    # normalized_key (identity/dedup), folding accents can never merge two
-    # genuinely different places into the same resolved country by mistake,
-    # it only lets an accented spelling reach a table that was already
-    # reachable via its unaccented spelling.
+    # all plain ASCII. Recompose with NFC so non-Latin scripts (e.g. Hangul
+    # syllables in "대한민국") stay intact rather than remaining decomposed Jamo.
+    # Safe here specifically because this function only extracts a country *signal*
+    # from the string — unlike parse_location's normalized_key (identity/dedup),
+    # folding accents can never merge two genuinely different places into the same
+    # resolved country by mistake, it only lets an accented spelling reach a table
+    # that was already reachable via its unaccented spelling.
     folded = unicodedata.normalize("NFD", location)
     folded = "".join(ch for ch in folded if unicodedata.category(ch) != "Mn")
+    folded = unicodedata.normalize("NFC", folded)
     normalized = folded.lower()
 
     leading_iso2 = LEADING_ISO2_DOT_RE.match(normalized)
     if leading_iso2 and leading_iso2.group(1).upper() in COUNTRY_NAMES:
         return leading_iso2.group(1).upper()
 
-    leading_iso3 = LEADING_ISO3_DASH_RE.match(normalized)
+    leading_iso3 = LEADING_ISO3_RE.match(normalized)
     if leading_iso3:
         code = ALPHA3_TO_ALPHA2.get(leading_iso3.group(1).upper())
         if code:
@@ -182,6 +254,13 @@ def resolve_country_from_location(location: str | None) -> str | None:
         if code:
             return code
 
+    # Sub-national region token for countries outside US/CA (e.g. Jalisco -> MX,
+    # Zhejiang -> CN, Bavaria -> DE, Buckinghamshire -> GB, VIC -> AU, São Paulo -> BR).
+    for token in tokens:
+        code = SUB_NATIONAL_REGION_TO_COUNTRY.get(token)
+        if code:
+            return code
+
     if LOCATION_ALIASES_COMBINED_RE.search(without_parens) is not None:
         for alias, code in LOCATION_ALIASES.items():
             if matches_word(without_parens, alias):
@@ -208,6 +287,10 @@ def resolve_country_from_location(location: str | None) -> str | None:
         if code:
             return code
 
+    bare_alpha3 = ALPHA3_TO_ALPHA2.get(normalized.strip().upper())
+    if bare_alpha3:
+        return bare_alpha3
+
     # Lowest-priority fallback: the whole string, once stripped, is nothing
     # but a bare city name with no country/province/ISO signal at all (e.g.
     # "Montreal", "Toronto"). Whole-string match only — not a token/substring
@@ -217,5 +300,31 @@ def resolve_country_from_location(location: str | None) -> str | None:
     bare_city_code = BARE_CITY_NAME_TO_COUNTRY.get(normalized.strip())
     if bare_city_code:
         return bare_city_code
+
+    # Multi-token strings where the TRAILING token is an unambiguous bare
+    # city name (e.g. "Pudong, Shanghai", "Lancaster Luminaire Building,
+    # Hanoi", "City Hall, 15670 NE 85th St, Redmond"). Safe only because
+    # the bare-city table itself has already guaranteed single-country
+    # uniqueness for each entry — the city name is unambiguous regardless
+    # of what precedes it. Also checks the trailing token with " city"
+    # removed (e.g. "Quezon City" -> "quezon city" is already in the table,
+    # but "davao city" -> "davao" is not, so this fallback handles it).
+    if len(tokens) >= 2:
+        last_token = tokens[-1]
+        code = BARE_CITY_NAME_TO_COUNTRY.get(last_token)
+        if not code and last_token.endswith(" city"):
+            code = BARE_CITY_NAME_TO_COUNTRY.get(last_token[: -len(" city")].rstrip())
+        if code:
+            return code
+
+    # Multi-token strings where the FIRST token is an unambiguous bare city
+    # and the SECOND token starts with digits (a street address number),
+    # indicating a "<City>, <street-number> <Street>" shape (e.g.
+    # "Montréal, 2020 Robert-Bourassa", "St-Hyacinthe, 2450 Girouard GO").
+    # The city is the reliable signal here; the address segment adds nothing.
+    if len(tokens) >= 2 and re.match(r"^\d+\b", tokens[1]):
+        code = BARE_CITY_NAME_TO_COUNTRY.get(tokens[0])
+        if code:
+            return code
 
     return None

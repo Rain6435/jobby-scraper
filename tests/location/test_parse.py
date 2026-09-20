@@ -1,5 +1,20 @@
+"""Tests for scraper/location/parse.py's parse_location and ParsedLocation.
+
+The first test below (test_parse_location_country_code_populated_via_shim)
+imports through the scraper.location_resolver back-compat shim instead of
+the real module directly, specifically to guard the shim itself against
+silent breakage — every other test here imports the real implementation.
+"""
+
 from scraper.location.parse import parse_location
+from scraper.location.resolve import resolve_country_from_location
 from scraper.location_resolver import parse_location as parse_location_via_shim
+
+
+def test_parse_location_country_code_populated_via_shim():
+    # Guards scraper.location_resolver's back-compat re-export itself.
+    parsed = parse_location_via_shim("San Francisco, CA")
+    assert parsed.country_code == "US"
 
 
 def test_parse_location_normalized_key_folds_case_and_whitespace():
@@ -42,14 +57,6 @@ def test_parse_location_region_extracted_for_us_state():
 
 def test_parse_location_preserves_raw_string():
     parsed = parse_location("  Spain Remote  ")
-    assert parsed.raw == "  Spain Remote  "
-
-
-def test_parse_location_preserves_raw_string_via_shim():
-    # Guards the backward-compat shim (scraper/location_resolver.py) itself
-    # against silent breakage — every other test in this file imports
-    # parse_location directly from scraper.location.parse.
-    parsed = parse_location_via_shim("  Spain Remote  ")
     assert parsed.raw == "  Spain Remote  "
 
 
@@ -164,6 +171,11 @@ def test_parse_location_resolves_city_and_region_for_space_joined_store_id():
     assert parsed2.country_code == "US"
 
 
+# --- City names that collide with a country name ("Lebanon, TN", "Jordan, --
+# --- MN", "Mexico, ME") — extends the existing US-state/CA-province ---
+# --- name-collision guard to ISO_NAME_TO_CODE/LOCATION_ALIASES ---
+
+
 def test_parse_location_city_extracted_despite_country_name_collision():
     # "Lebanon" alone is the country (LB); with a trailing US state token
     # as independent confirmation, it must read as the Tennessee city
@@ -250,6 +262,10 @@ def test_parse_location_resolves_region_past_trailing_paren_code():
 def test_parse_location_resolves_city_from_trailing_store_suffix():
     parsed = parse_location("HALIFAX STORE - 7126")
     assert parsed.city == "HALIFAX"
+
+
+# --- "<ST>, <City>, ..." — reversed comma order from the far more common --
+# --- "<City>, <ST>" shape ("TX, Austin, 11501 Alterra Pkwy STE 500") ---
 
 
 def test_parse_location_extracts_city_from_reversed_state_first_order():
@@ -340,7 +356,7 @@ def test_parse_location_prioritizes_explicit_country_name_over_leading_collision
 
 def test_parse_location_collision_code_without_explicit_country_still_resolves_via_city_region_table():
     # No "Germany" spelled out anywhere in these strings, but "Berlin"
-    # itself is in _CITY_REGION_COLLISION_TO_COUNTRY (no real US town
+    # itself is in CITY_REGION_COLLISION_TO_COUNTRY (no real US town
     # named Berlin has admin1_code "DE" — the only real US Berlins are in
     # MD/NJ/PA/MA/NH/WI — so ("berlin", "de") was a safe, single-match
     # derivation). This is a stronger, data-validated signal than the
@@ -355,11 +371,26 @@ def test_parse_location_collision_code_without_explicit_country_still_resolves_v
 
 
 def test_parse_location_bare_collision_code_still_keeps_existing_trade_off():
-    # No city at all — _CITY_REGION_COLLISION_TO_COUNTRY has nothing to
+    # No city at all — CITY_REGION_COLLISION_TO_COUNTRY has nothing to
     # key on here, so the original, documented state/province-wins-ties
     # trade-off must still apply exactly as before.
     assert parse_location("DE").country_code == "US"
     assert parse_location("IN").country_code == "US"
+
+
+def test_clean_leading_word_dash_still_works_for_non_colliding_states():
+    # Sanity: "WV - Triadelphia..."/"Idaho - Boise" have no country-name
+    # collision risk at all (WV/Idaho aren't ISO country codes) — must be
+    # completely unaffected by this fix.
+    assert parse_location("WV - Triadelphia, 215 Cabela Dr").city == "Triadelphia"
+    assert parse_location("Idaho - Boise").city == "Boise"
+
+
+# --- CITY_REGION_COLLISION_TO_COUNTRY — data-derived (city, collision- --
+# --- code) pairs where no real US/CA town of that name exists in that --
+# --- state/province, found while investigating gazetteer-match --
+# --- failures for cities like "Bangalore, IN" (resolving to Indiana --
+# --- instead of India) ---
 
 
 def test_parse_location_city_region_table_corrects_india_cities():
@@ -432,6 +463,13 @@ def test_parse_location_ordinary_city_state_country_unaffected():
     assert parsed2.country_code == "CA"
 
 
+# --- Accented city spelling ("München, DE") missing the --
+# --- CITY_REGION_COLLISION_TO_COUNTRY correction that its ASCII- --
+# --- folded/German-transliterated spellings ("munich"/"muenchen") --
+# --- already got — found while investigating why huge cities kept --
+# --- showing up unmatched despite fixes for their English spelling ---
+
+
 def test_parse_location_city_region_table_lookup_folds_accents():
     parsed = parse_location("Düsseldorf, DE")
     assert parsed.country_code == "DE"
@@ -467,6 +505,13 @@ def test_parse_location_resolves_other_countries_past_trailing_6_digit_code():
     assert parse_location("Cluj-Napoca, ROU, 400604").country_code == "RO"
 
 
+# --- "<CountryAlias>, <ST>, <City>" — 3-token, country-alias-first --
+# --- ("USA, VA, McLean") — found while investigating why "USA"/"US"/ --
+# --- "CAN" were the single most common garbage `city` values in the --
+# --- unmatched pool: is_recognized_non_city correctly kept the alias --
+# --- out of `city`, but nothing extracted the REAL city at tokens[2] ---
+
+
 def test_parse_location_extracts_city_from_country_alias_first_order():
     parsed = parse_location("USA, VA, McLean")
     assert parsed.city == "McLean"
@@ -481,7 +526,7 @@ def test_parse_location_extracts_city_from_country_alias_first_order():
 
 def test_parse_location_extracts_city_from_alpha3_country_code_first_order():
     # "CAN"/"USA" as alpha-3 codes, not LOCATION_ALIASES entries — a
-    # separate table (_ALPHA3_US_CA_TOKENS) had to recognize these too.
+    # separate table (ALPHA3_US_CA_TOKENS) had to recognize these too.
     parsed = parse_location("CAN, ON, London")
     assert parsed.city == "London"
     assert parsed.region == "ON"
@@ -527,6 +572,13 @@ def test_parse_location_resolves_city_past_direction_suffix_street_address():
     assert parsed2.region == "DC"
 
 
+# --- CA-province collision codes ("pe" Prince Edward Island/Peru, "nl" --
+# --- Newfoundland and Labrador/Netherlands, "sk" Saskatchewan/ --
+# --- Slovakia) — CITY_REGION_COLLISION_TO_COUNTRY's original derivation --
+# --- only covered US-collision codes; found via "Lima, LIM, PE, 15008" --
+# --- resolving country_code="CA" instead of "PE" ---
+
+
 def test_parse_location_city_region_table_covers_ca_province_collisions():
     assert parse_location("Lima, PE").country_code == "PE"
     assert parse_location("Amsterdam, NL").country_code == "NL"
@@ -552,6 +604,12 @@ def test_parse_location_city_region_table_ca_collision_leaves_real_ca_towns_alon
     # A real Canadian town in a real matching province must stay CA.
     parsed = parse_location("Vernon, CA")
     assert parsed.country_code == "CA"
+
+
+# --- "<Country>, <City>" — 2-token, full country NAME first ("Ireland, --
+# --- Limerick", "India, Bangalore") — country_code already resolved --
+# --- correctly via ISO_NAME_TO_CODE, but nothing extracted tokens[1] --
+# --- as the city this shape actually has (284 rows sampled) ---
 
 
 def test_parse_location_extracts_city_from_country_name_first_order():
@@ -616,6 +674,12 @@ def test_parse_location_resolves_state_and_country_for_space_joined_remote_phras
         assert parsed.is_remote is True, state
 
 
+# --- region set independently of whether the second token turns out to --
+# --- be a real city or a known non-city phrase — found via "Utah, Work --
+# --- at Home" (after the comma-insertion fix above) leaving region=None --
+# --- even though tokens[0]="utah" is an unambiguous, confirmed state ---
+
+
 def test_parse_location_region_set_even_when_second_token_is_non_city_phrase():
     parsed = parse_location("USA, ID, Home Office")
     assert parsed.city is None
@@ -638,3 +702,795 @@ def test_parse_location_resolves_dash_state_paren_zip_shape():
     assert parsed2.city == "Killeen"
     assert parsed2.region == "Texas"
     assert parsed2.country_code == "US"
+
+
+# --- State-dash-city-dash-facility ("IL-Channahon-Replenishment Center") ---
+
+
+def test_state_dash_city_dash_facility():
+    parsed = parse_location("IL-Channahon-Replenishment Center")
+    assert parsed.city == "Channahon"
+    assert parsed.region == "IL"
+    assert parsed.country_code == "US"
+
+    parsed2 = parse_location("SC-Aiken- PAM Hlth Rehab Hosp of Aiken")
+    assert parsed2.city == "Aiken"
+    assert parsed2.region == "SC"
+    assert parsed2.country_code == "US"
+
+    parsed3 = parse_location("NC-Rocky Mount-PAM Specialty Hospital")
+    assert parsed3.city == "Rocky Mount"
+    assert parsed3.region == "NC"
+    assert parsed3.country_code == "US"
+
+
+# --- Trailing parenthetical (City, Region/Country) ---
+
+
+def test_trailing_paren_city_region():
+    parsed = parse_location("HOKA Newbury Street Retail Store (Boston, MA)")
+    assert parsed.city == "Boston"
+    assert parsed.region == "MA"
+    assert parsed.country_code == "US"
+
+    parsed2 = parse_location("UGG Leesburg  Premium Outlets (Leesburg, VA)")
+    assert parsed2.city == "Leesburg"
+    assert parsed2.region == "VA"
+    assert parsed2.country_code == "US"
+
+    parsed3 = parse_location("HOKA Toronto Eaton Centre (Toronto, ON)")
+    assert parsed3.city == "Toronto"
+    assert parsed3.region == "ON"
+    assert parsed3.country_code == "CA"
+
+    parsed4 = parse_location("HOKA Garibaldi Store (Milan, IT)")
+    assert parsed4.city == "Milan"
+    assert parsed4.country_code == "IT"
+
+
+# --- Colon-delimited street address / store ID before city ---
+
+
+def test_colon_address_city_and_store_id():
+    parsed = parse_location("885 GEORGIA ST W:VANCOUVER")
+    assert parsed.city == "VANCOUVER"
+
+    parsed2 = parse_location("ST0189: Victoriaville")
+    assert parsed2.city == "Victoriaville"
+
+    parsed3 = parse_location("407 8 AVE SW:CALGARY")
+    assert parsed3.city == "CALGARY"
+
+    parsed4 = parse_location("ROYAL BANK PLAZA, 200 BAY ST:TORONTO")
+    assert parsed4.city == "TORONTO"
+
+
+# --- Leading & bare ISO alpha-3 country codes ---
+
+
+def test_alpha3_leading_and_bare():
+    parsed = parse_location("IND, GURGAON")
+    assert parsed.city == "GURGAON"
+    assert parsed.country_code == "IN"
+
+    parsed_bare = parse_location("CZE")
+    assert parsed_bare.city is None
+    assert parsed_bare.country_code == "CZ"
+
+    parsed_bra = parse_location("BRA")
+    assert parsed_bra.city is None
+    assert parsed_bra.country_code == "BR"
+
+    parsed_us = parse_location("USA, GA, Remote")
+    assert parsed_us.region == "GA"
+    assert parsed_us.country_code == "US"
+    assert parsed_us.is_remote is True
+
+
+# --- Missing country aliases (Turkey, Deutschland, Korea, Republic of) ---
+
+
+def test_new_country_aliases():
+    parsed_turkey = parse_location("Turkey Remote Office")
+    assert parsed_turkey.country_code == "TR"
+    assert parsed_turkey.is_remote is True
+
+    parsed_ist = parse_location("Istanbul, Turkey")
+    assert parsed_ist.city == "Istanbul"
+    assert parsed_ist.country_code == "TR"
+
+    parsed_de = parse_location("Biberach, Deutschland, Baden-Württemberg")
+    assert parsed_de.city == "Biberach"
+    assert parsed_de.country_code == "DE"
+
+    parsed_kr = parse_location("Korea, Republic of - Seoul")
+    assert parsed_kr.country_code == "KR"
+
+
+# --- Trailing attendance / hybrid policy suffix ---
+
+
+def test_trailing_attendance_policy():
+    parsed = parse_location("Seattle 2+ days in office")
+    assert parsed.city == "Seattle"
+    assert parsed.country_code == "US"
+
+    parsed2 = parse_location("Herndon 2+ days in office")
+    assert parsed2.city == "Herndon"
+    assert parsed2.country_code is None
+
+
+# --- Full state/province name in trailing dash suffix ---
+
+
+def test_trailing_state_dash_suffix_full_name():
+    parsed = parse_location("USA, Virginia - Full Time Remote")
+    assert parsed.city is None
+    assert parsed.region == "Virginia"
+    assert parsed.country_code == "US"
+    assert parsed.is_remote is True
+
+    parsed2 = parse_location("CAN, British Columbia - Full Time Remote")
+    assert parsed2.city is None
+    assert parsed2.region == "British Columbia"
+    assert parsed2.country_code == "CA"
+    assert parsed2.is_remote is True
+
+
+# --- Leading ISO2 country code + dash ("AE-Abu Dhabi-Mussafah Garden", "FR-Paris") ---
+
+
+def test_leading_iso2_dash_and_facility():
+    parsed = parse_location("AE-Abu Dhabi-Mussafah Garden")
+    assert parsed.city == "Abu Dhabi"
+    assert parsed.country_code == "AE"
+
+    parsed2 = parse_location("FR-Paris")
+    assert parsed2.city == "Paris"
+    assert parsed2.country_code == "FR"
+
+    parsed3 = parse_location("SE-Stockholm-MSO")
+    assert parsed3.city == "Stockholm"
+    assert parsed3.country_code == "SE"
+
+
+# --- Space-joined "CAN <Province> <City>" ---
+
+
+def test_can_space_prov_city():
+    parsed = parse_location("CAN Alberta Edmonton")
+    assert parsed.city == "Edmonton"
+    assert parsed.region == "Alberta"
+    assert parsed.country_code == "CA"
+
+    parsed2 = parse_location("CAN Quebec Québec")
+    assert parsed2.city == "Québec"
+    assert parsed2.region == "Quebec"
+    assert parsed2.country_code == "CA"
+
+
+# --- "<City> - <ISO2>" ---
+
+
+def test_city_dash_iso2():
+    parsed = parse_location("Guangzhou - CN")
+    assert parsed.city == "Guangzhou"
+    assert parsed.country_code == "CN"
+
+    parsed2 = parse_location("Dublin - IE")
+    assert parsed2.city == "Dublin"
+    assert parsed2.country_code == "IE"
+
+
+# --- "<City> - <State>" ---
+
+
+def test_city_dash_state():
+    parsed_city = parse_location("Jacksonville - Florida")
+    assert parsed_city.city == "Jacksonville"
+    assert parsed_city.region == "Florida"
+    assert parsed_city.country_code == "US"
+
+    parsed_city2 = parse_location("Salem - Ohio")
+    assert parsed_city2.city == "Salem"
+    assert parsed_city2.region == "Ohio"
+    assert parsed_city2.country_code == "US"
+
+
+# --- 2-token "<CountryAlias>, <City>" ---
+
+
+def test_alias_city_two_tokens():
+    parsed_uk = parse_location("UK, Bristol")
+    assert parsed_uk.city == "Bristol"
+    assert parsed_uk.country_code == "GB"
+
+    parsed_uae = parse_location("UAE, Dubai")
+    assert parsed_uae.city == "Dubai"
+    assert parsed_uae.country_code == "AE"
+
+    parsed_us = parse_location("USA, Atlanta")
+    assert parsed_us.city == "Atlanta"
+    assert parsed_us.country_code == "US"
+
+
+# --- Round 3 Improvements ---
+
+
+def test_french_street_address_and_colon_prefix():
+    p1 = parse_location("135-1, rue Principale, Sainte-Justine")
+    assert p1.city == "Sainte-Justine"
+
+    p2 = parse_location("839 RTE JEAN GAUVIN:QUÉBEC")
+    assert p2.city == "QUÉBEC"
+    assert p2.country_code == "CA"
+
+
+def test_circle_k_store_prefix_and_negative_lookahead():
+    p1 = parse_location("27241 CIRCLE K GÄLLIVARE")
+    assert p1.city == "GÄLLIVARE"
+
+    p2 = parse_location("10257 Circle K Maribo")
+    assert p2.city == "Maribo"
+    assert p2.country_code == "DK"
+
+    # Ensure ordinary circle street name still works
+    p3 = parse_location("500 Logan Circle, Washington, DC")
+    assert p3.city == "Washington"
+    assert p3.region == "DC"
+    assert p3.country_code == "US"
+
+
+def test_city_st_facility():
+    p1 = parse_location("Bloomington MN - Country Inn Bloomington")
+    assert p1.city == "Bloomington"
+    assert p1.region == "MN"
+    assert p1.country_code == "US"
+
+    p2 = parse_location("Denver PA - 465 Swamp Bridge Road")
+    assert p2.city == "Denver"
+    assert p2.region == "PA"
+    assert p2.country_code == "US"
+
+    p3 = parse_location("Hagerstown MD-Op Ctr")
+    assert p3.city == "Hagerstown"
+    assert p3.region == "MD"
+    assert p3.country_code == "US"
+
+
+def test_trailing_address_strip():
+    p1 = parse_location("Saskatoon-1816 McOrmond Dr")
+    assert p1.city == "Saskatoon"
+    assert p1.country_code == "CA"
+
+    p2 = parse_location("Austin-5900 E Ben White Blvd (10703)")
+    assert p2.city == "Austin"
+    assert p2.country_code == "US"
+
+    p3 = parse_location("Edmonton - 103 St")
+    assert p3.city == "Edmonton"
+
+
+def test_city_dash_alpha3_code():
+    p1 = parse_location("Manchester - GBR")
+    assert p1.city == "Manchester"
+    assert p1.country_code == "GB"
+
+    assert resolve_country_from_location("Manchester - GBR") == "GB"
+
+
+def test_iso3_region_city_and_iso3_city():
+    p1 = parse_location("CAN-ON-Kitchener")
+    assert p1.city == "Kitchener"
+    assert p1.region == "ON"
+    assert p1.country_code == "CA"
+
+    p2 = parse_location("CAN-AB-Calgary-112 4th Avenue SW")
+    assert p2.city == "Calgary"
+    assert p2.region == "AB"
+    assert p2.country_code == "CA"
+
+    p3 = parse_location("USA-AK-Home Office")
+    assert p3.region == "AK"
+    assert p3.country_code == "US"
+
+    p4 = parse_location("BRA-Barueri")
+    assert p4.city == "Barueri"
+    assert p4.country_code == "BR"
+
+
+def test_new_country_aliases_round_2():
+    # Renamed from a duplicate `test_new_country_aliases` (same name as the
+    # earlier test above) found while splitting this file — pytest was
+    # silently shadowing this one under the original combined file, so it
+    # never actually ran. Un-shadowed here rather than left duplicated.
+    assert resolve_country_from_location("Istanbul, Türkiye") == "TR"
+    assert resolve_country_from_location("Ho Chi Minh, Viet Nam") == "VN"
+    assert resolve_country_from_location("São Paulo, Brasil") == "BR"
+    assert resolve_country_from_location("Remote, KSA") == "SA"
+
+    p_prc = parse_location("PRC, Shanghai")
+    assert p_prc.city == "Shanghai"
+    assert p_prc.country_code == "CN"
+
+
+def test_non_city_phrase_first():
+    p1 = parse_location("Remote, Los Angeles")
+    assert p1.city == "Los Angeles"
+    assert p1.is_remote is True
+
+    p2 = parse_location("Virtual, Seattle")
+    assert p2.city == "Seattle"
+    assert p2.is_remote is True
+
+
+def test_non_city_phrase_first_covers_full_non_city_phrases_set():
+    # NON_CITY_PHRASES also includes "work from home"/"wfh"/"home office" —
+    # not just "remote"/"virtual" — as a leading, non-city first token.
+    p1 = parse_location("Work From Home, Austin")
+    assert p1.city == "Austin"
+    assert p1.is_remote is True
+
+    p2 = parse_location("WFH, Denver")
+    assert p2.city == "Denver"
+    assert p2.is_remote is True
+
+    p3 = parse_location("Home Office, Chicago")
+    assert p3.city == "Chicago"
+
+
+# --- Round 4 tests: Country-State-City, City-states, Sysco/office prefixes, ---
+# --- French double-space addresses, and Russian Federation alias ---
+
+
+def test_country_state_city_dash_patterns():
+    p1 = parse_location("US - Florida - Pensacola")
+    assert p1.city == "Pensacola"
+    assert p1.region == "Florida"
+    assert p1.country_code == "US"
+
+    p2 = parse_location("USA - Florida - Miami")
+    assert p2.city == "Miami"
+    assert p2.region == "Florida"
+    assert p2.country_code == "US"
+
+    p3 = parse_location("US-CA - San Diego")
+    assert p3.city == "San Diego"
+    assert p3.region == "CA"
+    assert p3.country_code == "US"
+
+    p4 = parse_location("CA - British Columbia - Vancouver")
+    assert p4.city == "Vancouver"
+    assert p4.region == "British Columbia"
+    assert p4.country_code == "CA"
+
+    p5 = parse_location("CAN - Ontario - Ottawa")
+    assert p5.city == "Ottawa"
+    assert p5.region == "Ontario"
+    assert p5.country_code == "CA"
+
+    p6 = parse_location("US-CA - El Segundo")
+    assert p6.city == "El Segundo"
+    assert p6.region == "CA"
+    assert p6.country_code == "US"
+
+    p7 = parse_location("CA - Alberta - Calgary")
+    assert p7.city == "Calgary"
+    assert p7.region == "Alberta"
+    assert p7.country_code == "CA"
+
+    p8 = parse_location("USA - WI - Marinette - 1931 Marinette Avenue")
+    assert p8.city == "Marinette"
+    assert p8.region == "WI"
+    assert p8.country_code == "US"
+
+    p9 = parse_location("US-Ohio-Tallmadge-184 South Avenue")
+    assert p9.city == "Tallmadge"
+    assert p9.region == "Ohio"
+    assert p9.country_code == "US"
+
+    p10 = parse_location("US - Richmond - VA")
+    assert p10.city == "Richmond"
+    assert p10.region == "VA"
+    assert p10.country_code == "US"
+
+    p11 = parse_location("US - Betts - SD")
+    assert p11.city == "Betts"
+    assert p11.region == "SD"
+    assert p11.country_code == "US"
+
+
+def test_international_iso3_region_city():
+    p1 = parse_location("GBR - England - Reading")
+    assert p1.city == "Reading"
+    assert p1.country_code == "GB"
+
+    p2 = parse_location("DEU - Hesse - Biebesheim")
+    assert p2.city == "Biebesheim"
+    assert p2.country_code == "DE"
+
+    p3 = parse_location("IND - Maharashtra - Mumbai")
+    assert p3.city == "Mumbai"
+    assert p3.country_code == "IN"
+
+    p4 = parse_location("CHN - Sichuan - Chengdu")
+    assert p4.city == "Chengdu"
+    assert p4.country_code == "CN"
+
+    p5 = parse_location("MEX - Jalisco - Guadalajara")
+    assert p5.city == "Guadalajara"
+    assert p5.country_code == "MX"
+
+
+def test_duplicate_tokens_new_york_and_city_states():
+    p_ny = parse_location("New York, New York")
+    assert p_ny.city is None
+    assert p_ny.region == "New York"
+    assert p_ny.country_code == "US"
+
+    p_ny_us = parse_location("New York, New York, US")
+    assert p_ny_us.city == "New York"
+    assert p_ny_us.region == "New York"
+    assert p_ny_us.country_code == "US"
+
+    p_sg = parse_location("Singapore, Singapore")
+    assert p_sg.city == "Singapore"
+    assert p_sg.country_code == "SG"
+
+    p_sg_sg = parse_location("Singapore, Singapore, SG")
+    assert p_sg_sg.city == "Singapore"
+    assert p_sg_sg.country_code == "SG"
+
+    p_mc = parse_location("Monaco, Monaco")
+    assert p_mc.city == "Monaco"
+    assert p_mc.country_code == "MC"
+
+    p_lu = parse_location("Luxembourg, Luxembourg")
+    assert p_lu.city == "Luxembourg"
+    assert p_lu.country_code == "LU"
+
+    p_dj = parse_location("Djibouti, Djibouti")
+    assert p_dj.city == "Djibouti"
+    assert p_dj.country_code == "DJ"
+
+    p_sm = parse_location("San Marino, San Marino")
+    assert p_sm.city == "San Marino"
+    assert p_sm.country_code == "SM"
+
+    p_kw = parse_location("Kuwait, Kuwait")
+    assert p_kw.city == "Kuwait"
+    assert p_kw.country_code == "KW"
+
+
+def test_vendor_prefixes_and_store_suffixes():
+    p_sysco1 = parse_location("Sysco Charlotte")
+    assert p_sysco1.city == "Charlotte"
+    assert p_sysco1.country_code == "US"
+
+    p_sysco2 = parse_location("Sysco Idaho - Boise")
+    assert p_sysco2.city == "Boise"
+    assert p_sysco2.region == "Idaho"
+    assert p_sysco2.country_code == "US"
+
+    p_off1 = parse_location("SERVICES OFFICE, LAKELAND - 1435")
+    assert p_off1.city == "LAKELAND"
+
+    p_off2 = parse_location("ASKUITY OFFICE, TORONTO - 2595")
+    assert p_off2.city == "TORONTO"
+
+    p_rdc = parse_location("WESTFIELD RDC - 5221")
+    assert p_rdc.city == "WESTFIELD"
+
+    p_fdc = parse_location("CHARLOTTE FDC/BDC - 5955")
+    assert p_fdc.city == "CHARLOTTE"
+
+    p_fr1 = parse_location("159, boulevard Bégin  Sainte-Claire")
+    assert p_fr1.city == "Sainte-Claire"
+
+    p_fr2 = parse_location("212 A, boulevard Labelle  Rosemère")
+    assert p_fr2.city == "Rosemère"
+
+
+def test_round_4_bare_cities_and_aliases():
+    p_ru = parse_location("Saint Petersburg, Russian Federation")
+    assert p_ru.city == "Saint Petersburg"
+    assert p_ru.country_code == "RU"
+    assert resolve_country_from_location("Saint Petersburg, Russian Federation") == "RU"
+
+    assert resolve_country_from_location("Wuhan") == "CN"
+    assert resolve_country_from_location("Lahore") == "PK"
+    assert resolve_country_from_location("Thunder Bay") == "CA"
+    assert resolve_country_from_location("Fort Worth") == "US"
+    assert resolve_country_from_location("St. Catharines") == "CA"
+
+
+def test_round_5_sub_national_regions():
+    p_mx = parse_location("Guadalajara, Jalisco")
+    assert p_mx.city == "Guadalajara"
+    assert p_mx.region is None
+    assert p_mx.country_code == "MX"
+    assert resolve_country_from_location("Guadalajara, Jalisco") == "MX"
+
+    p_cn = parse_location("Hangzhou, Zhejiang")
+    assert p_cn.city == "Hangzhou"
+    assert p_cn.region is None
+    assert p_cn.country_code == "CN"
+    assert resolve_country_from_location("Hangzhou, Zhejiang") == "CN"
+
+    p_br = parse_location("Pindamonhangaba, São Paulo")
+    assert p_br.city == "Pindamonhangaba"
+    assert p_br.region is None
+    assert p_br.country_code == "BR"
+    assert resolve_country_from_location("Pindamonhangaba, São Paulo") == "BR"
+
+    p_de = parse_location("Munich, Bavaria")
+    assert p_de.city == "Munich"
+    assert p_de.region is None
+    assert p_de.country_code == "DE"
+    assert resolve_country_from_location("Munich, Bavaria") == "DE"
+
+    p_gb = parse_location("High Wycombe, Buckinghamshire")
+    assert p_gb.city == "High Wycombe"
+    assert p_gb.region is None
+    assert p_gb.country_code == "GB"
+    assert resolve_country_from_location("High Wycombe, Buckinghamshire") == "GB"
+
+    p_au1 = parse_location("Cohuna, VIC")
+    assert p_au1.city == "Cohuna"
+    assert p_au1.region is None
+    assert p_au1.country_code == "AU"
+    assert resolve_country_from_location("Cohuna, VIC") == "AU"
+
+    p_au2 = parse_location("Brisbane, Queensland")
+    assert p_au2.city == "Brisbane"
+    assert p_au2.region is None
+    assert p_au2.country_code == "AU"
+    assert resolve_country_from_location("Brisbane, Queensland") == "AU"
+
+
+def test_round_5_noise_and_address_patterns():
+    # Store home office pattern
+    p_ho = parse_location("6361 Ossining NY Home Office")
+    assert p_ho.city == "Ossining"
+    assert p_ho.region == "NY"
+    assert p_ho.country_code == "US"
+    assert resolve_country_from_location("6361 Ossining NY Home Office") == "US"
+
+    # Office suffixes
+    p_off = parse_location("Troy, MI Group Sales Office (035)")
+    assert p_off.city == "Troy"
+    assert p_off.region == "MI"
+    assert p_off.country_code == "US"
+    assert resolve_country_from_location("Troy, MI Group Sales Office (035)") == "US"
+
+    # Lowe's prefix and facility suffix without dash
+    p_lowes = parse_location("Lowe's New Caney, TX BDC 3465")
+    assert p_lowes.city == "New Caney"
+    assert p_lowes.region == "TX"
+    assert p_lowes.country_code == "US"
+    assert resolve_country_from_location("Lowe's New Caney, TX BDC 3465") == "US"
+
+    # Remote work prefixes and More... suffixes
+    p_nv = parse_location("Work at Home - Nevada")
+    assert p_nv.region == "Nevada"
+    assert p_nv.country_code == "US"
+    assert resolve_country_from_location("Work at Home - Nevada") == "US"
+
+    p_on = parse_location("Work From Home - Ontario")
+    assert p_on.region == "Ontario"
+    assert p_on.country_code == "CA"
+    assert resolve_country_from_location("Work From Home - Ontario") == "CA"
+
+    p_mi = parse_location("Michigan Remote Work, More...")
+    assert p_mi.region == "Michigan"
+    assert p_mi.country_code == "US"
+    assert resolve_country_from_location("Michigan Remote Work, More...") == "US"
+
+    # Single-token states
+    p_nev = parse_location("Nevada")
+    assert p_nev.region == "Nevada"
+    assert p_nev.country_code == "US"
+    assert resolve_country_from_location("Nevada") == "US"
+
+    # International postal codes
+    p_br_zip = parse_location("Sao Paulo, São Paulo, BRA, 04578-133")
+    assert p_br_zip.country_code == "BR"
+    assert resolve_country_from_location("Sao Paulo, São Paulo, BRA, 04578-133") == "BR"
+
+    p_at_zip = parse_location("Klagenfurt, Carinthia, AUT, 9020")
+    assert p_at_zip.country_code == "AT"
+    assert resolve_country_from_location("Klagenfurt, Carinthia, AUT, 9020") == "AT"
+
+    p_uk_post = parse_location("5 Southampton Street, London WC2E 7HA")
+    assert p_uk_post.city == "London"
+    assert p_uk_post.country_code == "GB"
+    assert resolve_country_from_location("5 Southampton Street, London WC2E 7HA") == "GB"
+
+    # Trailing address dash with suite commas
+    p_hou = parse_location("Houston - 1311 W. Sam Houston Pkwy N., Ste. 150 (10400)")
+    assert p_hou.city == "Houston"
+    assert p_hou.country_code is None
+
+
+def test_round_6_improvements():
+    # Four Seasons prefix
+    p_fs_cn = parse_location("Four Seasons Dalian")
+    assert p_fs_cn.city == "Dalian"
+    assert p_fs_cn.country_code == "CN"
+    assert resolve_country_from_location("Four Seasons Dalian") == "CN"
+
+    p_fs_gb = parse_location("Four Seasons Hampshire")
+    assert p_fs_gb.city == "Hampshire"
+    assert p_fs_gb.country_code == "GB"
+    assert resolve_country_from_location("Four Seasons Hampshire") == "GB"
+
+    p_fs_us = parse_location("Four Seasons Nashville")
+    assert p_fs_us.city == "Nashville"
+    assert p_fs_us.country_code == "US"
+    assert resolve_country_from_location("Four Seasons Nashville") == "US"
+
+    # Freshpoint prefix
+    p_fp = parse_location("Freshpoint Nashville")
+    assert p_fp.city == "Nashville"
+    assert p_fp.country_code == "US"
+    assert resolve_country_from_location("Freshpoint Nashville") == "US"
+
+    # Remote/Home prefix
+    p_rh1 = parse_location("Remote/Home Indiana")
+    assert p_rh1.region == "Indiana"
+    assert p_rh1.country_code == "US"
+    assert p_rh1.is_remote is True
+    assert resolve_country_from_location("Remote/Home Indiana") == "US"
+
+    p_rh2 = parse_location("Remote/Home Oklahoma")
+    assert p_rh2.region == "Oklahoma"
+    assert p_rh2.country_code == "US"
+    assert p_rh2.is_remote is True
+    assert resolve_country_from_location("Remote/Home Oklahoma") == "US"
+
+    # Ngr store suffix
+    p_ngr1 = parse_location("Tampa 1286 Ngr")
+    assert p_ngr1.city == "Tampa"
+    assert p_ngr1.country_code == "US"
+    assert resolve_country_from_location("Tampa 1286 Ngr") == "US"
+
+    p_ngr2 = parse_location("Memphis 1988 Ngr")
+    assert p_ngr2.city == "Memphis"
+    assert p_ngr2.country_code == "US"
+    assert resolve_country_from_location("Memphis 1988 Ngr") == "US"
+
+    # Metro Area / Area suffix
+    p_ma1 = parse_location("Austin Metro Area")
+    assert p_ma1.city == "Austin"
+    assert p_ma1.country_code == "US"
+    assert resolve_country_from_location("Austin Metro Area") == "US"
+
+    p_ma2 = parse_location("Santiago De Querétaro_Area")
+    assert p_ma2.city == "Santiago De Querétaro"
+    assert p_ma2.country_code == "MX"
+    assert resolve_country_from_location("Santiago De Querétaro_Area") == "MX"
+
+    # Hub suffix
+    p_hub1 = parse_location("Toronto, ON Hub")
+    assert p_hub1.city == "Toronto"
+    assert p_hub1.region == "ON"
+    assert p_hub1.country_code == "CA"
+    assert resolve_country_from_location("Toronto, ON Hub") == "CA"
+
+    p_hub2 = parse_location("Vancouver, BC Hub")
+    assert p_hub2.city == "Vancouver"
+    assert p_hub2.region == "BC"
+    assert p_hub2.country_code == "CA"
+    assert resolve_country_from_location("Vancouver, BC Hub") == "CA"
+
+    # Trailing city address after comma
+    p_addr1 = parse_location("Ajax, 59 Westney Rd S")
+    assert p_addr1.city == "Ajax"
+    assert p_addr1.country_code == "CA"
+    assert resolve_country_from_location("Ajax, 59 Westney Rd S") == "CA"
+
+    p_addr2 = parse_location("Mississauga, 2 Prologis Blvd")
+    assert p_addr2.city == "Mississauga"
+    assert p_addr2.country_code == "CA"
+    assert resolve_country_from_location("Mississauga, 2 Prologis Blvd") == "CA"
+
+    # Verified safe unique bare cities
+    assert resolve_country_from_location("Uzhhorod") == "UA"
+    assert resolve_country_from_location("Köln") == "DE"
+    assert resolve_country_from_location("Dortmund") == "DE"
+    assert resolve_country_from_location("Lévis") == "CA"
+    assert resolve_country_from_location("Longueuil") == "CA"
+    assert resolve_country_from_location("São Bernardo Do Campo") == "BR"
+    assert resolve_country_from_location("São José dos Campos") == "BR"
+    assert resolve_country_from_location("Canberra") == "AU"
+    assert resolve_country_from_location("Bordeaux") == "FR"
+    assert resolve_country_from_location("Lyon") == "FR"
+    assert resolve_country_from_location("Baku") == "AZ"
+    assert resolve_country_from_location("Istanbul") == "TR"
+    assert resolve_country_from_location("Osaka") == "JP"
+    assert resolve_country_from_location("Kyoto") == "JP"
+    assert resolve_country_from_location("Seoul") == "KR"
+    assert resolve_country_from_location("Kuala Lumpur") == "MY"
+    assert resolve_country_from_location("Budapest") == "HU"
+    assert resolve_country_from_location("Johannesburg") == "ZA"
+    assert resolve_country_from_location("Tunis") == "TN"
+
+
+def test_round_7_improvements():
+    # 1. UNIQLO format
+    assert resolve_country_from_location("UNIQLO MA Burlington Mall(UQUS)") == "US"
+    p_u1 = parse_location("UNIQLO MA Burlington Mall(UQUS)")
+    assert p_u1.city == "Burlington Mall"
+    assert p_u1.region == "MA"
+    assert p_u1.country_code == "US"
+
+    assert resolve_country_from_location("UNIQLO WA Tacoma mall(UQUS)") == "US"
+    p_u2 = parse_location("UNIQLO WA Tacoma mall(UQUS)")
+    assert p_u2.city == "Tacoma mall"
+    assert p_u2.region == "WA"
+    assert p_u2.country_code == "US"
+
+    # 2. Desjardins Canadian financial cooperative
+    assert resolve_country_from_location("Caisse Desjardins du Centre de Lotbinière") == "CA"
+    assert resolve_country_from_location("Complexe Desjardins Montréal") == "CA"
+    assert resolve_country_from_location("Caisse populaire Desjardins d'Hochelaga-Maisonneuve") == "CA"
+
+    # 3. Trailing city address with country preserved
+    assert resolve_country_from_location("Croydon, 69 PARK LANE, United Kingdom") == "GB"
+    p_croydon = parse_location("Croydon, 69 PARK LANE, United Kingdom")
+    assert p_croydon.city == "Croydon"
+    assert p_croydon.country_code == "GB"
+
+    # 4. Venue prefix with city and state extraction
+    p_td = parse_location("TD Centre - North - 77 King Street West, Toronto, Ontario")
+    assert p_td.city == "Toronto"
+    assert p_td.region == "Ontario"
+    assert p_td.country_code == "CA"
+    assert resolve_country_from_location("TD Centre - North - 77 King Street West, Toronto, Ontario") == "CA"
+
+    p_qc = parse_location("Head Office, Quebec City, QC")
+    assert p_qc.city == "Quebec City"
+    assert p_qc.region == "QC"
+    assert p_qc.country_code == "CA"
+
+    p_sh = parse_location("Carrefour de l'Estrie, Sherbrooke, QC")
+    assert p_sh.city == "Sherbrooke"
+    assert p_sh.region == "QC"
+    assert p_sh.country_code == "CA"
+
+    p_pa = parse_location("42 East Baltimore Pike, Media, Pennsylvania")
+    assert p_pa.city == "Media"
+    assert p_pa.region == "Pennsylvania"
+    assert p_pa.country_code == "US"
+
+    # 5. European 3+2 postal code
+    assert resolve_country_from_location("Stockholm, SWE, 104 51") == "SE"
+
+    # 6. French street address prefix with space before comma
+    assert resolve_country_from_location("276, rue Papineau , Papineauville") == "CA"
+    p_pap = parse_location("276, rue Papineau , Papineauville")
+    assert p_pap.city == "Papineauville"
+    assert p_pap.country_code == "CA"
+
+    # 7. Sub-national regions
+    assert resolve_country_from_location("Taguig City, National Capital Region (Manila)") == "PH"
+    assert resolve_country_from_location("Pune, Maharashtra") == "IN"
+    assert resolve_country_from_location("Bengaluru, Karnataka") == "IN"
+    assert resolve_country_from_location("Yokohama, Kanagawa") == "JP"
+    assert resolve_country_from_location("Barcelona, Catalonia") == "ES"
+    assert resolve_country_from_location("Milan, Lombardy") == "IT"
+    assert resolve_country_from_location("Rennes, Bretagne") == "FR"
+
+    # 8. Verified safe bare cities
+    assert resolve_country_from_location("Saint-Jean-sur-Richelieu") == "CA"
+    assert resolve_country_from_location("Saint-Hyacinthe") == "CA"
+    assert resolve_country_from_location("Saint-Eustache") == "CA"
+    assert resolve_country_from_location("Pointe-Claire") == "CA"
+    assert resolve_country_from_location("Amman") == "JO"
+    assert resolve_country_from_location("Chiang Mai") == "TH"
+    assert resolve_country_from_location("Taguig") == "PH"
+    assert resolve_country_from_location("Mandaluyong") == "PH"
+    assert resolve_country_from_location("Haderslev") == "DK"
+    assert resolve_country_from_location("Brive-la-Gaillarde") == "FR"
+
+

@@ -1,5 +1,12 @@
+"""Tests for scraper/location/cleaning.py's clean_location_for_parsing —
+noise-stripping and comma-insertion passes that run before parse_location's
+tokenizer sees a raw location string.
+"""
+
 from scraper.location.cleaning import clean_location_for_parsing
-from scraper.location.parse import parse_location
+
+# --- Preprocessing cleanup (street address / store ID / trailing ZIP / --
+# --- broader remote detection), sampled from real unresolved prod rows ---
 
 
 def test_clean_strips_leading_street_address_before_city():
@@ -38,6 +45,10 @@ def test_clean_never_returns_empty_string():
     assert clean_location_for_parsing("123 Main Street") == "123 Main Street"
 
 
+# --- Trailing space-joined state/province ("Portland OR", store-ID-prefixed --
+# --- "Store 2743142 Murrysville PA") — comma insertion ahead of parsing ---
+
+
 def test_clean_inserts_comma_before_trailing_us_state_abbreviation():
     assert clean_location_for_parsing("Portland OR") == "Portland, OR"
     assert clean_location_for_parsing("Appleton WI") == "Appleton, WI"
@@ -63,10 +74,21 @@ def test_clean_trailing_space_state_skipped_when_string_already_has_a_comma():
     assert clean_location_for_parsing("Toronto, ON") == "Toronto, ON"
 
 
+# --- Canadian addresses with a trailing "CA" (ISO code) after a real CA --
+# --- province token ("London, ON, CA, N6E 1V4") — previously misread as --
+# --- California, since a bare "ca" token also matches US_STATE_TOKENS ---
+
+
 def test_clean_strips_trailing_canadian_postal_code():
     assert clean_location_for_parsing("London, ON, CA, N6E 1V4") == "London, ON, CA"
     assert clean_location_for_parsing("Montreal, QC, CA, H3B4G7") == "Montreal, QC, CA"
     assert clean_location_for_parsing("Milton, ON, CA, L9T 0A5") == "Milton, ON, CA"
+
+
+# --- Leading "<ST> - <City>" / "<ST>-<City>" ("WV - Triadelphia, 215 --
+# --- Cabela Dr", "CT-WALLINGFORD, 108 LEIGUS RD") — a documented, --
+# --- deliberately unhandled ambiguity in resolve_country_from_location's --
+# --- own ISO2-region-dash tier (see LEADING_ISO2_REGION_DASH_RE) ---
 
 
 def test_clean_reorders_leading_state_dash_to_trailing_comma_shape():
@@ -85,11 +107,16 @@ def test_clean_leading_state_dash_skips_the_iso2_region_dash_ats_shape():
     # "CA-QC-LONGUEUIL-J01" / "AU-NSW-WILLIAMTOWN-001" are the OTHER
     # documented leading-dash shape (all-caps ISO2 country + region code),
     # already handled correctly and more precisely by
-    # _LEADING_ISO2_REGION_DASH_RE inside resolve_country_from_location —
+    # LEADING_ISO2_REGION_DASH_RE inside resolve_country_from_location —
     # must be left untouched, not reordered as if "CA"/"AU" were a US
     # state/CA province.
     assert clean_location_for_parsing("CA-QC-LONGUEUIL-J01") == "CA-QC-LONGUEUIL-J01"
     assert clean_location_for_parsing("AU-NSW-WILLIAMTOWN-001") == "AU-NSW-WILLIAMTOWN-001"
+
+
+# --- Trailing short (1-4 digit) facility code after the state, space- --
+# --- separated ("Fayetteville, NC 0388") — same failure mode as the --
+# --- 5-digit ZIP case, just a shorter code ---
 
 
 def test_clean_strips_trailing_short_facility_code():
@@ -99,9 +126,13 @@ def test_clean_strips_trailing_short_facility_code():
 
 
 def test_clean_trailing_short_code_does_not_touch_5_digit_zip():
-    # 5-digit is _TRAILING_ZIP_RE's job (runs first) — must not double
+    # 5-digit is TRAILING_ZIP_RE's job (runs first) — must not double
     # apply or disagree on the boundary.
     assert clean_location_for_parsing("Wayne, NJ, US, 07470") == "Wayne, NJ, US"
+
+
+# --- Trailing digits stuck after a closing paren ("W. Jefferson, NC (W --
+# --- Jefferson) 2255") — breaks the state-token match once parens strip ---
 
 
 def test_clean_strips_trailing_digits_after_paren():
@@ -115,9 +146,17 @@ def test_clean_strips_trailing_digits_after_paren():
     )
 
 
+# --- Trailing "STORE - NNNN" suffix, city-first ("QUINCY STORE - 1915") --
+# --- — the mirror image of the leading store-ID-prefix case ---
+
+
 def test_clean_strips_trailing_store_suffix():
     assert clean_location_for_parsing("QUINCY STORE - 1915") == "QUINCY"
     assert clean_location_for_parsing("PICKERING STORE - 7238") == "PICKERING"
+
+
+# --- Leading full state/province name + dash ("Idaho - Boise", "Kansas --
+# --- - Great Bend") — full-name variant of the 2-letter-code case ---
 
 
 def test_clean_reorders_leading_full_state_name_dash():
@@ -127,9 +166,10 @@ def test_clean_reorders_leading_full_state_name_dash():
 
 def test_clean_leading_full_state_name_dash_skips_remote_and_work_at_home():
     # "remote"/"work at home" are not state/province names — must not
-    # fire just because they precede a dash.
-    assert clean_location_for_parsing("Remote - Toronto") == "Remote - Toronto"
-    assert clean_location_for_parsing("Work at Home - Nevada") == "Work at Home - Nevada"
+    # be reordered as if they were a state preceding a dash (e.g. "Toronto, Remote").
+    # Leading remote prefixes are stripped cleanly instead.
+    assert clean_location_for_parsing("Remote - Toronto") == "Toronto"
+    assert clean_location_for_parsing("Work at Home - Nevada") == "Nevada"
 
 
 def test_clean_leading_full_state_name_dash_skips_iso2_region_dash_shape():
@@ -140,17 +180,21 @@ def test_clean_leading_full_state_name_dash_skips_iso2_region_dash_shape():
     assert clean_location_for_parsing("CA-QC-LONGUEUIL-J01") == "CA-QC-LONGUEUIL-J01"
 
 
+# --- Leading zero-padded 5-digit facility ID + dash ("02319 - Grove --
+# --- City Dialysis") — different vendor convention from "Store <id>" ---
+
+
 def test_clean_strips_leading_5_digit_facility_id():
     assert clean_location_for_parsing("02319 - Grove City Dialysis") == "Grove City Dialysis"
     assert clean_location_for_parsing("11722 - Majestic Dialysis") == "Majestic Dialysis"
 
 
-def test_clean_leading_word_dash_still_works_for_non_colliding_states():
-    # Sanity: "WV - Triadelphia..."/"Idaho - Boise" have no country-name
-    # collision risk at all (WV/Idaho aren't ISO country codes) — must be
-    # completely unaffected by this fix.
-    assert parse_location("WV - Triadelphia, 215 Cabela Dr").city == "Triadelphia"
-    assert parse_location("Idaho - Boise").city == "Boise"
+# --- Trailing "<ST> - <suffix>" after the state token ("Dallas, TX - --
+# --- USA", "New Haven, CT - USA") — found while investigating why huge --
+# --- cities like Dallas/Amsterdam/Shanghai weren't matching the --
+# --- gazetteer: the dash-glued suffix broke tokens[-1]'s state match, --
+# --- so region stayed None and town_resolver.py correctly refused to --
+# --- guess among multiple same-named US towns without it ---
 
 
 def test_clean_strips_trailing_state_dash_suffix():
@@ -167,6 +211,13 @@ def test_clean_trailing_state_dash_suffix_preserves_city_internal_dash():
     )
 
 
+# --- Trailing 6-digit international postal code (India's PIN code, --
+# --- Singapore's, Vietnam's, ...) — same failure mode as the 5-digit --
+# --- US ZIP case, just a different digit count, found via "Bangalore, --
+# --- Karnataka, IND, 560093" staying country_code=None even though --
+# --- "IND" alone (no trailing digits) resolves fine ---
+
+
 def test_clean_strips_trailing_6_digit_postal_code():
     assert (
         clean_location_for_parsing("Bangalore, Karnataka, IND, 560093")
@@ -178,6 +229,12 @@ def test_clean_strips_trailing_6_digit_postal_code():
 def test_clean_6_digit_postal_code_does_not_touch_5_digit_us_zip():
     assert clean_location_for_parsing("Wayne, NJ, US, 07470") == "Wayne, NJ, US"
     assert clean_location_for_parsing("Athens, GA, US, 30606") == "Athens, GA, US"
+
+
+# --- Trailing compass-direction suffix on a street address ("7000 --
+# --- Target Pkwy N", "15800 87th St NE") — the existing street-address --
+# --- prefix strip left the direction letter as an opaque tokens[0], --
+# --- leaking bare "N"/"NE"/"SW"/etc. into `city` ---
 
 
 def test_clean_strips_street_address_with_direction_suffix():
@@ -206,6 +263,11 @@ def test_clean_street_address_without_direction_suffix_still_works():
     )
 
 
+# --- "<FullStateName> <remote-phrase>" — space-joined, no comma or dash --
+# --- at all ("Utah Work at Home", "Oregon Virtual") — distinct from the --
+# --- dash-joined "<ST> - Remote" shape already handled; 60 rows sampled ---
+
+
 def test_clean_inserts_comma_before_trailing_remote_phrase():
     assert clean_location_for_parsing("Utah Work at Home") == "Utah, Work at Home"
     assert clean_location_for_parsing("Oregon Virtual") == "Oregon, Virtual"
@@ -219,6 +281,11 @@ def test_clean_remote_phrase_suffix_does_not_fire_on_non_state_leading_word():
     # No real state/province name before the remote phrase — must not
     # insert a comma or claim a region.
     assert clean_location_for_parsing("Somewhere Remote") == "Somewhere Remote"
+
+
+# --- "<City>-<FullStateName>(<zip>)" — no comma/space around the dash at --
+# --- all, trailing zip in parens ("Laredo-Texas(78043)") — a distinct --
+# --- ATS vendor shape from every other dash pattern (81 rows sampled) ---
 
 
 def test_clean_reorders_dash_state_paren_zip_shape():
@@ -244,3 +311,5 @@ def test_clean_dash_state_paren_zip_unaffected_by_other_dash_patterns():
     assert (
         clean_location_for_parsing("Winston- Salem, NC - USA") == "Winston- Salem, NC"
     )
+
+

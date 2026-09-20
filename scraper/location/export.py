@@ -7,15 +7,17 @@ jobby/utils/pipeline/generated/country-resolver-data.ts.
 from __future__ import annotations
 
 from scraper.location.data import (
+    BARE_CITY_NAME_TO_COUNTRY,
     CA_PROVINCE_TOKENS,
+    CITY_REGION_COLLISION_TO_COUNTRY,
     COUNTRY_NAMES,
     LOCATION_ALIASES,
-    US_STATE_TOKENS,
-    BARE_CITY_NAME_TO_COUNTRY,
-    CITY_REGION_COLLISION_TO_COUNTRY,
     LOCATION_ALIASES_AMBIGUOUS_WITH_US_CA_CITY,
     NON_CITY_PHRASES,
+    SUB_NATIONAL_REGION_TO_COUNTRY,
+    US_STATE_TOKENS,
 )
+
 
 def export_location_tables() -> dict[str, object]:
     """Hand-authored lookup tables, as plain JSON-serializable data.
@@ -50,6 +52,7 @@ def export_location_tables() -> dict[str, object]:
         "ca_province_tokens": sorted(CA_PROVINCE_TOKENS),
         "non_city_phrases": sorted(NON_CITY_PHRASES),
         "bare_city_name_to_country": BARE_CITY_NAME_TO_COUNTRY,
+        "sub_national_region_to_country": SUB_NATIONAL_REGION_TO_COUNTRY,
         # Tuple keys aren't JSON-safe — flatten to the same "city|code"
         # string key countryResolver.ts already hand-typed its own copy
         # with, so the generated TS table needs zero shape translation

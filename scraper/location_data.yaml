@@ -516,9 +516,47 @@ location_aliases:
   silicon valley: US
   nyc: US
   new york city: US
+  turkey: TR
+  turkiye: TR
+  deutschland: DE
+  korea, republic of: KR
+  viet nam: VN
+  brasil: BR
+  prc: CN
+  ksa: SA
+  russian federation: RU
+  中国: CN
+  日本: JP
+  대한민국: KR
+  한국: KR
+  españa: ES
+  espana: ES
+  schweiz: CH
+  suisse: CH
+  italia: IT
+  belgique: BE
+  belgie: BE
+  polska: PL
+  oesterreich: AT
+  osterreich: AT
+  norge: 'NO'
+  sverige: SE
+  suomi: FI
+  danmark: DK
+  nederland: NL
+  warszawa: PL
+  macedonia: MK
+  macedonia, the former yugoslav republic of: MK
+  the former yugoslav republic of macedonia: MK
+  fyrom: MK
+  swaziland: SZ
+  burma: MM
+  u.s. virgin islands: VI
+  us virgin islands: VI
 location_aliases_ambiguous_with_us_ca_city:
 - england
 - holland
+- nederland
 - new york city
 - scotland
 - wales
@@ -540,6 +578,7 @@ us_state_tokens:
 - dc
 - de
 - delaware
+- district of columbia
 - fl
 - florida
 - ga
@@ -656,129 +695,1232 @@ ca_province_tokens:
 non_city_phrases:
 - home office
 - remote
+- remote work
 - virtual
+- virtual work
 - wfh
 - work at home
 - work from home
 bare_city_name_to_country:
+  abidjan: CI
   abu dhabi: AE
+  aguascalientes: MX
+  ahmedabad: IN
+  ajax: CA
   albacete: ES
+  almaty: KZ
+  ankara: TR
+  arequipa: PE
   atlanta: US
+  auckland: NZ
   austin: US
   backnang: DE
   baesweiler: DE
+  baie-comeau: CA
   baltimore: US
   bangkok: TH
+  barranquilla: CO
   barrie: CA
+  barueri: BR
   basel: CH
   beijing: CN
+  bengaluru: IN
+  bothell: US
+  brantford: CA
+  brasilia: BR
+  brasov: RO
   bratislava: SK
   brownsville: US
   bucharest: RO
   budapest: HU
+  burnaby: CA
   caen: FR
   calgary: CA
   cape town: ZA
   carlsbad: US
   catania: IT
+  changchun: CN
+  changsha: CN
+  charleston: US
+  charlotte: US
+  charlottetown: CA
+  chelyabinsk: RU
   chengdu: CN
   chennai: IN
   chicago: US
+  chihuahua: MX
   chongqing: CN
+  clermont-ferrand: FR
+  coimbatore: IN
+  collegeville: US
+  columbus: US
   copenhagen: DK
+  cork: IE
+  curitiba: BR
+  da nang: VN
+  dalian: CN
+  decatur: US
+  denver: US
+  dongguan: CN
   dothan: US
+  drumheller: CA
+  east london: ZA
+  edmundston: CA
   eindhoven: NL
   espoo: FI
   fond du lac: US
+  fornovo san giovanni: IT
   fort erie: CA
+  fort worth: US
+  foshan: CN
+  frankfurt am main: DE
+  fredericton: CA
+  fukuoka: JP
   fuzhou: CN
+  gatineau: CA
+  general santos: PH
   getafe: ES
+  grand falls: CA
+  grenoble: FR
   guangzhou: CN
+  guarulhos: BR
+  guelph: CA
   gurugram: IN
   hangzhou: CN
+  hanoi: VN
+  harbin: CN
+  ho chi minh city: VN
   hsinchu: TW
   indianapolis: US
   islamabad: PK
+  istanbul: TR
   ivrea: IT
   jacksonville: US
   jakarta: ID
   jiaxing: CN
   jinan: CN
+  johannesburg: ZA
   kamloops: CA
+  kansas city: US
   kaohsiung: TW
+  kapolei: US
+  karachi: PK
   kelowna: CA
+  kobe: JP
+  kolkata: IN
   krakow: PL
   kuala lumpur: MY
+  kunming: CN
   kyiv: UA
+  kyoto: JP
   lafayette: US
+  lahore: PK
   lake country: CA
+  lanzhou: CN
   lehi: US
   leipzig: DE
   lethbridge: CA
   leuven: BE
   ljubljana: SI
   luzhou: CN
+  lviv: UA
+  magog: CA
   makati city: PH
+  manaus: BR
+  maribo: DK
+  marseille: FR
+  memphis: US
   milwaukee: US
+  minneapolis: US
   mississauga: CA
+  moncton: CA
   montpellier: FR
   monza: IT
   morrisville: US
   mumbai: IN
   munich: DE
+  nagoya: JP
+  nairobi: KE
+  nanjing: CN
+  napierville: CA
+  nashville: US
   neenah: US
   new delhi: IN
+  newcastle upon tyne: GB
   niagara-on-the-lake: CA
   noida: IN
   novi: US
   orlando: US
+  osaka: JP
   oshawa: CA
+  oslo: 'NO'
   otsego: US
   pasig city: PH
   pattaya: TH
+  penticton: CA
   penzberg: DE
   petaling jaya: MY
   petaluma: US
   phnom penh: KH
   pittsburgh: US
   pleasanton: US
+  portage la prairie: CA
   pune: IN
   puurs: BE
+  qingdao: CN
   quezon city: PH
   quito: EC
   raleigh: US
   red deer: CA
   rennes: FR
+  reston: US
   riga: LV
+  rio de janeiro: BR
+  saanich: CA
+  saguenay: CA
+  saitama: JP
   salmon arm: CA
+  san luis obispo: US
+  san luis potosi: MX
+  saratov: RU
   sarnia: CA
   saskatoon: CA
   seattle: US
   seoul: KR
   sepang: MY
   shanghai: CN
+  shantou: CN
+  shenyang: CN
+  sherbrooke: CA
   sibiu: RO
+  sioux falls: US
   skopje: MK
   south san francisco: US
+  st. catharines: CA
   stevenage: GB
   stockholm: SE
   stolberg: DE
   strathroy: CA
   subang jaya: MY
   suzhou: CN
+  syracuse: US
+  taichung: TW
   taipei: TW
   taiyuan: CN
   tampa: US
   targu mures: RO
+  thane: IN
+  thunder bay: CA
+  tianjin: CN
   tokyo: JP
   toulouse: FR
   tucson: US
+  tumwater: US
+  tunis: TN
   turku: FI
   ulm: DE
   vaughan: CA
+  victoriaville: CA
   vilvoorde: BE
+  virginia beach: US
+  volgograd: RU
   winnipeg: CA
+  wuhan: CN
+  wuxi: CN
   yokohama: JP
+  zhengzhou: CN
+  aalborg: DK
+  augsburg: DE
+  banja luka: BA
+  bern: CH
+  bilbao: ES
+  bologna: IT
+  brno: CZ
+  brugge: BE
+  cluj-napoca: RO
+  danderyd: SE
+  gdansk: PL
+  gdańsk: PL
+  gallivare: SE
+  gällivare: SE
+  gent: BE
+  graz: AT
+  haderslev: DK
+  iasi: RO
+  innsbruck: AT
+  izmir: TR
+  katowice: PL
+  kaunas: LT
+  klaipeda: LT
+  kolding: DK
+  kosice: SK
+  košice: SK
+  kraków: PL
+  landskrona: SE
+  lausanne: CH
+  liege: BE
+  limassol: CY
+  linz: AT
+  liège: BE
+  lodz: PL
+  lublin: PL
+  luxembourg: LU
+  malmo: SE
+  malmö: SE
+  novi sad: RS
+  odense: DK
+  ostrava: CZ
+  pitea: SE
+  piteå: SE
+  plovdiv: BG
+  poznan: PL
+  poznań: PL
+  reykjavik: IS
+  salzburg: AT
+  sarajevo: BA
+  sofia: BG
+  solna: SE
+  stavanger: 'NO'
+  svedala: SE
+  szczecin: PL
+  tallinn: EE
+  tampere: FI
+  thessaloniki: GR
+  timisoara: RO
+  tirana: AL
+  trondheim: 'NO'
+  uppsala: SE
+  valletta: MT
+  vantaa: FI
+  vilnius: LT
+  warsaw: PL
+  wroclaw: PL
+  wrocław: PL
+  zagreb: HR
+  zaventem: BE
+  zuerich: CH
+  zürich: CH
+  zurich: CH
+  donauworth: DE
+  gunzburg: DE
+  koln: DE
+  lidingo: SE
+  orkelljunga: SE
+  aachen: DE
+  abilene: US
+  addison: US
+  allentown: US
+  altus: US
+  amos: CA
+  amqui: CA
+  anchorage: US
+  anderson: US
+  angers: FR
+  ann arbor: US
+  annecy: FR
+  antioch: US
+  ashburn: US
+  astana: KZ
+  astoria: US
+  atascadero: US
+  atholville: CA
+  aubagne: FR
+  auch: FR
+  bacolod city: PH
+  bakersfield: US
+  baku: AZ
+  balsthal: CH
+  bandung: ID
+  banjarmasin: ID
+  bankstown: AU
+  baraboo: US
+  basiglio: IT
+  battambang: KH
+  bay city: US
+  beauharnois: CA
+  beauport: CA
+  beaver dam: US
+  becancour: CA
+  berthierville: CA
+  besancon: FR
+  besançon: FR
+  betim: BR
+  beziers: FR
+  biddeford: US
+  bjerringbro: DK
+  blainville: CA
+  bloomfield: US
+  blue bell: US
+  boca raton: US
+  bogota: CO
+  bogotá: CO
+  boisbriand: CA
+  boise: US
+  bonita springs: US
+  boone: US
+  bordeaux: FR
+  boucherville: CA
+  bracknell: GB
+  brandywine: US
+  brockport: US
+  brossard: CA
+  broughton: GB
+  broussard: US
+  bueckeburg: DE
+  buellton: US
+  burgess hill: GB
+  burr ridge: US
+  bécancour: CA
+  béziers: FR
+  calamba: PH
+  caldicot: GB
+  camarillo: US
+  campbell river: CA
+  canandaigua: US
+  canberra: AU
+  candiac: CA
+  carleton place: CA
+  carrollton: US
+  cayce: US
+  cedar park: US
+  cedar rapids: US
+  centerville: US
+  charles city: US
+  charlottesville: US
+  chateauguay: CA
+  cheektowaga: US
+  chesapeake: US
+  chestnut hill: US
+  chibougamau: CA
+  chicago ridge: US
+  chicoutimi: CA
+  chilliwack: CA
+  châteauguay: CA
+  cicero: US
+  cincinnati: US
+  clackamas: US
+  claremore: US
+  clarksville: US
+  cobourg: CA
+  coeur d'alene: US
+  colonial heights: US
+  comox: CA
+  coon rapids: US
+  coos bay: US
+  coquitlam: CA
+  corning: US
+  cowansville: CA
+  crystal city: US
+  culpeper: US
+  culver city: US
+  cumming: US
+  cupertino: US
+  davenport: US
+  degelis: CA
+  derrimut: AU
+  des moines: US
+  detroit: US
+  dettingen an der erms: DE
+  dickinson: US
+  diegem: BE
+  dijon: FR
+  dixon: US
+  diyarbakır: TR
+  donaldsonville: US
+  donauwörth: DE
+  donnacona: CA
+  dorsten: DE
+  dortmund: DE
+  douglasville: US
+  downingtown: US
+  drummondville: CA
+  dégelis: CA
+  edison: US
+  egham: GB
+  el segundo: US
+  elk grove: US
+  elk grove village: US
+  emeryville: US
+  englewood: US
+  enschede: NL
+  erembodegem: BE
+  escondido: US
+  esquimalt: CA
+  etobicoke: CA
+  everett: US
+  ewing: US
+  fairfax: US
+  fairport: US
+  fargo: US
+  farnborough: GB
+  federal way: US
+  fergus falls: US
+  florianopolis: BR
+  florianópolis: BR
+  fort collins: US
+  fort lauderdale: US
+  fort saskatchewan: CA
+  fredericia: DK
+  frederick: US
+  fredericksburg: US
+  fremont: US
+  fribourg: CH
+  galion: US
+  galveston: US
+  galway: IE
+  gander: CA
+  garliava: LT
+  gaspe: CA
+  gaspé: CA
+  geilenkirchen: DE
+  geneseo: US
+  germantown: US
+  gig harbor: US
+  grand rapids: US
+  grande prairie: CA
+  gratkorn: AT
+  greeley: US
+  grenchen: CH
+  großostheim: DE
+  guiyang: CN
+  günzburg: DE
+  hachioji: JP
+  hadsund: DK
+  haifa: IL
+  hannover: DE
+  harrisburg: US
+  harrisonburg: US
+  harstad: 'NO'
+  hawkesbury: CA
+  helsinki: FI
+  hendersonville: US
+  hengelo: NL
+  herford: DE
+  herzliya: IL
+  hillerød: DK
+  holly springs: US
+  homebush: AU
+  homestead: US
+  honolulu: US
+  hoofddorp: NL
+  hopkinton: US
+  hornell: US
+  huainan: CN
+  huningue: FR
+  hunt valley: US
+  immenstaad am bodensee: DE
+  iowa city: US
+  iqaluit: CA
+  irondequoit: US
+  irving: US
+  itajai: BR
+  itajuba: BR
+  itajubá: BR
+  itasca: US
+  ithaca: US
+  jackson: US
+  jelgava: LV
+  jiamusi: CN
+  johnson city: US
+  joliet: US
+  joliette: CA
+  jonquiere: CA
+  jonquière: CA
+  jurupa valley: US
+  kalgoorlie: AU
+  kampong cham: KH
+  kanata: CA
+  karoliniskes: LT
+  karoliniškės: LT
+  kassel: DE
+  keila: EE
+  kennett square: US
+  kerteminde: DK
+  khamis mushait: SA
+  king of prussia: US
+  kleinmachnow: DE
+  knightdale: US
+  knoxville: US
+  kodiak: US
+  koh kong: KH
+  kozhikode: IN
+  kursk: RU
+  kwidzyn: PL
+  köln: DE
+  la pocatiere: CA
+  la pocatière: CA
+  la prairie: CA
+  la sarre: CA
+  la tuque: CA
+  laagri: EE
+  lachute: CA
+  lainate: IT
+  lake grove: US
+  lakeland: US
+  lakeville: US
+  langenhagen: DE
+  las palmas de gran canaria: ES
+  lawndale: US
+  lawrenceville: US
+  layton: US
+  le locle: CH
+  le luc: FR
+  leawood: US
+  leesburg: US
+  levis: CA
+  lidingö: SE
+  livonia: US
+  llantrisant: GB
+  lloydminster: CA
+  long island city: US
+  longtan: CN
+  longueuil: CA
+  longview: US
+  louiseville: CA
+  louisville: US
+  lubbock: US
+  ludwigsburg: DE
+  lyon: FR
+  lévis: CA
+  mainz: DE
+  makkah: SA
+  manasquan: US
+  manching: DE
+  maniwaki: CA
+  mankato: US
+  marshalltown: US
+  mascouche: CA
+  mason city: US
+  matane: CA
+  mcallen: US
+  mclean: US
+  mechanicsburg: US
+  medford: US
+  medicine hat: CA
+  menges: SI
+  mengeš: SI
+  menlo park: US
+  mercier: CA
+  metz: FR
+  meudon: FR
+  meylan: FR
+  miami beach: US
+  midlothian: US
+  midrand: ZA
+  minato: JP
+  miramichi: CA
+  mishawaka: US
+  missoula: US
+  mistissini: CA
+  modesto: US
+  moenchengladbach: DE
+  montgomeryville: US
+  montvale: US
+  moose jaw: CA
+  morris plains: US
+  morumbi: BR
+  mosjøen: 'NO'
+  motherwell: GB
+  mount laurel: US
+  mount pearl: CA
+  mountain view: US
+  mukilteo: US
+  murfreesboro: US
+  nanaimo: CA
+  nanterre: FR
+  nantong: CN
+  nardo: IT
+  neijiang: CN
+  nepean: CA
+  new cairo: EG
+  new minas: CA
+  new ross: IE
+  newark: US
+  nicolet: CA
+  nijmegen: NL
+  noblesville: US
+  nordenham: DE
+  nordholz: DE
+  normandin: CA
+  north bay: CA
+  north bay village: US
+  north little rock: US
+  north myrtle beach: US
+  north vancouver: CA
+  norwalk: US
+  nowra: AU
+  o'fallon: US
+  oakbrook: US
+  oakland: US
+  oberengstringen: CH
+  oceanside: US
+  okinawa: JP
+  oklahoma city: US
+  okotoks: CA
+  olathe: US
+  omaha: US
+  orillia: CA
+  osijek: HR
+  owatonna: US
+  owen sound: CA
+  owings mills: US
+  oxon hill: US
+  paducah: US
+  palm beach gardens: US
+  pantin: FR
+  parramatta: AU
+  parry sound: CA
+  parsippany: US
+  pearl river: US
+  peetri: EE
+  peoria: US
+  perris: US
+  perrysburg: US
+  petawawa: CA
+  philadelphia: US
+  phoenix: US
+  pierrelatte: FR
+  pittston: US
+  plano: US
+  plessisville: CA
+  pocatello: US
+  pohang: KR
+  pohenegamook: CA
+  pohénégamook: CA
+  pomezia: IT
+  port alberni: CA
+  port coquitlam: CA
+  port hardy: CA
+  port melbourne: AU
+  potomac: US
+  prestwick: GB
+  prineville: US
+  pulheim: DE
+  putrajaya: MY
+  queens: US
+  rancho cordova: US
+  rapid city: US
+  rawdon: CA
+  red bank: US
+  redmond: US
+  redondo beach: US
+  redwood city: US
+  repentigny: CA
+  revelstoke: CA
+  richland: US
+  ridgecrest: US
+  rimouski: CA
+  roberval: CA
+  rockaway: US
+  rokiskis: LT
+  rokiškis: LT
+  rosemere: CA
+  rosemère: CA
+  roswell: US
+  rotkreuz: CH
+  roznov: RO
+  rungis: FR
+  sackville: CA
+  salaspils: LV
+  salt lake city: US
+  san giovanni in marignano: IT
+  sant cugat del valles: ES
+  sant cugat del vallès: ES
+  santander: ES
+  santiago de queretaro: MX
+  santiago de querétaro: MX
+  sao bernardo do campo: BR
+  sao jose dos campos: BR
+  sarasota: US
+  sasayama: JP
+  schaumburg: US
+  scranton: US
+  secaucus: US
+  sesto calende: IT
+  seward: US
+  shawinigan: CA
+  shawnessy: CA
+  sherwood park: CA
+  short hills: US
+  short pump: US
+  sindelfingen: DE
+  sintra: PT
+  sligo: IE
+  slough: GB
+  solihull: GB
+  south bend: US
+  south surrey: CA
+  southdale: CA
+  spokane: US
+  spruce grove: CA
+  squamish: CA
+  st. louis: US
+  state college: US
+  staten island: US
+  stockerau: AT
+  strabane: GB
+  strzelin: PL
+  subang: ID
+  sulzbach: DE
+  sun prairie: US
+  sundbyberg: SE
+  sungai petani: MY
+  swindon: GB
+  são bernardo do campo: BR
+  são josé dos campos: BR
+  tachikawa: JP
+  tacoma: US
+  tambov: RU
+  tavagnacco: IT
+  tel aviv: IL
+  thatcham: GB
+  thermi: GR
+  thirsk: GB
+  tigard: US
+  timmins: CA
+  tiszaujvaros: HU
+  toms river: US
+  torre annunziata: IT
+  townsville: AU
+  tukwila: US
+  tulsa: US
+  tuscaloosa: US
+  tuttlingen: DE
+  twinsburg: US
+  ucluelet: CA
+  union city: US
+  uniontown: US
+  uzhhorod: UA
+  valdosta: US
+  vejen: DK
+  waco: US
+  waconia: US
+  wake forest: US
+  waldorf: US
+  wappingers falls: US
+  wareham: GB
+  waukee: US
+  wausau: US
+  weilheim: DE
+  welland: CA
+  wels: AT
+  west columbia: US
+  west des moines: US
+  west long branch: US
+  west mifflin: US
+  west seneca: US
+  westfield: US
+  whippany: US
+  whitehorse: CA
+  wiesbaden: DE
+  williamsport: US
+  wilmington: US
+  winfield: US
+  woodland hills: US
+  woodward: US
+  wunstorf: DE
+  yazoo city: US
+  yellowknife: CA
+  yinchuan: CN
+  zhubei: TW
+  örkelljunga: SE
+  acton vale: CA
+  coaticook: CA
+  disraeli: CA
+  l'ile-perrot: CA
+  l'île-perrot: CA
+  mont-laurier: CA
+  mont-royal: CA
+  mont-saint-hilaire: CA
+  papineauville: CA
+  pointe-claire: CA
+  pont-rouge: CA
+  port-cartier: CA
+  saint-basile-le-grand: CA
+  saint-constant: CA
+  saint-eustache: CA
+  saint-hyacinthe: CA
+  saint-jean-sur-richelieu: CA
+  saint-raymond: CA
+  sainte-agathe-des-monts: CA
+  sainte-claire: CA
+  sainte-martine: CA
+  salaberry-de-valleyfield: CA
+  sorel-tracy: CA
+  bettlach: CH
+  brive-la-gaillarde: FR
+  chippenham: GB
+  emmaboda: SE
+  eton: GB
+  gstaad: CH
+  kaiseraugst: CH
+  kundl: AT
+  mitcheldean: GB
+  monsheim: DE
+  saclay: FR
+  welwyn: GB
+  amman: JO
+  chiang mai: TH
+  chiang rai: TH
+  mandaluyong: PH
+  taguig: PH
+  cagayan de oro: PH
+  cebu city: PH
+  davao: PH
+  iloilo: PH
+  muntinlupa: PH
+  pasay: PH
+  gelang patah: MY
+  kuching: MY
+  shah alam: MY
+  sibu: MY
+  harlev: DK
+  herning: DK
+  horsens: DK
+  gebze: TR
+  maslak: TR
+  glenrothes: GB
+  harlow: GB
+  middlesbrough: GB
+  widnes: GB
+  wilmslow: GB
+  wokingham: GB
+  wolverhampton: GB
+  freienbach: CH
+  landquart: CH
+  lugano: CH
+  meyrin: CH
+  schwyz: CH
+  aviles: ES
+  albignasego: IT
+  trezzano sul naviglio: IT
+  charlotte amalie: VI
+  saint croix: VI
+  culiacan: MX
+  hermosillo: MX
+  tijuana: MX
+  amstelveen: NL
+  bremerton: US
+  duvall: US
+  irwindale: US
+  poulsbo: US
+  kitchener: CA
+  fortaleza: BR
+  porto alegre: BR
+  recife: BR
+  santos: BR
+  vitoria: BR
+  aden: YE
+  sanaa: YE
+  beirut: LB
+  kuwait city: KW
+  manama: BH
+  muscat: OM
+  bhubaneswar: IN
+  chandigarh: IN
+  visakhapatnam: IN
+  bandar seri begawan: BN
+  dili: TL
+  mandalay: MM
+  nay pyi taw: MM
+  vientiane: LA
+  yangon: MM
+  kandy: LK
+  kathmandu: NP
+  taikoo shing: HK
+  chisinau: MD
+  minsk: BY
+  podgorica: ME
+  pristina: XK
+  tashkent: UZ
+  tbilisi: GE
+  yerevan: AM
+  andorra la vella: AD
+  vaduz: LI
+  oulu: FI
+  namur: BE
+  guayaquil: EC
+  caracas: VE
+  maracaibo: VE
+  abuja: NG
+  accra: GH
+  addis ababa: ET
+  antananarivo: MG
+  bamako: ML
+  banjul: GM
+  cotonou: BJ
+  conakry: GN
+  dakar: SN
+  dar es salaam: TZ
+  dodoma: TZ
+  douala: CM
+  gaborone: BW
+  harare: ZW
+  kampala: UG
+  khartoum: SD
+  kigali: RW
+  kinshasa: CD
+  libreville: GA
+  lome: TG
+  lubumbashi: CD
+  lusaka: ZM
+  maputo: MZ
+  maseru: LS
+  mbabane: SZ
+  niamey: NE
+  nouakchott: MR
+  ouagadougou: BF
+  porto-novo: BJ
+  windhoek: NA
+  yamoussoukro: CI
+  yaounde: CM
+sub_national_region_to_country:
+  aguascalientes: MX
+  baja california: MX
+  baja california sur: MX
+  campeche: MX
+  chiapas: MX
+  chihuahua: MX
+  coahuila: MX
+  colima: MX
+  durango: MX
+  guanajuato: MX
+  guerrero: MX
+  hidalgo: MX
+  jalisco: MX
+  michoacan: MX
+  morelos: MX
+  nayarit: MX
+  nuevo leon: MX
+  oaxaca: MX
+  puebla: MX
+  queretaro: MX
+  quintana roo: MX
+  san luis potosi: MX
+  sinaloa: MX
+  sonora: MX
+  tabasco: MX
+  tamaulipas: MX
+  tlaxcala: MX
+  veracruz: MX
+  yucatan: MX
+  zacatecas: MX
+  cdmx: MX
+  anhui: CN
+  fujian: CN
+  gansu: CN
+  guangdong: CN
+  guizhou: CN
+  hainan: CN
+  hebei: CN
+  heilongjiang: CN
+  henan: CN
+  hubei: CN
+  hunan: CN
+  jiangsu: CN
+  jiangxi: CN
+  jilin: CN
+  liaoning: CN
+  qinghai: CN
+  shaanxi: CN
+  shandong: CN
+  shanxi: CN
+  sichuan: CN
+  yunnan: CN
+  zhejiang: CN
+  guangxi: CN
+  neimenggu: CN
+  inner mongolia: CN
+  ningxia: CN
+  xinjiang: CN
+  xizang: CN
+  tibet: CN
+  sao paulo: BR
+  minas gerais: BR
+  bahia: BR
+  parana: BR
+  rio grande do sul: BR
+  santa catarina: BR
+  espirito santo: BR
+  goias: BR
+  ceara: BR
+  pernambuco: BR
+  paraiba: BR
+  rio grande do norte: BR
+  mato grosso: BR
+  mato grosso do sul: BR
+  alagoas: BR
+  piaui: BR
+  maranhao: BR
+  sergipe: BR
+  amazonas: BR
+  rondonia: BR
+  tocantins: BR
+  acre: BR
+  amapa: BR
+  roraima: BR
+  bavaria: DE
+  bayern: DE
+  baden-wurttemberg: DE
+  baden-wuerttemberg: DE
+  hesse: DE
+  hessen: DE
+  saxony: DE
+  sachsen: DE
+  saxony-anhalt: DE
+  sachsen-anhalt: DE
+  lower saxony: DE
+  niedersachsen: DE
+  north rhine-westphalia: DE
+  nordrhein-westfalen: DE
+  rhineland-palatinate: DE
+  rheinland-pfalz: DE
+  schleswig-holstein: DE
+  thuringia: DE
+  thueringen: DE
+  brandenburg: DE
+  saarland: DE
+  mecklenburg-vorpommern: DE
+  buckinghamshire: GB
+  hampshire: GB
+  oxfordshire: GB
+  berkshire: GB
+  surrey: GB
+  suffolk: GB
+  gloucestershire: GB
+  warwickshire: GB
+  lancashire: GB
+  yorkshire: GB
+  cambridgeshire: GB
+  northamptonshire: GB
+  wiltshire: GB
+  worcestershire: GB
+  bedfordshire: GB
+  derbyshire: GB
+  herefordshire: GB
+  leicestershire: GB
+  lincolnshire: GB
+  nottinghamshire: GB
+  staffordshire: GB
+  merseyside: GB
+  tyne and wear: GB
+  greater manchester: GB
+  west midlands: GB
+  nsw: AU
+  new south wales: AU
+  vic: AU
+  qld: AU
+  queensland: AU
+  tas: AU
+  tasmania: AU
+  act: AU
+  australian capital territory: AU
+  south australia: AU
+  western australia: AU
+  national capital region: PH
+  metro manila: PH
+  calabarzon: PH
+  central luzon: PH
+  central visayas: PH
+  western visayas: PH
+  davao region: PH
+  maharashtra: IN
+  karnataka: IN
+  tamil nadu: IN
+  uttar pradesh: IN
+  telangana: IN
+  gujarat: IN
+  haryana: IN
+  west bengal: IN
+  kerala: IN
+  rajasthan: IN
+  andhra pradesh: IN
+  madhya pradesh: IN
+  odisha: IN
+  bihar: IN
+  jharkhand: IN
+  assam: IN
+  chhattisgarh: IN
+  uttarakhand: IN
+  himachal pradesh: IN
+  kanagawa: JP
+  aichi: JP
+  hokkaido: JP
+  fukuoka: JP
+  saitama: JP
+  hyogo: JP
+  shizuoka: JP
+  hiroshima: JP
+  miyagi: JP
+  fukushima: JP
+  nagano: JP
+  niigata: JP
+  okayama: JP
+  kumamoto: JP
+  kagoshima: JP
+  okinawa: JP
+  catalonia: ES
+  catalunya: ES
+  comunidad de madrid: ES
+  pais vasco: ES
+  basque country: ES
+  valencian community: ES
+  lombardy: IT
+  piemonte: IT
+  veneto: IT
+  emilia-romagna: IT
+  toscana: IT
+  sicily: IT
+  sicilia: IT
+  sardegna: IT
+  lazio: IT
+  campania: IT
+  puglia: IT
+  ile-de-france: FR
+  auvergne-rhone-alpes: FR
+  nouvelle-aquitaine: FR
+  occitanie: FR
+  hauts-de-france: FR
+  provence-alpes-cote d'azur: FR
+  pays de la loire: FR
+  bretagne: FR
+  grand est: FR
+  selangor: MY
+  johor: MY
+  pulau pinang: MY
+  penang: MY
+  perak: MY
+  kedah: MY
+  pahang: MY
+  terengganu: MY
+  kelantan: MY
+  perlis: MY
+  melaka: MY
+  malacca: MY
+  negeri sembilan: MY
+  sabah: MY
+  sarawak: MY
+  west java: ID
+  jawa barat: ID
+  central java: ID
+  jawa tengah: ID
+  east java: ID
+  jawa timur: ID
+  banten: ID
+  north sumatra: ID
+  sumatera utara: ID
+  yogyakarta: ID
+  hertfordshire: GB
+  west sussex: GB
+  east sussex: GB
+  south yorkshire: GB
+  west yorkshire: GB
+  north yorkshire: GB
+  east riding of yorkshire: GB
+  shropshire: GB
+  cumbria: GB
+  dorset: GB
+  northern territory: AU
 city_region_collision_to_country:
   '''s-hertogenbosch|nl': NL
   aalsmeer|nl: NL

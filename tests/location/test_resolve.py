@@ -1,18 +1,24 @@
+"""Tests for scraper/location/resolve.py's resolve_country_from_location.
+
+The first test below (test_resolve_country_city_state_us) imports through
+the scraper.location_resolver back-compat shim instead of the real module
+directly, specifically to guard the shim itself against silent breakage —
+every other test here imports the real implementation.
+"""
+
 from scraper.location.resolve import resolve_country_from_location
 from scraper.location_resolver import (
     resolve_country_from_location as resolve_country_from_location_via_shim,
 )
 
 
+def test_resolve_country_city_state_us_via_shim():
+    # Guards scraper.location_resolver's back-compat re-export itself.
+    assert resolve_country_from_location_via_shim("San Francisco, CA") == "US"
+
+
 def test_resolve_country_city_state_us():
     assert resolve_country_from_location("San Francisco, CA") == "US"
-
-
-def test_resolve_country_city_state_us_via_shim():
-    # Guards the backward-compat shim (scraper/location_resolver.py) itself
-    # against silent breakage — every other test in this file imports
-    # resolve_country_from_location directly from scraper.location.resolve.
-    assert resolve_country_from_location_via_shim("San Francisco, CA") == "US"
 
 
 def test_resolve_country_uk_alias():
@@ -156,7 +162,7 @@ def test_resolve_country_trailing_state_with_period():
 
 def test_resolve_country_bare_city_name():
     # A location with no country/province/ISO signal at all — resolved via
-    # _BARE_CITY_NAME_TO_COUNTRY, the gazetteer-derived lowest-priority
+    # BARE_CITY_NAME_TO_COUNTRY, the gazetteer-derived lowest-priority
     # fallback tier.
     assert resolve_country_from_location("Mumbai") == "IN"
     assert resolve_country_from_location("Shanghai") == "CN"
@@ -191,7 +197,7 @@ def test_resolve_country_bare_city_name_second_expansion():
 
 
 def test_resolve_country_bare_city_name_excludes_names_ambiguous_in_cities1000():
-    # These were valid single-country entries when _BARE_CITY_NAME_TO_COUNTRY
+    # These were valid single-country entries when BARE_CITY_NAME_TO_COUNTRY
     # was derived against the smaller cities15000 gazetteer, but the
     # 2026-09-19 upgrade to cities1000 (~171k rows, see gazetteer.py) made
     # them genuinely ambiguous (e.g. "Toronto" now also matches small towns
@@ -205,7 +211,7 @@ def test_resolve_country_bare_city_name_excludes_names_ambiguous_in_cities1000()
     assert resolve_country_from_location("Dubai") is None
     assert resolve_country_from_location("Houston") is None
     # Still resolve correctly via the name-matching tier, which isn't
-    # affected by _BARE_CITY_NAME_TO_COUNTRY's shrink at all.
+    # affected by BARE_CITY_NAME_TO_COUNTRY's shrink at all.
     assert resolve_country_from_location("Montreal, Canada") == "CA"
     assert resolve_country_from_location("Toronto, ON") == "CA"
 
@@ -233,6 +239,11 @@ def test_resolve_country_bare_trailing_ca_still_california():
     assert resolve_country_from_location("Capitola, CA, United States") == "US"
 
 
+# --- Bare, unambiguous ISO alpha-2 country codes ("GB", "FR", "CN", --
+# --- "AU" alone, or "GB,Manchester" with no space after the comma) — --
+# --- previously fell through to None everywhere in this file ---
+
+
 def test_resolve_country_bare_alpha2_code():
     assert resolve_country_from_location("GB") == "GB"
     assert resolve_country_from_location("FR") == "FR"
@@ -255,6 +266,15 @@ def test_resolve_country_bare_alpha2_excludes_us_ca_collision_codes():
     assert resolve_country_from_location("DE") == "US"  # Delaware, not Germany
 
 
+# --- Leading US-state/CA-province COLLISION code ("DE", "IN", "CA", --
+# --- ...) with an explicit country name elsewhere in the string ---
+# --- ("DE - Berlin, Germany") — a real correctness bug found while --
+# --- investigating unmatched rows: the leading-dash reorder fixes --
+# --- above moved the collision code into its own clean token, which --
+# --- then won the wrong (US-state) reading ahead of the correct one --
+# --- the unreordered string already produced ---
+
+
 def test_resolve_country_prioritizes_explicit_country_name_over_leading_collision_code():
     # Without the fix, "DE - Berlin, Germany" resolved to "US" (Delaware)
     # — confirmed live before this fix, since resolve_country_from_
@@ -264,6 +284,16 @@ def test_resolve_country_prioritizes_explicit_country_name_over_leading_collisio
     assert resolve_country_from_location("DE - Berlin, Germany") == "DE"
     assert resolve_country_from_location("IN - Mumbai, India") == "IN"
     assert resolve_country_from_location("CA - Toronto, Canada") == "CA"
+
+
+# --- Explicit country name elsewhere in the string overrides the US/CA --
+# --- collision tier's own guess — generalizes the earlier "DE - Berlin, --
+# --- Germany" leading-dash-only fix to the (more common) comma- --
+# --- separated shape, found via "Shanghai, SD, China" (SD = Shanghai's --
+# --- own district code, not South Dakota) and "Amsterdam, NH, --
+# --- Netherlands" (NH = New Hampshire, not a collision code itself, but --
+# --- still wrong without this fix since a US-state hit alone used to --
+# --- short-circuit before ever checking for "Netherlands") ---
 
 
 def test_resolve_country_explicit_country_name_overrides_state_collision_token():
@@ -288,6 +318,12 @@ def test_resolve_country_no_explicit_name_keeps_existing_trailing_token_rule():
     assert resolve_country_from_location("Amsterdam, NH, NL") == "CA"
 
 
+# --- LOCATION_ALIASES keys that are ALSO real US/CA town names --
+# --- ("Holland, MI", "England, AR", "Scotland, SD", "Wales, WI") — --
+# --- found via the same "USA, VA, McLean" investigation: "Holland, --
+# --- MI" was resolving country_code="NL" instead of "US" ---
+
+
 def test_resolve_country_ambiguous_alias_defers_to_real_us_ca_town():
     assert resolve_country_from_location("Holland, MI") == "US"
     assert resolve_country_from_location("England, AR") == "US"
@@ -308,3 +344,209 @@ def test_resolve_country_non_ambiguous_aliases_unaffected():
     # completely unaffected by the ambiguous-alias guard.
     assert resolve_country_from_location("USA") == "US"
     assert resolve_country_from_location("Seoul, South Korea") == "KR"
+
+
+def test_new_bare_cities():
+    assert resolve_country_from_location("Cork") == "IE"
+    assert resolve_country_from_location("Sherbrooke") == "CA"
+    assert resolve_country_from_location("Denver") == "US"
+    assert resolve_country_from_location("Tianjin") == "CN"
+    assert resolve_country_from_location("Frankfurt am Main") == "DE"
+
+
+def test_round_5_native_country_names_and_verified_cities():
+    assert resolve_country_from_location("上海, 中国") == "CN"
+    assert resolve_country_from_location("東根, 日本, 山形") == "JP"
+    assert resolve_country_from_location("대한민국 서울") == "KR"
+    assert resolve_country_from_location("Barcelona, España") == "ES"
+    assert resolve_country_from_location("Genève, Suisse") == "CH"
+    assert resolve_country_from_location("Zürich") == "CH"
+    assert resolve_country_from_location("Zagreb") == "HR"
+    assert resolve_country_from_location("Zaventem") == "BE"
+    assert resolve_country_from_location("Warszawa") == "PL"
+    assert resolve_country_from_location("Warsaw") == "PL"
+    assert resolve_country_from_location("Krakow") == "PL"
+    assert resolve_country_from_location("Reykjavik") == "IS"
+    assert resolve_country_from_location("Vilnius") == "LT"
+    assert resolve_country_from_location("Riga") == "LV"
+    assert resolve_country_from_location("Tallinn") == "EE"
+    assert resolve_country_from_location("Sofia") == "BG"
+    assert resolve_country_from_location("Sarajevo") == "BA"
+    assert resolve_country_from_location("Salzburg") == "AT"
+    assert resolve_country_from_location("Innsbruck") == "AT"
+    assert resolve_country_from_location("Graz") == "AT"
+    assert resolve_country_from_location("Bologna") == "IT"
+    assert resolve_country_from_location("Bilbao") == "ES"
+    assert resolve_country_from_location("Malmö") == "SE"
+    assert resolve_country_from_location("Tampere") == "FI"
+    assert resolve_country_from_location("Trondheim") == "NO"
+    assert resolve_country_from_location("Stavanger") == "NO"
+    assert resolve_country_from_location("Odense") == "DK"
+    assert resolve_country_from_location("Aalborg") == "DK"
+
+
+def test_round_8_improvements():
+    # 1. District of Columbia in US_STATE_TOKENS
+    assert resolve_country_from_location("Washington Navy Yard, District of Columbia") == "US"
+    assert resolve_country_from_location("Joint Base Anacostia-Bolling, District of Columbia") == "US"
+    assert resolve_country_from_location("District of Columbia") == "US"
+
+    # 2. Former / variant country name aliases
+    assert resolve_country_from_location("Macedonia") == "MK"
+    assert resolve_country_from_location("FYROM") == "MK"
+    assert resolve_country_from_location("Macedonia, The Former Yugoslav Republic Of") == "MK"
+    assert resolve_country_from_location("Swaziland") == "SZ"
+    assert resolve_country_from_location("Burma") == "MM"
+    assert resolve_country_from_location("U.S. Virgin Islands") == "VI"
+    assert resolve_country_from_location("US Virgin Islands") == "VI"
+
+    # 3. New sub-national regions — Malaysia
+    assert resolve_country_from_location("Kuala Lumpur, Selangor") == "MY"
+    assert resolve_country_from_location("Johor Bahru, Johor") == "MY"
+    assert resolve_country_from_location("George Town, Penang") == "MY"
+    assert resolve_country_from_location("Ipoh, Perak") == "MY"
+    assert resolve_country_from_location("Sabah") == "MY"
+    assert resolve_country_from_location("Sarawak") == "MY"
+    assert resolve_country_from_location("Malacca") == "MY"
+
+    # 4. New sub-national regions — Indonesia
+    assert resolve_country_from_location("Surabaya, East Java") == "ID"
+    assert resolve_country_from_location("Bandung, West Java") == "ID"
+    assert resolve_country_from_location("Semarang, Central Java") == "ID"
+    assert resolve_country_from_location("Medan, North Sumatra") == "ID"
+    assert resolve_country_from_location("Yogyakarta") == "ID"
+
+    # 5. New sub-national regions — UK additional counties
+    assert resolve_country_from_location("Stevenage, Hertfordshire") == "GB"
+    assert resolve_country_from_location("Crawley, West Sussex") == "GB"
+    assert resolve_country_from_location("Sheffield, South Yorkshire") == "GB"
+    assert resolve_country_from_location("Leeds, West Yorkshire") == "GB"
+    assert resolve_country_from_location("Shrewsbury, Shropshire") == "GB"
+    assert resolve_country_from_location("Carlisle, Cumbria") == "GB"
+    assert resolve_country_from_location("Dorchester, Dorset") == "GB"
+    assert resolve_country_from_location("East Riding of Yorkshire") == "GB"
+
+    # 6. New sub-national regions — Australia Northern Territory
+    assert resolve_country_from_location("Darwin, Northern Territory") == "AU"
+    assert resolve_country_from_location("Northern Territory") == "AU"
+
+    # 7. New bare cities — Philippines
+    assert resolve_country_from_location("Davao") == "PH"
+    assert resolve_country_from_location("Cagayan de Oro") == "PH"
+    assert resolve_country_from_location("Cebu City") == "PH"
+    assert resolve_country_from_location("Iloilo") == "PH"
+    assert resolve_country_from_location("Muntinlupa") == "PH"
+    assert resolve_country_from_location("Pasay") == "PH"
+
+    # 8. New bare cities — Malaysia
+    assert resolve_country_from_location("Gelang Patah") == "MY"
+    assert resolve_country_from_location("Kuching") == "MY"
+    assert resolve_country_from_location("Shah Alam") == "MY"
+    assert resolve_country_from_location("Sibu") == "MY"
+
+    # 9. New bare cities — Turkey
+    assert resolve_country_from_location("Gebze") == "TR"
+    assert resolve_country_from_location("Maslak") == "TR"
+
+    # 10. New bare cities — UK
+    assert resolve_country_from_location("Middlesbrough") == "GB"
+    assert resolve_country_from_location("Harlow") == "GB"
+    assert resolve_country_from_location("Glenrothes") == "GB"
+    assert resolve_country_from_location("Wolverhampton") == "GB"
+
+    # 11. New bare cities — Switzerland
+    assert resolve_country_from_location("Meyrin") == "CH"
+    assert resolve_country_from_location("Schwyz") == "CH"
+
+    # 12. New bare cities — VI
+    assert resolve_country_from_location("Charlotte Amalie") == "VI"
+    assert resolve_country_from_location("Saint Croix") == "VI"
+
+    # 13. New bare cities — Mexico
+    assert resolve_country_from_location("Tijuana") == "MX"
+    assert resolve_country_from_location("Hermosillo") == "MX"
+
+    # 14. New bare cities — Africa capitals (sampling)
+    assert resolve_country_from_location("Accra") == "GH"
+    assert resolve_country_from_location("Abuja") == "NG"
+    assert resolve_country_from_location("Addis Ababa") == "ET"
+    assert resolve_country_from_location("Kampala") == "UG"
+    assert resolve_country_from_location("Kinshasa") == "CD"
+    assert resolve_country_from_location("Ouagadougou") == "BF"
+    assert resolve_country_from_location("Windhoek") == "NA"
+    assert resolve_country_from_location("Kigali") == "RW"
+
+    # 15. New bare cities — Middle East
+    assert resolve_country_from_location("Muscat") == "OM"
+    assert resolve_country_from_location("Manama") == "BH"
+    assert resolve_country_from_location("Kuwait City") == "KW"
+    assert resolve_country_from_location("Beirut") == "LB"
+    assert resolve_country_from_location("Sanaa") == "YE"
+
+    # 16. New bare cities — SEA
+    assert resolve_country_from_location("Yangon") == "MM"
+    assert resolve_country_from_location("Mandalay") == "MM"
+    assert resolve_country_from_location("Vientiane") == "LA"
+    assert resolve_country_from_location("Nay Pyi Taw") == "MM"
+    assert resolve_country_from_location("Bandar Seri Begawan") == "BN"
+    assert resolve_country_from_location("Dili") == "TL"
+
+    # 17. New bare cities — Caucasus / Central Asia
+    assert resolve_country_from_location("Tbilisi") == "GE"
+    assert resolve_country_from_location("Yerevan") == "AM"
+    assert resolve_country_from_location("Baku") == "AZ"
+    assert resolve_country_from_location("Tashkent") == "UZ"
+    assert resolve_country_from_location("Minsk") == "BY"
+    assert resolve_country_from_location("Chisinau") == "MD"
+
+    # 18. New bare cities — Balkans / EU small
+    assert resolve_country_from_location("Tirana") == "AL"
+    assert resolve_country_from_location("Pristina") == "XK"
+    assert resolve_country_from_location("Podgorica") == "ME"
+    assert resolve_country_from_location("Vaduz") == "LI"
+    assert resolve_country_from_location("Andorra la Vella") == "AD"
+
+    # 19. DNU- prefix stripping
+    assert resolve_country_from_location("DNU-IDN-JW-JAKARTA") == "ID"
+    assert resolve_country_from_location("DNU-MEX-NLE-MONTERREY") == "MX"
+    assert resolve_country_from_location("DNU-BRA-SP-SAO-PAULO") == "BR"
+    assert resolve_country_from_location("DNU-ID-JW-JAKARTA") == "ID"
+    assert resolve_country_from_location("DNU-MX-NLE-MONTERREY") == "MX"
+
+    # 20. Trailing store/RDC suffix stripping — strips the numeric ID suffix
+    # so downstream city/state extraction can proceed normally.
+    # CHARLOTTE is in BARE_CITY_NAME_TO_COUNTRY -> US
+    assert resolve_country_from_location("CHARLOTTE FDC/BDC - 5955") == "US"
+    # WESTFIELD alone doesn't resolve, but with state token it does
+    assert resolve_country_from_location("QUINCY, MA STORE - 1915") == "US"
+
+    # 21. Trailing token bare city lookup
+    assert resolve_country_from_location("Pudong, Shanghai") == "CN"
+    assert resolve_country_from_location("Lancaster Luminaire Building, Hanoi") == "VN"
+    assert resolve_country_from_location("Some Office, Davao") == "PH"
+
+    # 22. First-token city + numeric address
+    assert resolve_country_from_location("Shanghai, 100 Nanjing Road") == "CN"
+    assert resolve_country_from_location("Tokyo, 1-1 Marunouchi") == "JP"
+    assert resolve_country_from_location("Chicago, 233 S Wacker Dr") == "US"
+    assert resolve_country_from_location("Seoul, 100 Gangnam-daero") == "KR"
+
+    # 23. Safety checks — no new regressions
+    assert resolve_country_from_location("Mumbai Office") is None
+    assert resolve_country_from_location("CPO - Copenhagen Office") is None
+
+
+def test_leading_iso3_comma_shape():
+    # LEADING_ISO3_RE matches a comma delimiter as well as a dash — a
+    # widening beyond the original dash-only pattern, for vendor feeds that
+    # use "<ISO3>, <City>" instead of "<ISO3> - <City>".
+    assert resolve_country_from_location("BRA, Sao Paulo") == "BR"
+    assert resolve_country_from_location("bra, sao paulo") == "BR"
+
+
+def test_bare_alpha3_whole_string():
+    # A bare alpha-3 code as the entire (stripped) string, with no other
+    # token at all — falls back to alpha3_to_alpha2 on the whole normalized
+    # string, distinct from the trailing "<City>, <ISO3>" tier above.
+    assert resolve_country_from_location("BRA") == "BR"
+    assert resolve_country_from_location("bra") == "BR"

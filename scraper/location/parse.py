@@ -13,20 +13,22 @@ from dataclasses import dataclass
 
 from scraper.location.cleaning import clean_location_for_parsing
 from scraper.location.data import (
-    CA_PROVINCE_TOKENS,
-    LOCATION_ALIASES,
-    US_STATE_TOKENS,
+    ALPHA3_TO_ALPHA2,
     ALPHA3_US_CA_TOKENS,
     BARE_ALPHA2_CODE_TO_COUNTRY,
+    CA_PROVINCE_TOKENS,
     CITY_REGION_COLLISION_TO_COUNTRY,
     ISO_NAME_TO_CODE,
+    LOCATION_ALIASES,
     LOCATION_ALIASES_AMBIGUOUS_WITH_US_CA_CITY,
     NON_CITY_PHRASES,
+    US_STATE_TOKENS,
 )
-from scraper.location.regexes import PAREN_RE, REMOTE_KEYWORD_RE, WHITESPACE_RE
+from scraper.location.regexes import PAREN_RE, REMOTE_KEYWORD_RE, VENUE_PREFIX_RE, WHITESPACE_RE
 from scraper.location.resolve import resolve_country_from_location
 
-def normalize_key(raw: str) -> str:
+
+def _normalize_key(raw: str) -> str:
     """Trim + casefold + collapse whitespace — the only transformation ever
     used to decide "is this the same locations row as an existing one."
     Deliberately does NOT expand abbreviations or reorder tokens: that's
@@ -62,7 +64,7 @@ def parse_location(raw: str) -> ParsedLocation:
     # to, or two differently-formatted scrapes of the same posting could
     # silently dedup into two rows (or vice versa) depending on which one
     # a future cleaning-pattern tweak happens to match.
-    normalized_key = normalize_key(raw)
+    normalized_key = _normalize_key(raw)
     cleaned = clean_location_for_parsing(raw)
     # Checked against raw, not cleaned: cleanup steps exist to strip noise
     # for city/region/country extraction, and at least one of them (the
@@ -83,6 +85,7 @@ def parse_location(raw: str) -> ParsedLocation:
     if tokens:
         first = tokens[0]
         first_lower = first.lower()
+        first_upper = first.upper()
         is_recognized_non_city = (
             first_lower in US_STATE_TOKENS
             or first_lower in CA_PROVINCE_TOKENS
@@ -90,7 +93,8 @@ def parse_location(raw: str) -> ParsedLocation:
             or first_lower in ISO_NAME_TO_CODE
             or first_lower in BARE_ALPHA2_CODE_TO_COUNTRY
             or first_lower in ALPHA3_US_CA_TOKENS
-            or first_lower == "remote"
+            or first_upper in ALPHA3_TO_ALPHA2
+            or first_lower in NON_CITY_PHRASES
         )
         # A handful of real city names are also full US-state/CA-province
         # names ("New York", "Washington") — the checks above alone would
@@ -111,7 +115,11 @@ def parse_location(raw: str) -> ParsedLocation:
                 (t in US_STATE_TOKENS or t in CA_PROVINCE_TOKENS) and t != first_lower
                 for t in other_tokens_lower
             )
-            if has_distinct_state_or_province_token:
+            if has_distinct_state_or_province_token or (
+                first_lower == "new york"
+                and len(tokens) >= 3
+                and ("new york" in other_tokens_lower or "ny" in other_tokens_lower)
+            ):
                 is_recognized_non_city = False
         # Same collision, different table: a handful of real US city names
         # are also full country names ("Lebanon, TN", "Jordan, MN",
@@ -192,7 +200,7 @@ def parse_location(raw: str) -> ParsedLocation:
 
         # Same reversed shape, bare-alpha2-country-code-first instead of
         # state/province-first ("GB,Manchester", "AM,Yerevan",
-        # "CN,Shenzhen"). No region assignment here — unlike the
+        # "CN,Shenzhen") or alpha-3 code first ("IND, Gurgaon"). No region assignment here — unlike the
         # state/province case above, tokens[0] is a whole country, not a
         # sub-national region, so `region` (which elsewhere in this
         # function only ever holds a state/province) stays unset;
@@ -200,7 +208,46 @@ def parse_location(raw: str) -> ParsedLocation:
         if (
             city is None
             and is_recognized_non_city
-            and first_lower in BARE_ALPHA2_CODE_TO_COUNTRY
+            and (first_lower in BARE_ALPHA2_CODE_TO_COUNTRY or first_upper in ALPHA3_TO_ALPHA2)
+            and len(tokens) >= 2
+        ):
+            second = tokens[1].strip()
+            second_lower = second.lower()
+            second_upper = second.upper()
+            second_is_non_city = (
+                second_lower in US_STATE_TOKENS
+                or second_lower in CA_PROVINCE_TOKENS
+                or second_lower in LOCATION_ALIASES
+                or second_lower in ISO_NAME_TO_CODE
+                or second_lower in BARE_ALPHA2_CODE_TO_COUNTRY
+                or second_upper in ALPHA3_TO_ALPHA2
+                or second_lower in NON_CITY_PHRASES
+                or second_lower == "remote"
+            )
+            if not second_is_non_city:
+                city = second
+
+        # Same reversed shape again, full country NAME first instead of a
+        # bare alpha-2 code ("Ireland, Limerick", "India, Bangalore",
+        # "Philippines, Manila", "Netherlands, Amsterdam", "China,
+        # Shanghai", "Canada, Vancouver", "Italy, Milan") — 284 rows
+        # sampled from live pool data where country_code already resolved
+        # correctly (via ISO_NAME_TO_CODE) but city stayed None, since
+        # nothing extracted tokens[1] as the city this shape actually has.
+        # No region assignment, same reasoning as the bare-alpha2 branch
+        # Same reversed shape again, full country NAME or non-ambiguous country
+        # ALIAS first ("UK, Bristol", "UAE, Dubai", "USA, Atlanta") instead of
+        # a bare alpha-2 code.
+        if (
+            city is None
+            and is_recognized_non_city
+            and (
+                first_lower in ISO_NAME_TO_CODE
+                or (
+                    first_lower in LOCATION_ALIASES
+                    and first_lower not in LOCATION_ALIASES_AMBIGUOUS_WITH_US_CA_CITY
+                )
+            )
             and len(tokens) >= 2
         ):
             second = tokens[1].strip()
@@ -217,34 +264,18 @@ def parse_location(raw: str) -> ParsedLocation:
             if not second_is_non_city:
                 city = second
 
-        # Same reversed shape again, full country NAME first instead of a
-        # bare alpha-2 code ("Ireland, Limerick", "India, Bangalore",
-        # "Philippines, Manila", "Netherlands, Amsterdam", "China,
-        # Shanghai", "Canada, Vancouver", "Italy, Milan") — 284 rows
-        # sampled from live pool data where country_code already resolved
-        # correctly (via ISO_NAME_TO_CODE) but city stayed None, since
-        # nothing extracted tokens[1] as the city this shape actually has.
-        # No region assignment, same reasoning as the bare-alpha2 branch
-        # above — tokens[0] is a whole country, not a sub-national region.
+        # City-states / country-capitals sharing the country's name ("Singapore, Singapore",
+        # "Monaco, Monaco", "Luxembourg, Luxembourg", "Djibouti, Djibouti", "San Marino, San Marino",
+        # "Kuwait, Kuwait", "Panama, Panama", "Guatemala, Guatemala").
         if (
             city is None
             and is_recognized_non_city
-            and first_lower in ISO_NAME_TO_CODE
             and len(tokens) >= 2
+            and first_lower == tokens[1].strip().lower()
+            and (first_lower in ISO_NAME_TO_CODE or first_lower in LOCATION_ALIASES)
         ):
-            second = tokens[1].strip()
-            second_lower = second.lower()
-            second_is_non_city = (
-                second_lower in US_STATE_TOKENS
-                or second_lower in CA_PROVINCE_TOKENS
-                or second_lower in LOCATION_ALIASES
-                or second_lower in ISO_NAME_TO_CODE
-                or second_lower in BARE_ALPHA2_CODE_TO_COUNTRY
-                or second_lower in NON_CITY_PHRASES
-                or second_lower == "remote"
-            )
-            if not second_is_non_city:
-                city = second
+            city = first
+            country_code = ISO_NAME_TO_CODE.get(first_lower) or LOCATION_ALIASES.get(first_lower)
 
         # "<CountryAlias>, <ST>, <City>" — 3-token, country-alias-first
         # instead of state/province-first ("USA, VA, McLean", "US, CO,
@@ -280,6 +311,32 @@ def parse_location(raw: str) -> ParsedLocation:
                 city = third
                 region = second
 
+        # Non-city phrase first ("Remote, Los Angeles", "Virtual, Seattle").
+        # When tokens[0] is in NON_CITY_PHRASES and tokens[1] is not a non-city phrase,
+        # extract tokens[1] as the city (or region if it is a state/province).
+        if (
+            city is None
+            and is_recognized_non_city
+            and first_lower in NON_CITY_PHRASES
+            and len(tokens) >= 2
+        ):
+            second = tokens[1].strip()
+            second_lower = second.lower()
+            second_upper = second.upper()
+            second_is_non_city = (
+                second_lower in US_STATE_TOKENS
+                or second_lower in CA_PROVINCE_TOKENS
+                or second_lower in LOCATION_ALIASES
+                or second_lower in ISO_NAME_TO_CODE
+                or second_lower in BARE_ALPHA2_CODE_TO_COUNTRY
+                or second_upper in ALPHA3_TO_ALPHA2
+                or second_lower in NON_CITY_PHRASES
+            )
+            if not second_is_non_city:
+                city = second
+            elif second_lower in US_STATE_TOKENS or second_lower in CA_PROVINCE_TOKENS:
+                region = second
+
         if not is_recognized_non_city and city is None:
             city = first
 
@@ -304,7 +361,11 @@ def parse_location(raw: str) -> ParsedLocation:
     # silently overridden by a lower-confidence trailing 2-letter token.
     region_country_matches = country_code in ("US", "CA")
     if region_country_matches:
-        if len(tokens) == 2:
+        if len(tokens) == 1:
+            first_lower = tokens[0].lower()
+            if first_lower in US_STATE_TOKENS or first_lower in CA_PROVINCE_TOKENS:
+                region = tokens[0]
+        elif len(tokens) == 2:
             # A bare "City, ST" shape ("Washington, DC", "Toronto, ON") —
             # the region is the trailing token itself, tokens[-1]. The >= 3
             # branch below instead looks at tokens[-2] for a "City, Region,
@@ -329,6 +390,15 @@ def parse_location(raw: str) -> ParsedLocation:
                 or second_to_last_lower in CA_PROVINCE_TOKENS
             ):
                 region = second_to_last
+            else:
+                last = tokens[-1].strip()
+                last_lower = last.lower()
+                if (
+                    last_lower in US_STATE_TOKENS
+                    or last_lower in CA_PROVINCE_TOKENS
+                ) and VENUE_PREFIX_RE.search(tokens[0]):
+                    region = last
+                    city = second_to_last
 
     # Correct the specific collision CITY_REGION_COLLISION_TO_COUNTRY was
     # derived for: city/region resolved to a real-looking US-state/CA-
@@ -373,16 +443,19 @@ def parse_location(raw: str) -> ParsedLocation:
             t.lower() for t in tokens if t.lower() != city.lower()
         ]
         corrected_country = None
+        matched_code = None
         for code in candidate_codes:
             for city_key in city_keys:
                 corrected_country = CITY_REGION_COLLISION_TO_COUNTRY.get((city_key, code))
                 if corrected_country is not None:
+                    matched_code = code
                     break
             if corrected_country is not None:
                 break
         if corrected_country is not None:
             country_code = corrected_country
-            region = None
+            if region and region.lower() == matched_code:
+                region = None
 
     return ParsedLocation(
         raw=raw,

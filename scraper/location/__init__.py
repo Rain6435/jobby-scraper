@@ -1,7 +1,7 @@
 """Free-text job-location string -> structured fields (country, city, region,
 remote flag) plus a casing/whitespace-insensitive dedup key.
 
-Split into focused modules (was one 2,391-line file):
+Split into focused modules (2026-09-19, was one 4,066-line file):
 - `location_data.yaml` (repo root: `scraper/location_data.yaml`) — the
   hand-authored lookup tables (COUNTRY_NAMES, LOCATION_ALIASES,
   US_STATE_TOKENS, BARE_CITY_NAME_TO_COUNTRY, ...) as plain data, no
@@ -9,7 +9,7 @@ Split into focused modules (was one 2,391-line file):
 - `data.py` — loads that YAML, restores each table's original Python type,
   and computes derived tables. Explanatory comments (derivation method,
   safety invariants, "how to extend") live here, attached to the loader.
-- `regexes.py` — the compiled cleanup/matching patterns.
+- `regexes.py` — the 56 compiled cleanup/matching patterns.
 - `cleaning.py` — `clean_location_for_parsing` and its helpers.
 - `resolve.py` — `resolve_country_from_location`.
 - `parse.py` — `ParsedLocation` and `parse_location`.
