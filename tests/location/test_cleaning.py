@@ -313,3 +313,47 @@ def test_clean_dash_state_paren_zip_unaffected_by_other_dash_patterns():
     )
 
 
+
+
+# --- Leading regional-org prefix ("AMER - <Country> - <Region-or-City> -
+# --- [<City-or-suffix>]") — a sales-region-grouping ATS convention with
+# --- no comma anywhere in the string (2026-09-20). ---
+
+
+def test_clean_org_region_prefix_reorders_trailing_city():
+    assert (
+        clean_location_for_parsing("AMER - Canada - Alberta - Calgary - 8th Street NE")
+        == "Calgary, Canada"
+    )
+    assert (
+        clean_location_for_parsing("AMER - United States - Georgia - Atlanta - Peachtree St NW")
+        == "Atlanta, United States"
+    )
+    assert clean_location_for_parsing("APAC - India - New Delhi") == "New Delhi, India"
+
+
+def test_clean_org_region_prefix_drops_noise_only_suffix():
+    assert (
+        clean_location_for_parsing("AMER - United States - Alabama - Offsite/Home")
+        == "Alabama, United States"
+    )
+    # No real city segment survives once the noise suffix is dropped — left
+    # as the bare country name, same "no city to extract" outcome as any
+    # other country-only string.
+    assert clean_location_for_parsing("EMEA - United Kingdom - Remote") == "United Kingdom"
+
+
+def test_clean_org_region_prefix_handles_no_space_around_dash():
+    assert clean_location_for_parsing("EMEA-NL-NH-Amsterdam") == "Amsterdam, NL"
+
+
+def test_clean_org_region_prefix_only_recognizes_english_street_suffixes():
+    # Known, accepted limitation: _looks_like_street_address only matches
+    # English street-suffix words ("street", "st", "avenue", ...), same
+    # scope as every other street-address regex in this file. A trailing
+    # segment in another language ("Balanstrasse" — German for "street")
+    # isn't recognized as an address, so it's kept as the (wrong) city
+    # instead of the real one before it ("Munich") — an accepted miss, not
+    # a guess, matching this file's existing English-only street-suffix
+    # scope elsewhere.
+    assert clean_location_for_parsing("EMEA - Germany - Munich - Balanstrasse") == "Balanstrasse, Germany"

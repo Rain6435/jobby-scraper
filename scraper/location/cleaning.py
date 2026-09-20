@@ -36,6 +36,7 @@ from scraper.location.regexes import (
     ISO3_REGION_CITY_RE,
     LEADING_FACILITY_ID_DASH_RE,
     LEADING_ISO2_REGION_DASH_RE,
+    LEADING_ORG_REGION_PREFIX_RE,
     LEADING_REMOTE_DASH_RE,
     LEADING_SPACE_STATE_DASH_RE,
     LEADING_WORD_DASH_RE,
@@ -70,6 +71,23 @@ from scraper.location.regexes import (
 def matches_word(normalized: str, phrase: str) -> bool:
     escaped = re.escape(phrase)
     return re.search(rf"(?:^|[^a-z]){escaped}(?:[^a-z]|$)", normalized) is not None
+
+
+_STREET_ADDRESS_SEGMENT_RE = re.compile(
+    r"^\d|\b(?:street|st|avenue|ave|road|rd|boulevard|blvd|drive|dr|lane|ln|way|"
+    r"parkway|pkwy|highway|hwy|circle|cir|court|ct|place|pl|square|sq)\b\.?"
+    r"(?:\s+(?:north|south|east|west|n|s|e|w|ne|nw|se|sw)\b\.?)?\s*$",
+    re.IGNORECASE,
+)
+
+
+def _looks_like_street_address(segment: str) -> bool:
+    """True for a dash-separated segment that's a street address rather
+    than a place name — used by clean_location_for_parsing's org-region-
+    prefix reorder to drop a trailing address segment ("8th Street NE",
+    "1 Denison") so the real city (the segment before it) is what gets
+    extracted, not the address itself."""
+    return _STREET_ADDRESS_SEGMENT_RE.search(segment) is not None
 
 
 
@@ -114,6 +132,41 @@ def clean_location_for_parsing(raw: str) -> str:
     parses exactly as before this function existed.
     """
     cleaned = raw
+    org_region_match = LEADING_ORG_REGION_PREFIX_RE.match(cleaned)
+    if org_region_match:
+        # "AMER - Canada - Alberta - Calgary - 8th Street NE" / "AMER -
+        # United States - Georgia - Offsite/Home" / "EMEA - Germany -
+        # Munich - Balanstrasse" / "APAC - India - New Delhi" — a sales-
+        # region-grouping ATS convention with no comma anywhere in the
+        # string, so the tokenizer everywhere else in this file never
+        # separates it at all. Reorders the dash-separated segments after
+        # the org-region prefix into the comma-separated shape every
+        # downstream tier already understands: drops a trailing segment
+        # that's pure noise (NON_CITY_PHRASES, e.g. "Offsite/Home") or
+        # that looks like a street address (leading digit, or ending in a
+        # common street-suffix word — "8th Street NE", "1 Denison"), then
+        # emits "<last real segment>, <country>" — deliberately NOT trying
+        # to also recover a US/CA state or a non-US/CA sub-national region
+        # from a middle segment, since a segment here can be a full state
+        # name, a 2-letter code, or a country-specific region name/number
+        # ("SanJose", numeric codes) with no reliable way to tell which
+        # from shape alone; the trailing segment (the real city, when
+        # present) is the one signal safe to extract unambiguously.
+        rest = cleaned[org_region_match.end() :]
+        segments = [s.strip() for s in re.split(r"\s*-\s*", rest) if s.strip()]
+        if len(segments) >= 2:
+            country_segment = segments[0]
+            trailing_segments = segments[1:]
+            while trailing_segments and (
+                trailing_segments[-1].lower() in NON_CITY_PHRASES
+                or _looks_like_street_address(trailing_segments[-1])
+            ):
+                trailing_segments.pop()
+            if trailing_segments:
+                cleaned = f"{trailing_segments[-1]}, {country_segment}"
+            else:
+                cleaned = country_segment
+
     paren_city_region = TRAILING_PAREN_CITY_REGION_RE.match(cleaned)
     if paren_city_region:
         second_token = paren_city_region.group(3).strip().lower()

@@ -694,6 +694,8 @@ ca_province_tokens:
 - yukon
 non_city_phrases:
 - home office
+- offsite
+- offsite/home
 - remote
 - remote work
 - virtual

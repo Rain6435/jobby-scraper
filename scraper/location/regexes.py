@@ -469,3 +469,20 @@ LEADING_WORD_REMOTE_SUFFIX_RE = re.compile(
     r"(remote(?:\s+work)?|virtual(?:\s+work)?|work[\s-]?from[\s-]?home|wfh|work\s+at\s+home)\s*$",
     re.IGNORECASE,
 )
+
+# Leading regional-org prefix + dash-delimited "<Country> - <Region-or-
+# City> - [<City-or-suffix>]" ("AMER - Canada - Alberta - Calgary - 8th
+# Street NE", "AMER - United States - Georgia - Offsite/Home", "EMEA -
+# Germany - Munich - Balanstrasse", "APAC - India - New Delhi") — a
+# distinct ATS vendor convention grouping postings by sales region
+# (AMER/EMEA/APAC/LATAM) ahead of the actual location, with no comma
+# anywhere in the string, so the existing comma-based tokenizer never
+# separates it at all (the whole string became one opaque, unresolvable
+# token). Only strips the org-region prefix itself; the remaining
+# "<Country> - <Region-or-City> - ..." is left dash-delimited for
+# COUNTRY_DASH_3PART_RE and friends to continue
+# handling exactly as they already do for an ordinary leading-country-dash
+# shape.
+LEADING_ORG_REGION_PREFIX_RE = re.compile(
+    r"^(?:AMER|EMEA|APAC|LATAM)\s*-\s*(?=\S)", re.IGNORECASE
+)
