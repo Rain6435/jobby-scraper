@@ -544,7 +544,6 @@ location_aliases:
   suomi: FI
   danmark: DK
   nederland: NL
-  warszawa: PL
   macedonia: MK
   macedonia, the former yugoslav republic of: MK
   the former yugoslav republic of macedonia: MK
@@ -556,6 +555,7 @@ location_aliases:
 location_aliases_ambiguous_with_us_ca_city:
 - england
 - holland
+- macedonia
 - nederland
 - new york city
 - scotland

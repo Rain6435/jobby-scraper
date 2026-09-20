@@ -363,7 +363,17 @@ def test_round_5_native_country_names_and_verified_cities():
     assert resolve_country_from_location("Zürich") == "CH"
     assert resolve_country_from_location("Zagreb") == "HR"
     assert resolve_country_from_location("Zaventem") == "BE"
-    assert resolve_country_from_location("Warszawa") == "PL"
+    # "Warszawa" bare (no country/region signal) intentionally resolves to
+    # None, not PL — it was previously a LOCATION_ALIASES entry, but that
+    # table is also consulted by parse_location's city-extraction gate,
+    # where it broke city extraction for every real "Warszawa, ..." ATS
+    # shape (verified against 23 real rows in the live pool). "Warszawa"
+    # isn't a safe fit for BARE_CITY_NAME_TO_COUNTRY either, since that
+    # table only admits names matching a town's ascii_name with a single
+    # worldwide match, and no gazetteer town has ascii_name "Warszawa"
+    # (only "Warsaw", which is itself excluded there for colliding with
+    # several same-named US towns).
+    assert resolve_country_from_location("Warszawa") is None
     assert resolve_country_from_location("Warsaw") == "PL"
     assert resolve_country_from_location("Krakow") == "PL"
     assert resolve_country_from_location("Reykjavik") == "IS"

@@ -151,7 +151,13 @@ WHITESPACE_RE = re.compile(r"\s+")
 # comma — deliberately narrow (suffix word required) so it never eats a
 # legitimate "123 Main" style city/town name that has no street suffix.
 STREET_ADDRESS_PREFIX_RE = re.compile(
-    r"^(?:(?:\d+|suite|ste|level|floor|fl|unit|bldg|building)\b[\w\s./\x27-]*?\b(?:street|st|avenue|ave|road|rd|boulevard|blvd|"
+    # "fl" (bare, for "floor") deliberately excluded from this leading
+    # alternation despite "floor" itself being included — confirmed live:
+    # "fl" collides with the 2-letter Florida state abbreviation ("FL -
+    # St Petersburg" was misread as a "floor ... street" address prefix
+    # and stripped down to "Petersburg", losing "St"), a collision risk
+    # "floor" spelled out in full doesn't have.
+    r"^(?:(?:\d+|suite|ste|level|floor|unit|bldg|building)\b[\w\s./\x27-]*?\b(?:street|st|avenue|ave|road|rd|boulevard|blvd|"
     r"drive|dr|lane|ln|way|parkway|pkwy|highway|hwy|circle(?![\s-]k\b)|cir(?![\s-]k\b)|court|ct|"
     r"place|pl|square|sq|rue|boul|route|rte|chemin|ch)\b\.?"
     # Optional trailing compass-direction suffix ("7000 Target Pkwy N",
@@ -162,7 +168,7 @@ STREET_ADDRESS_PREFIX_RE = re.compile(
     # bare direction letter into `city`. Word-boundaried so it only
     # matches a standalone direction token, never eating into a real
     # word that happens to start the same way.
-    r"(?:\s+(?:n|s|e|w|ne|nw|se|sw)\b\.?)?)(?:[,:;]\s*)",
+    r"(?:\s+(?:n|s|e|w|ne|nw|se|sw)\b\.?)?)(?:[,:;]\s*)?",
     re.IGNORECASE,
 )
 
