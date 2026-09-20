@@ -1433,7 +1433,9 @@ def test_round_7_improvements():
     # 2. Desjardins Canadian financial cooperative
     assert resolve_country_from_location("Caisse Desjardins du Centre de Lotbinière") == "CA"
     assert resolve_country_from_location("Complexe Desjardins Montréal") == "CA"
-    assert resolve_country_from_location("Caisse populaire Desjardins d'Hochelaga-Maisonneuve") == "CA"
+    assert (
+        resolve_country_from_location("Caisse populaire Desjardins d'Hochelaga-Maisonneuve") == "CA"
+    )
 
     # 3. Trailing city address with country preserved
     assert resolve_country_from_location("Croydon, 69 PARK LANE, United Kingdom") == "GB"
@@ -1446,7 +1448,10 @@ def test_round_7_improvements():
     assert p_td.city == "Toronto"
     assert p_td.region == "Ontario"
     assert p_td.country_code == "CA"
-    assert resolve_country_from_location("TD Centre - North - 77 King Street West, Toronto, Ontario") == "CA"
+    assert (
+        resolve_country_from_location("TD Centre - North - 77 King Street West, Toronto, Ontario")
+        == "CA"
+    )
 
     p_qc = parse_location("Head Office, Quebec City, QC")
     assert p_qc.city == "Quebec City"
@@ -1492,8 +1497,6 @@ def test_round_7_improvements():
     assert resolve_country_from_location("Mandaluyong") == "PH"
     assert resolve_country_from_location("Haderslev") == "DK"
     assert resolve_country_from_location("Brive-la-Gaillarde") == "FR"
-
-
 
 
 # --- default_country fallback (opt-in, only fills a truly unresolved

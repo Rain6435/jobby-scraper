@@ -398,7 +398,9 @@ def test_round_5_native_country_names_and_verified_cities():
 def test_round_8_improvements():
     # 1. District of Columbia in US_STATE_TOKENS
     assert resolve_country_from_location("Washington Navy Yard, District of Columbia") == "US"
-    assert resolve_country_from_location("Joint Base Anacostia-Bolling, District of Columbia") == "US"
+    assert (
+        resolve_country_from_location("Joint Base Anacostia-Bolling, District of Columbia") == "US"
+    )
     assert resolve_country_from_location("District of Columbia") == "US"
 
     # 2. Former / variant country name aliases

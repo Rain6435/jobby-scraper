@@ -117,7 +117,9 @@ HUB_SUFFIX_RE = re.compile(r",\s*([A-Za-z]{2})\s+Hub\s*$", re.IGNORECASE)
 UNIQLO_PREFIX_RE = re.compile(r"^UNIQLO\s+([A-Z]{2})\s+(.*?)(?:\s*\(UQUS\))?$", re.IGNORECASE)
 
 # Desjardins Canadian financial cooperative ("Caisse Desjardins du Centre de Lotbinière", "Complexe Desjardins Montréal").
-DESJARDINS_RE = re.compile(r"^(?:Caisse\s+(?:populaire\s+)?Desjardins|Complexe\s+Desjardins)\b", re.IGNORECASE)
+DESJARDINS_RE = re.compile(
+    r"^(?:Caisse\s+(?:populaire\s+)?Desjardins|Complexe\s+Desjardins)\b", re.IGNORECASE
+)
 
 # Venue prefix in 3-token strings ("Carrefour de l'Estrie, Sherbrooke, QC", "Head Office, Quebec City, QC", "42 East Baltimore Pike, Media, Pennsylvania").
 VENUE_PREFIX_RE = re.compile(
@@ -203,9 +205,7 @@ STORE_ID_PREFIX_RE = re.compile(
 )
 
 # Trailing facility suffix without dash ("TX BDC 3465", "PA BDC 3462", "TX BDC").
-TRAILING_FACILITY_NO_DASH_RE = re.compile(
-    r"\s+(?:bdc|rdc|fdc)(?:\s+\d{3,5})?\s*$", re.IGNORECASE
-)
+TRAILING_FACILITY_NO_DASH_RE = re.compile(r"\s+(?:bdc|rdc|fdc)(?:\s+\d{3,5})?\s*$", re.IGNORECASE)
 
 # Store ID + City + State + "Home Office" ("6361 Ossining NY Home Office", "3206 Stamford CT Home Office").
 HOME_OFFICE_STORE_RE = re.compile(
@@ -289,9 +289,7 @@ TRAILING_STATE_DASH_SUFFIX_RE = re.compile(r",\s*([A-Za-z][A-Za-z ]*?)\s+-\s+[^,
 # against US_STATE_TOKENS/CA_PROVINCE_TOKENS by the caller, same
 # "regex finds the shape, a table lookup decides whether to trust it"
 # split as every other cleanup pattern here.
-TRAILING_DASH_STATE_PAREN_ZIP_RE = re.compile(
-    r"^(.+)-([A-Za-z][A-Za-z ]*?)\(\d+\)\s*$"
-)
+TRAILING_DASH_STATE_PAREN_ZIP_RE = re.compile(r"^(.+)-([A-Za-z][A-Za-z ]*?)\(\d+\)\s*$")
 
 # Trailing Canadian postal code ("London, ON, CA, N6E 1V4", "Montreal, QC,
 # CA, H3B4G7") — letter-digit-letter [optional space] digit-letter-digit,
@@ -300,9 +298,7 @@ TRAILING_DASH_STATE_PAREN_ZIP_RE = re.compile(
 # is what the CA-province-collision tier in resolve_country_from_location
 # needs to see. Anchored to the end only, same reasoning as the US ZIP
 # pattern above.
-TRAILING_CA_POSTAL_CODE_RE = re.compile(
-    r"[,\s]+[A-Za-z]\d[A-Za-z]\s?\d[A-Za-z]\d\s*$"
-)
+TRAILING_CA_POSTAL_CODE_RE = re.compile(r"[,\s]+[A-Za-z]\d[A-Za-z]\s?\d[A-Za-z]\d\s*$")
 
 # Trailing facility code stuck onto the end of a parenthetical, after the
 # closing paren ("W. Jefferson, NC (W Jefferson) 2255", "Warwick, RI (N
@@ -320,9 +316,7 @@ TRAILING_PAREN_CODE_RE = re.compile(r"\)\s*\d+\s*$")
 # "HOKA Toronto Eaton Centre (Toronto, ON)", "HOKA Garibaldi Store (Milan, IT)").
 # When the second token inside parens is a recognized US state, CA province,
 # country alias, or country name, the parenthetical holds the real location.
-TRAILING_PAREN_CITY_REGION_RE = re.compile(
-    r"^(.+?)\s*\(([A-Za-z\s.'-]+),\s*([A-Za-z]{2,})\)\s*$"
-)
+TRAILING_PAREN_CITY_REGION_RE = re.compile(r"^(.+?)\s*\(([A-Za-z\s.'-]+),\s*([A-Za-z]{2,})\)\s*$")
 
 # Colon-delimited street address / building / mall prefix before the city
 # ("885 GEORGIA ST W:VANCOUVER", "ROYAL BANK PLAZA, 200 BAY ST:TORONTO",
@@ -394,14 +388,10 @@ TRAILING_ATTENDANCE_POLICY_RE = re.compile(
 CAN_SPACE_PROV_CITY_RE = re.compile(r"^CAN\s+([A-Za-z]+)\s+([A-Za-zÀ-ÖØ-öø-ÿ\s]+)$")
 
 # "<City> - <CountryCode>" ("Guangzhou - CN", "Shanghai - CN", "Dublin - IE", "Manchester - GBR").
-CITY_DASH_COUNTRY_CODE_RE = re.compile(
-    r"^([A-Za-zÀ-ÖØ-öø-ÿ\s.'-]+?)\s*-\s*([A-Za-z]{2,3})$"
-)
+CITY_DASH_COUNTRY_CODE_RE = re.compile(r"^([A-Za-zÀ-ÖØ-öø-ÿ\s.'-]+?)\s*-\s*([A-Za-z]{2,3})$")
 
 # "<City> - <State>" ("Jacksonville - Florida", "Salem - Ohio").
-CITY_DASH_STATE_RE = re.compile(
-    r"^([A-Za-zÀ-ÖØ-öø-ÿ\s.'-]+?)\s*-\s*([A-Za-z\s]+)$"
-)
+CITY_DASH_STATE_RE = re.compile(r"^([A-Za-zÀ-ÖØ-öø-ÿ\s.'-]+?)\s*-\s*([A-Za-z\s]+)$")
 
 # Space-joined "<City words> <ST>" with no comma at all ("Portland OR",
 # "Store 2743142 Murrysville PA" after store-ID stripping) — the existing
@@ -437,9 +427,7 @@ TRAILING_SPACE_STATE_RE = re.compile(r"(?<=[A-Za-z])\s+([A-Z]{2})\s*$")
 # lowercase word), and the city segment (up to the next comma or a
 # second dash) must contain a letter, so a bare "WV -" or "WV - 12345"
 # with no real city text is left untouched.
-LEADING_SPACE_STATE_DASH_RE = re.compile(
-    r"^([A-Z]{2})\s*-\s*([A-Za-z][^,-]*)"
-)
+LEADING_SPACE_STATE_DASH_RE = re.compile(r"^([A-Z]{2})\s*-\s*([A-Za-z][^,-]*)")
 
 # Leading full state/province name + dash ("Idaho - Boise", "Kansas -
 # Great Bend") — same shape and purpose as LEADING_SPACE_STATE_DASH_RE,
@@ -483,6 +471,4 @@ LEADING_WORD_REMOTE_SUFFIX_RE = re.compile(
 # COUNTRY_DASH_3PART_RE and friends to continue
 # handling exactly as they already do for an ordinary leading-country-dash
 # shape.
-LEADING_ORG_REGION_PREFIX_RE = re.compile(
-    r"^(?:AMER|EMEA|APAC|LATAM)\s*-\s*(?=\S)", re.IGNORECASE
-)
+LEADING_ORG_REGION_PREFIX_RE = re.compile(r"^(?:AMER|EMEA|APAC|LATAM)\s*-\s*(?=\S)", re.IGNORECASE)

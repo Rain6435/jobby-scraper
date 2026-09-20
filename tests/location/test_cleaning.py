@@ -141,8 +141,7 @@ def test_clean_strips_trailing_digits_after_paren():
         == "W. Jefferson, NC (W Jefferson)"
     )
     assert (
-        clean_location_for_parsing("Chandler, AZ (W Chandler) 0674")
-        == "Chandler, AZ (W Chandler)"
+        clean_location_for_parsing("Chandler, AZ (W Chandler) 0674") == "Chandler, AZ (W Chandler)"
     )
 
 
@@ -206,9 +205,7 @@ def test_clean_strips_trailing_state_dash_suffix():
 def test_clean_trailing_state_dash_suffix_preserves_city_internal_dash():
     # The city itself has a dash BEFORE the comma — only the segment
     # after the LAST comma is a candidate for stripping.
-    assert (
-        clean_location_for_parsing("Winston- Salem, NC - USA") == "Winston- Salem, NC"
-    )
+    assert clean_location_for_parsing("Winston- Salem, NC - USA") == "Winston- Salem, NC"
 
 
 # --- Trailing 6-digit international postal code (India's PIN code, --
@@ -238,13 +235,9 @@ def test_clean_6_digit_postal_code_does_not_touch_5_digit_us_zip():
 
 
 def test_clean_strips_street_address_with_direction_suffix():
+    assert clean_location_for_parsing("15800 87th St NE, Otsego, MN 55330-6546") == "Otsego, MN"
     assert (
-        clean_location_for_parsing("15800 87th St NE, Otsego, MN 55330-6546")
-        == "Otsego, MN"
-    )
-    assert (
-        clean_location_for_parsing("356 12th St SW, Forest Lake,MN 55025-1749")
-        == "Forest Lake,MN"
+        clean_location_for_parsing("356 12th St SW, Forest Lake,MN 55025-1749") == "Forest Lake,MN"
     )
 
 
@@ -271,10 +264,7 @@ def test_clean_street_address_without_direction_suffix_still_works():
 def test_clean_inserts_comma_before_trailing_remote_phrase():
     assert clean_location_for_parsing("Utah Work at Home") == "Utah, Work at Home"
     assert clean_location_for_parsing("Oregon Virtual") == "Oregon, Virtual"
-    assert (
-        clean_location_for_parsing("West Virginia Work at Home")
-        == "West Virginia, Work at Home"
-    )
+    assert clean_location_for_parsing("West Virginia Work at Home") == "West Virginia, Work at Home"
 
 
 def test_clean_remote_phrase_suffix_does_not_fire_on_non_state_leading_word():
@@ -297,10 +287,7 @@ def test_clean_dash_state_paren_zip_captures_multiword_city_whole():
     # The city segment is greedy-minimal up to the LAST dash, so a
     # multi-word city keeps its own internal space rather than being
     # split at it.
-    assert (
-        clean_location_for_parsing("College Station-Texas(77845)")
-        == "College Station, Texas"
-    )
+    assert clean_location_for_parsing("College Station-Texas(77845)") == "College Station, Texas"
 
 
 def test_clean_dash_state_paren_zip_unaffected_by_other_dash_patterns():
@@ -308,11 +295,7 @@ def test_clean_dash_state_paren_zip_unaffected_by_other_dash_patterns():
     # completely untouched by adding this new, narrowly-scoped pattern.
     assert clean_location_for_parsing("DE - Berlin, Germany") == "Berlin, Germany"
     assert clean_location_for_parsing("Idaho - Boise") == "Boise, Idaho"
-    assert (
-        clean_location_for_parsing("Winston- Salem, NC - USA") == "Winston- Salem, NC"
-    )
-
-
+    assert clean_location_for_parsing("Winston- Salem, NC - USA") == "Winston- Salem, NC"
 
 
 # --- Leading regional-org prefix ("AMER - <Country> - <Region-or-City> -
@@ -356,4 +339,7 @@ def test_clean_org_region_prefix_only_recognizes_english_street_suffixes():
     # instead of the real one before it ("Munich") — an accepted miss, not
     # a guess, matching this file's existing English-only street-suffix
     # scope elsewhere.
-    assert clean_location_for_parsing("EMEA - Germany - Munich - Balanstrasse") == "Balanstrasse, Germany"
+    assert (
+        clean_location_for_parsing("EMEA - Germany - Munich - Balanstrasse")
+        == "Balanstrasse, Germany"
+    )

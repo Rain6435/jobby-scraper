@@ -43,9 +43,7 @@ from sqlalchemy.engine import Connection
 
 from scraper.db import towns_table
 
-GAZETTEER_PATH = (
-    Path(__file__).resolve().parent.parent / "data" / "gazetteer" / "cities1000.txt.gz"
-)
+GAZETTEER_PATH = Path(__file__).resolve().parent.parent / "data" / "gazetteer" / "cities1000.txt.gz"
 
 # GeoNames' alternatenames column is a single comma-joined field mixing
 # short common aliases ("NYC", "SF") with long descriptive names in dozens

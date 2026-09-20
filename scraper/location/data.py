@@ -112,7 +112,7 @@ BARE_CITY_NAME_TO_COUNTRY: dict[str, str] = _RAW["bare_city_name_to_country"]
 # the same name in Argentina/Mexico/Israel respectively). resolve.py
 # scans every raw comma-separated token against this table unconditionally
 # — no "<City>, <Region>" positional requirement — so a bare collision is
-# directly reachable, not just a theoretical risk. Any new entry here
+# directly reachable, not just a theoretical risk. A future new entry
 # should be checked against the towns gazetteer for a same-named town in a
 # different country with non-trivial population before being added, the
 # same safety bar _BARE_CITY_NAME_TO_COUNTRY's own derivation already

@@ -424,9 +424,7 @@ def test_write_jobs_first_company_wins_on_shared_location_default_country_confli
     engine = create_engine(url)
     with engine.connect() as conn:
         country_code = conn.execute(
-            select(locations_table.c.country_code).where(
-                locations_table.c.name == "Ambiguous HQ"
-            )
+            select(locations_table.c.country_code).where(locations_table.c.name == "Ambiguous HQ")
         ).scalar_one()
     assert country_code == "US"
 

@@ -431,9 +431,7 @@ def _get_or_create_ids(conn: Connection, table: Table, names: set[str]) -> dict[
     return existing
 
 
-def get_or_create_locations(
-    conn: Connection, names: dict[str, str | None]
-) -> dict[str, int]:
+def get_or_create_locations(conn: Connection, names: dict[str, str | None]) -> dict[str, int]:
     """Look up existing `locations` rows by normalized_key (trim+casefold+
     collapse-whitespace of the raw string — see location_resolver.py), not
     by raw `name`, so "Toronto, Ontario, Canada" and "TORONTO, Ontario,

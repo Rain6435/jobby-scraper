@@ -428,8 +428,7 @@ def parse_location(raw: str, *, default_country: str | None = None) -> ParsedLoc
                 last = tokens[-1].strip()
                 last_lower = last.lower()
                 if (
-                    last_lower in US_STATE_TOKENS
-                    or last_lower in CA_PROVINCE_TOKENS
+                    last_lower in US_STATE_TOKENS or last_lower in CA_PROVINCE_TOKENS
                 ) and VENUE_PREFIX_RE.search(tokens[0]):
                     region = last
                     city = second_to_last
@@ -459,9 +458,7 @@ def parse_location(raw: str, *, default_country: str | None = None) -> ParsedLoc
         # reason noted there: this only extracts a lookup key, it can
         # never merge two genuinely different places.
         city_folded = "".join(
-            ch
-            for ch in unicodedata.normalize("NFD", city)
-            if unicodedata.category(ch) != "Mn"
+            ch for ch in unicodedata.normalize("NFD", city) if unicodedata.category(ch) != "Mn"
         )
         city_keys = (city_folded.casefold(), city.casefold())
         # Try `region` first when it was extracted (the common case), but

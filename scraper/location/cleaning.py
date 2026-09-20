@@ -90,7 +90,6 @@ def _looks_like_street_address(segment: str) -> bool:
     return _STREET_ADDRESS_SEGMENT_RE.search(segment) is not None
 
 
-
 def _leading_collision_code_has_explicit_country_elsewhere(
     leading_code: str, rest_of_string: str
 ) -> bool:
@@ -118,7 +117,6 @@ def _leading_collision_code_has_explicit_country_elsewhere(
     return any(
         t.strip().lower() in ISO_NAME_TO_CODE for t in rest_of_string.split(",") if t.strip()
     )
-
 
 
 def clean_location_for_parsing(raw: str) -> str:
@@ -262,8 +260,16 @@ def clean_location_for_parsing(raw: str) -> str:
         p1 = m_c_st.group(2).strip()
         p2 = m_c_st.group(3).strip()
         c_code = "CA" if c_raw in ("CA", "CAN") else "US"
-        v1 = (p1.lower() in CA_PROVINCE_TOKENS) if c_code == "CA" else (p1.lower() in US_STATE_TOKENS)
-        v2 = (p2.lower() in CA_PROVINCE_TOKENS) if c_code == "CA" else (p2.lower() in US_STATE_TOKENS)
+        v1 = (
+            (p1.lower() in CA_PROVINCE_TOKENS)
+            if c_code == "CA"
+            else (p1.lower() in US_STATE_TOKENS)
+        )
+        v2 = (
+            (p2.lower() in CA_PROVINCE_TOKENS)
+            if c_code == "CA"
+            else (p2.lower() in US_STATE_TOKENS)
+        )
 
         if v1 and not v2:
             cleaned = f"{p2}, {p1}, {c_code}"
@@ -273,7 +279,11 @@ def clean_location_for_parsing(raw: str) -> str:
             cleaned = f"{p2}, {p1}, {c_code}"
     else:
         m_iso3_reg = ISO3_REGION_CITY_RE.match(cleaned.strip())
-        if m_iso3_reg and m_iso3_reg.group(1) in ALPHA3_TO_ALPHA2 and m_iso3_reg.group(1) not in ("USA", "CAN"):
+        if (
+            m_iso3_reg
+            and m_iso3_reg.group(1) in ALPHA3_TO_ALPHA2
+            and m_iso3_reg.group(1) not in ("USA", "CAN")
+        ):
             c2 = ALPHA3_TO_ALPHA2[m_iso3_reg.group(1)]
             c_name = COUNTRY_NAMES.get(c2, c2)
             reg = m_iso3_reg.group(2).strip()
@@ -284,7 +294,11 @@ def clean_location_for_parsing(raw: str) -> str:
                 cleaned = f"{reg}, {c_name}"
         else:
             m_iso3_city = ISO3_DASH_CITY_RE.match(cleaned.strip())
-            if m_iso3_city and m_iso3_city.group(1) in ALPHA3_TO_ALPHA2 and m_iso3_city.group(1) not in ("USA", "CAN"):
+            if (
+                m_iso3_city
+                and m_iso3_city.group(1) in ALPHA3_TO_ALPHA2
+                and m_iso3_city.group(1) not in ("USA", "CAN")
+            ):
                 c2 = ALPHA3_TO_ALPHA2[m_iso3_city.group(1)]
                 c_name = COUNTRY_NAMES.get(c2, c2)
                 city_seg = m_iso3_city.group(2).strip()
@@ -308,7 +322,7 @@ def clean_location_for_parsing(raw: str) -> str:
         and not LEADING_ISO2_REGION_DASH_RE.match(cleaned)
     ):
         city_segment = leading.group(2).strip()
-        rest = cleaned[leading.end():]
+        rest = cleaned[leading.end() :]
         if rest.startswith("-"):
             rest = ", " + rest.lstrip("- ")
         if _leading_collision_code_has_explicit_country_elsewhere(leading.group(1), rest):
@@ -334,7 +348,7 @@ def clean_location_for_parsing(raw: str) -> str:
             and not LEADING_ISO2_REGION_DASH_RE.match(cleaned)
         ):
             city_segment = word_leading.group(2).strip()
-            rest = cleaned[word_leading.end():]
+            rest = cleaned[word_leading.end() :]
             word_code = word_leading.group(1).strip()
             if rest.startswith("-"):
                 rest = ", " + rest.lstrip("- ")
@@ -355,9 +369,8 @@ def clean_location_for_parsing(raw: str) -> str:
             if len(code_raw) == 3
             else (code_raw if code_raw in COUNTRY_NAMES else None)
         )
-        if (
-            resolved_country
-            and resolved_country.lower() not in (US_STATE_TOKENS | CA_PROVINCE_TOKENS)
+        if resolved_country and resolved_country.lower() not in (
+            US_STATE_TOKENS | CA_PROVINCE_TOKENS
         ):
             cleaned = f"{city_country_code.group(1).strip()}, {resolved_country}"
 
@@ -379,8 +392,6 @@ def clean_location_for_parsing(raw: str) -> str:
                 US_STATE_TOKENS | CA_PROVINCE_TOKENS
             ):
                 state_segment = remote_suffix.group(1).strip()
-                rest = cleaned[remote_suffix.start(2):]
+                rest = cleaned[remote_suffix.start(2) :]
                 cleaned = f"{state_segment}, {rest}"
     return cleaned.strip() or raw
-
-
