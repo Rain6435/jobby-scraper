@@ -10,7 +10,7 @@ from sqlalchemy import create_engine, select
 import scraper.main as main_module
 from scraper.boards.base import BaseScraper
 from scraper.config_types import CompanyConfig
-from scraper.db import jobs_table
+from scraper.db import jobs_table, locations_table
 from scraper.models import Job
 
 
@@ -227,6 +227,43 @@ def test_database_flag_mirrors_snapshot_into_sql_db(tmp_path: Path) -> None:
 
     assert result == 0
     assert db_job_ids(db_url) == {"acme:1"}
+
+
+def test_default_country_config_fills_unresolved_location_country_code(
+    tmp_path: Path,
+) -> None:
+    # "00146 - Puyallup Dialysis" carries no country signal on its own
+    # (verified: resolve_country_from_location returns None for it) — a
+    # confirmed single-country employer's config.json "default_country"
+    # must reach the stored locations row as the fallback, denormalized
+    # by main.py's run() the same way company_blurb already is.
+    davita_job = Job(
+        id="davita:1",
+        company="DaVita",
+        title="RN",
+        location="00146 - Puyallup Dialysis",
+        locations=["00146 - Puyallup Dialysis"],
+        url="https://example.com",
+        posted_on="Posted Today",
+        source="stub",
+    )
+    db_url, deps = setup_run(
+        tmp_path,
+        companies=[{"name": "DaVita", "board": "stub", "default_country": "US"}],
+        jobs_by_company={"DaVita": [davita_job]},
+    )
+
+    result = main_module.run(database=db_url, deps=deps)
+
+    assert result == 0
+    engine = create_engine(db_url)
+    with engine.connect() as conn:
+        country_code = conn.execute(
+            select(locations_table.c.country_code).where(
+                locations_table.c.name == "00146 - Puyallup Dialysis"
+            )
+        ).scalar_one()
+    assert country_code == "US"
 
 
 def test_database_write_skipped_when_limit_set(tmp_path: Path) -> None:

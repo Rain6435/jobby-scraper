@@ -18,6 +18,12 @@ class CompanyConfig(TypedDict):
     name: str
     board: str
     blurb: NotRequired[str]
+    # ISO alpha-2 code, applied by main.py only as a fallback when a job's
+    # location string itself carries no country signal at all — never
+    # overrides a country the string resolved on its own. Reserved for a
+    # confirmed single-country employer whose ATS omits the country from
+    # its own location text (e.g. DaVita's "00146 - Puyallup Dialysis").
+    default_country: NotRequired[str]
 
 
 class WorkdayConfig(CompanyConfig):

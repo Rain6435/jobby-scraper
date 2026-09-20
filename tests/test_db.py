@@ -29,6 +29,7 @@ def job(
     source: str = "workday",
     company_blurb: str = "",
     company_group: str = "",
+    default_country: str = "",
 ) -> Job:
     return Job(
         id=jid,
@@ -43,6 +44,7 @@ def job(
         source=source,
         company_blurb=company_blurb,
         company_group=company_group,
+        default_country=default_country,
     )
 
 
@@ -313,7 +315,7 @@ def test_get_or_create_locations_resolves_town_id_for_new_row() -> None:
     metadata.create_all(engine)
     with engine.begin() as conn:
         load_towns(conn)
-        ids = get_or_create_locations(conn, {"San Francisco, California, United States"})
+        ids = get_or_create_locations(conn, {"San Francisco, California, United States": None})
         loc_id = ids["San Francisco, California, United States"]
         town_id = conn.execute(
             select(locations_table.c.town_id).where(locations_table.c.id == loc_id)
@@ -332,7 +334,7 @@ def test_get_or_create_locations_never_overwrites_town_id_on_cache_hit() -> None
     metadata.create_all(engine)
     with engine.begin() as conn:
         load_towns(conn)
-        first = get_or_create_locations(conn, {"San Francisco, CA"})
+        first = get_or_create_locations(conn, {"San Francisco, CA": None})
         loc_id = first["San Francisco, CA"]
         conn.execute(
             locations_table.update().where(locations_table.c.id == loc_id).values(town_id=None)
@@ -340,7 +342,7 @@ def test_get_or_create_locations_never_overwrites_town_id_on_cache_hit() -> None
 
         # Same normalized_key (just different casing/whitespace) — must hit
         # the existing row, not recompute and repopulate town_id.
-        second = get_or_create_locations(conn, {"san francisco, ca "})
+        second = get_or_create_locations(conn, {"san francisco, ca ": None})
         assert second["san francisco, ca "] == loc_id
         town_id = conn.execute(
             select(locations_table.c.town_id).where(locations_table.c.id == loc_id)
@@ -353,12 +355,78 @@ def test_get_or_create_locations_town_id_none_for_unmatched_location() -> None:
     metadata.create_all(engine)
     with engine.begin() as conn:
         load_towns(conn)
-        ids = get_or_create_locations(conn, {"ProspectLand"})
+        ids = get_or_create_locations(conn, {"ProspectLand": None})
         loc_id = ids["ProspectLand"]
         town_id = conn.execute(
             select(locations_table.c.town_id).where(locations_table.c.id == loc_id)
         ).scalar_one()
     assert town_id is None
+
+
+def test_get_or_create_locations_applies_default_country_fallback() -> None:
+    engine = create_engine("sqlite:///:memory:")
+    metadata.create_all(engine)
+    with engine.begin() as conn:
+        ids = get_or_create_locations(conn, {"00146 - Puyallup Dialysis": "US"})
+        loc_id = ids["00146 - Puyallup Dialysis"]
+        country_code = conn.execute(
+            select(locations_table.c.country_code).where(locations_table.c.id == loc_id)
+        ).scalar_one()
+    assert country_code == "US"
+
+
+def test_get_or_create_locations_default_country_never_overrides_resolved_country() -> None:
+    engine = create_engine("sqlite:///:memory:")
+    metadata.create_all(engine)
+    with engine.begin() as conn:
+        ids = get_or_create_locations(conn, {"Berlin, DE": "FR"})
+        loc_id = ids["Berlin, DE"]
+        country_code = conn.execute(
+            select(locations_table.c.country_code).where(locations_table.c.id == loc_id)
+        ).scalar_one()
+    assert country_code == "DE"
+
+
+def test_write_jobs_denormalizes_default_country_into_locations(tmp_path: Path) -> None:
+    url = f"sqlite:///{tmp_path / 'jobs.db'}"
+    jobs = [job("x:1", locations=["00146 - Puyallup Dialysis"], default_country="US")]
+
+    write_jobs(url, jobs, new_ids={"x:1"})
+
+    engine = create_engine(url)
+    with engine.connect() as conn:
+        country_code = conn.execute(
+            select(locations_table.c.country_code).where(
+                locations_table.c.name == "00146 - Puyallup Dialysis"
+            )
+        ).scalar_one()
+    assert country_code == "US"
+
+
+def test_write_jobs_first_company_wins_on_shared_location_default_country_conflict(
+    tmp_path: Path,
+) -> None:
+    # Same raw location string scraped for two companies with different
+    # default_country values — the locations row is shared (identity is
+    # per-string, not per-company), so whichever job write_jobs() iterates
+    # first determines which default_country is applied. Documents the
+    # tie-break get_or_create_locations()'s own docstring describes, rather
+    # than asserting a specific "correct" winner (there isn't one — this is
+    # an inherent ambiguity of a shared, string-keyed row).
+    url = f"sqlite:///{tmp_path / 'jobs.db'}"
+    jobs = [
+        job("a:1", company="A", locations=["Ambiguous HQ"], default_country="US"),
+        job("b:1", company="B", locations=["Ambiguous HQ"], default_country="CA"),
+    ]
+
+    write_jobs(url, jobs, new_ids={"a:1", "b:1"})
+
+    engine = create_engine(url)
+    with engine.connect() as conn:
+        country_code = conn.execute(
+            select(locations_table.c.country_code).where(locations_table.c.name == "Ambiguous HQ")
+        ).scalar_one()
+    assert country_code == "US"
 
 
 def test_write_jobs_scoped_only_replaces_its_own_companies(tmp_path: Path) -> None:

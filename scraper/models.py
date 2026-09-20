@@ -31,3 +31,11 @@ class Job:
     # under one broader entity ("Government of Canada"). "" for every board
     # where `company` is already the right filterable identity on its own.
     company_group: str = ""
+    # Denormalized from config.json's per-company "default_country" (see
+    # main.py), same pattern as company_blurb above. Passed through to
+    # parse_location() as a fallback ONLY when a job's location string
+    # itself carries no country signal at all — never overrides a country
+    # the string did resolve. Reserved for a confirmed single-country
+    # employer (e.g. DaVita is US-only, Home Depot Canada is CA-only);
+    # "" (the default) means no fallback, same as every other board.
+    default_country: str = ""
