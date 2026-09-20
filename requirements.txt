@@ -2,6 +2,7 @@ requests>=2.31
 anthropic>=0.79
 python-dotenv>=1.0
 sqlalchemy>=2.0
+pyyaml>=6.0
 
 # dev
 pytest>=8.0

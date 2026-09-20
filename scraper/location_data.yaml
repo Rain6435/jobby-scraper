@@ -1,0 +1,1188 @@
+country_names:
+  AF: Afghanistan
+  AX: Åland Islands
+  AL: Albania
+  DZ: Algeria
+  AS: American Samoa
+  AD: Andorra
+  AO: Angola
+  AI: Anguilla
+  AG: Antigua and Barbuda
+  AR: Argentina
+  AM: Armenia
+  AW: Aruba
+  AU: Australia
+  AT: Austria
+  AZ: Azerbaijan
+  BS: Bahamas
+  BH: Bahrain
+  BD: Bangladesh
+  BB: Barbados
+  BY: Belarus
+  BE: Belgium
+  BZ: Belize
+  BJ: Benin
+  BM: Bermuda
+  BT: Bhutan
+  BO: Bolivia
+  BQ: Bonaire, Sint Eustatius and Saba
+  BA: Bosnia and Herzegovina
+  BW: Botswana
+  BR: Brazil
+  IO: British Indian Ocean Territory
+  BN: Brunei
+  BG: Bulgaria
+  BF: Burkina Faso
+  BI: Burundi
+  KH: Cambodia
+  CM: Cameroon
+  CA: Canada
+  CV: Cape Verde
+  KY: Cayman Islands
+  CF: Central African Republic
+  TD: Chad
+  CL: Chile
+  CN: China
+  CX: Christmas Island
+  CC: Cocos (Keeling) Islands
+  CO: Colombia
+  KM: Comoros
+  CG: Congo
+  CK: Cook Islands
+  CR: Costa Rica
+  CI: Cote d'Ivoire
+  HR: Croatia
+  CU: Cuba
+  CW: Curaçao
+  CY: Cyprus
+  CZ: Czech Republic
+  DK: Denmark
+  DJ: Djibouti
+  DM: Dominica
+  DO: Dominican Republic
+  CD: DR Congo
+  EC: Ecuador
+  EG: Egypt
+  SV: El Salvador
+  GQ: Equatorial Guinea
+  ER: Eritrea
+  EE: Estonia
+  SZ: Eswatini
+  ET: Ethiopia
+  FK: Falkland Islands (Malvinas)
+  FO: Faroe Islands
+  FJ: Fiji
+  FI: Finland
+  FR: France
+  GF: French Guiana
+  PF: French Polynesia
+  GA: Gabon
+  GM: Gambia
+  GE: Georgia
+  DE: Germany
+  GH: Ghana
+  GI: Gibraltar
+  GR: Greece
+  GL: Greenland
+  GD: Grenada
+  GP: Guadeloupe
+  GU: Guam
+  GT: Guatemala
+  GG: Guernsey
+  GN: Guinea
+  GW: Guinea-Bissau
+  GY: Guyana
+  HT: Haiti
+  HN: Honduras
+  HK: Hong Kong
+  HU: Hungary
+  IS: Iceland
+  IN: India
+  ID: Indonesia
+  IR: Iran
+  IQ: Iraq
+  IE: Ireland
+  IM: Isle of Man
+  IL: Israel
+  IT: Italy
+  JM: Jamaica
+  JP: Japan
+  JE: Jersey
+  JO: Jordan
+  KZ: Kazakhstan
+  KE: Kenya
+  KI: Kiribati
+  XK: Kosovo
+  KW: Kuwait
+  KG: Kyrgyzstan
+  LA: Laos
+  LV: Latvia
+  LB: Lebanon
+  LS: Lesotho
+  LR: Liberia
+  LY: Libya
+  LI: Liechtenstein
+  LT: Lithuania
+  LU: Luxembourg
+  MO: Macao
+  MG: Madagascar
+  MW: Malawi
+  MY: Malaysia
+  MV: Maldives
+  ML: Mali
+  MT: Malta
+  MH: Marshall Islands
+  MQ: Martinique
+  MR: Mauritania
+  MU: Mauritius
+  YT: Mayotte
+  MX: Mexico
+  FM: Micronesia
+  MD: Moldova
+  MC: Monaco
+  MN: Mongolia
+  ME: Montenegro
+  MS: Montserrat
+  MA: Morocco
+  MZ: Mozambique
+  MM: Myanmar
+  NA: Namibia
+  NR: Nauru
+  NP: Nepal
+  NL: Netherlands
+  NC: New Caledonia
+  NZ: New Zealand
+  NI: Nicaragua
+  NE: Niger
+  NG: Nigeria
+  NU: Niue
+  NF: Norfolk Island
+  KP: North Korea
+  MK: North Macedonia
+  MP: Northern Mariana Islands
+  'NO': Norway
+  OM: Oman
+  PK: Pakistan
+  PW: Palau
+  PA: Panama
+  PG: Papua New Guinea
+  PY: Paraguay
+  PE: Peru
+  PH: Philippines
+  PL: Poland
+  PT: Portugal
+  PR: Puerto Rico
+  QA: Qatar
+  RE: Reunion
+  RO: Romania
+  RU: Russia
+  RW: Rwanda
+  BL: Saint Barthélemy
+  SH: Saint Helena
+  KN: Saint Kitts and Nevis
+  LC: Saint Lucia
+  MF: Saint Martin (French part)
+  PM: Saint Pierre and Miquelon
+  VC: Saint Vincent and the Grenadines
+  WS: Samoa
+  SM: San Marino
+  ST: Sao Tome and Principe
+  SA: Saudi Arabia
+  SN: Senegal
+  RS: Serbia
+  SC: Seychelles
+  SL: Sierra Leone
+  SG: Singapore
+  SX: Sint Maarten (Dutch part)
+  SK: Slovakia
+  SI: Slovenia
+  SB: Solomon Islands
+  SO: Somalia
+  ZA: South Africa
+  KR: South Korea
+  SS: South Sudan
+  ES: Spain
+  LK: Sri Lanka
+  PS: State of Palestine
+  SD: Sudan
+  SR: Suriname
+  SJ: Svalbard and Jan Mayen
+  SE: Sweden
+  CH: Switzerland
+  SY: Syria
+  TW: Taiwan
+  TJ: Tajikistan
+  TZ: Tanzania
+  TH: Thailand
+  TL: Timor-Leste
+  TG: Togo
+  TK: Tokelau
+  TO: Tonga
+  TT: Trinidad and Tobago
+  TN: Tunisia
+  TR: Türkiye
+  TM: Turkmenistan
+  TC: Turks and Caicos Islands
+  TV: Tuvalu
+  UG: Uganda
+  UA: Ukraine
+  AE: United Arab Emirates
+  GB: United Kingdom
+  US: United States
+  UY: Uruguay
+  UZ: Uzbekistan
+  VU: Vanuatu
+  VA: Vatican City
+  VE: Venezuela
+  VN: Vietnam
+  VG: Virgin Islands, British
+  VI: Virgin Islands, U.S.
+  WF: Wallis and Futuna
+  EH: Western Sahara
+  YE: Yemen
+  ZM: Zambia
+  ZW: Zimbabwe
+alpha3_to_alpha2:
+  ABW: AW
+  AFG: AF
+  AGO: AO
+  AIA: AI
+  ALA: AX
+  ALB: AL
+  AND: AD
+  ARE: AE
+  ARG: AR
+  ARM: AM
+  ASM: AS
+  ATG: AG
+  AUS: AU
+  AUT: AT
+  AZE: AZ
+  BDI: BI
+  BEL: BE
+  BEN: BJ
+  BES: BQ
+  BFA: BF
+  BGD: BD
+  BGR: BG
+  BHR: BH
+  BHS: BS
+  BIH: BA
+  BLM: BL
+  BLR: BY
+  BLZ: BZ
+  BMU: BM
+  BOL: BO
+  BRA: BR
+  BRB: BB
+  BRN: BN
+  BTN: BT
+  BWA: BW
+  CAF: CF
+  CAN: CA
+  CCK: CC
+  CHE: CH
+  CHL: CL
+  CHN: CN
+  CIV: CI
+  CMR: CM
+  COD: CD
+  COG: CG
+  COK: CK
+  COL: CO
+  COM: KM
+  CPV: CV
+  CRI: CR
+  CUB: CU
+  CUW: CW
+  CXR: CX
+  CYM: KY
+  CYP: CY
+  CZE: CZ
+  DEU: DE
+  DJI: DJ
+  DMA: DM
+  DNK: DK
+  DOM: DO
+  DZA: DZ
+  ECU: EC
+  EGY: EG
+  ERI: ER
+  ESH: EH
+  ESP: ES
+  EST: EE
+  ETH: ET
+  FIN: FI
+  FJI: FJ
+  FLK: FK
+  FRA: FR
+  FRO: FO
+  FSM: FM
+  GAB: GA
+  GBR: GB
+  GEO: GE
+  GGY: GG
+  GHA: GH
+  GIB: GI
+  GIN: GN
+  GLP: GP
+  GMB: GM
+  GNB: GW
+  GNQ: GQ
+  GRC: GR
+  GRD: GD
+  GRL: GL
+  GTM: GT
+  GUF: GF
+  GUM: GU
+  GUY: GY
+  HKG: HK
+  HND: HN
+  HRV: HR
+  HTI: HT
+  HUN: HU
+  IDN: ID
+  IMN: IM
+  IND: IN
+  IOT: IO
+  IRL: IE
+  IRN: IR
+  IRQ: IQ
+  ISL: IS
+  ISR: IL
+  ITA: IT
+  JAM: JM
+  JEY: JE
+  JOR: JO
+  JPN: JP
+  KAZ: KZ
+  KEN: KE
+  KGZ: KG
+  KHM: KH
+  KIR: KI
+  KNA: KN
+  KOR: KR
+  KWT: KW
+  LAO: LA
+  LBN: LB
+  LBR: LR
+  LBY: LY
+  LCA: LC
+  LIE: LI
+  LKA: LK
+  LSO: LS
+  LTU: LT
+  LUX: LU
+  LVA: LV
+  MAC: MO
+  MAF: MF
+  MAR: MA
+  MCO: MC
+  MDA: MD
+  MDG: MG
+  MDV: MV
+  MEX: MX
+  MHL: MH
+  MKD: MK
+  MLI: ML
+  MLT: MT
+  MMR: MM
+  MNE: ME
+  MNG: MN
+  MNP: MP
+  MOZ: MZ
+  MRT: MR
+  MSR: MS
+  MTQ: MQ
+  MUS: MU
+  MWI: MW
+  MYS: MY
+  MYT: YT
+  NAM: NA
+  NCL: NC
+  NER: NE
+  NFK: NF
+  NGA: NG
+  NIC: NI
+  NIU: NU
+  NLD: NL
+  NOR: 'NO'
+  NPL: NP
+  NRU: NR
+  NZL: NZ
+  OMN: OM
+  PAK: PK
+  PAN: PA
+  PER: PE
+  PHL: PH
+  PLW: PW
+  PNG: PG
+  POL: PL
+  PRI: PR
+  PRK: KP
+  PRT: PT
+  PRY: PY
+  PSE: PS
+  PYF: PF
+  QAT: QA
+  REU: RE
+  ROU: RO
+  RUS: RU
+  RWA: RW
+  SAU: SA
+  SDN: SD
+  SEN: SN
+  SGP: SG
+  SHN: SH
+  SJM: SJ
+  SLB: SB
+  SLE: SL
+  SLV: SV
+  SMR: SM
+  SOM: SO
+  SPM: PM
+  SRB: RS
+  SSD: SS
+  STP: ST
+  SUR: SR
+  SVK: SK
+  SVN: SI
+  SWE: SE
+  SWZ: SZ
+  SXM: SX
+  SYC: SC
+  SYR: SY
+  TCA: TC
+  TCD: TD
+  TGO: TG
+  THA: TH
+  TJK: TJ
+  TKL: TK
+  TKM: TM
+  TLS: TL
+  TON: TO
+  TTO: TT
+  TUN: TN
+  TUR: TR
+  TUV: TV
+  TWN: TW
+  TZA: TZ
+  UGA: UG
+  UKR: UA
+  URY: UY
+  USA: US
+  UZB: UZ
+  VAT: VA
+  VCT: VC
+  VEN: VE
+  VGB: VG
+  VIR: VI
+  VNM: VN
+  VUT: VU
+  WLF: WF
+  WSM: WS
+  XKK: XK
+  YEM: YE
+  ZAF: ZA
+  ZMB: ZM
+  ZWE: ZW
+  ROM: RO
+location_aliases:
+  usa: US
+  u.s.a.: US
+  u.s.: US
+  us: US
+  united states of america: US
+  america: US
+  uk: GB
+  u.k.: GB
+  britain: GB
+  great britain: GB
+  england: GB
+  scotland: GB
+  wales: GB
+  northern ireland: GB
+  uae: AE
+  drc: CD
+  ivory coast: CI
+  south korea: KR
+  korea: KR
+  republic of korea: KR
+  north korea: KP
+  holland: NL
+  czechia: CZ
+  the netherlands: NL
+  bay area: US
+  silicon valley: US
+  nyc: US
+  new york city: US
+location_aliases_ambiguous_with_us_ca_city:
+- england
+- holland
+- new york city
+- scotland
+- wales
+us_state_tokens:
+- ak
+- al
+- alabama
+- alaska
+- ar
+- arizona
+- arkansas
+- az
+- ca
+- california
+- co
+- colorado
+- connecticut
+- ct
+- dc
+- de
+- delaware
+- fl
+- florida
+- ga
+- georgia
+- hawaii
+- hi
+- ia
+- id
+- idaho
+- il
+- illinois
+- in
+- indiana
+- iowa
+- kansas
+- kentucky
+- ks
+- ky
+- la
+- louisiana
+- ma
+- maine
+- maryland
+- massachusetts
+- md
+- me
+- mi
+- michigan
+- minnesota
+- mississippi
+- missouri
+- mn
+- mo
+- montana
+- ms
+- mt
+- nc
+- nd
+- ne
+- nebraska
+- nevada
+- new hampshire
+- new jersey
+- new mexico
+- new york
+- nh
+- nj
+- nm
+- north carolina
+- north dakota
+- nv
+- ny
+- oh
+- ohio
+- ok
+- oklahoma
+- or
+- oregon
+- pa
+- pennsylvania
+- rhode island
+- ri
+- sc
+- sd
+- south carolina
+- south dakota
+- tennessee
+- texas
+- tn
+- tx
+- ut
+- utah
+- va
+- vermont
+- virginia
+- vt
+- wa
+- washington
+- washington d.c.
+- washington dc
+- west virginia
+- wi
+- wisconsin
+- wv
+- wy
+- wyoming
+ca_province_tokens:
+- ab
+- alberta
+- bc
+- british columbia
+- manitoba
+- mb
+- nb
+- new brunswick
+- newfoundland and labrador
+- nl
+- northwest territories
+- nova scotia
+- ns
+- nt
+- nu
+- nunavut
+- 'on'
+- ontario
+- pe
+- prince edward island
+- qc
+- quebec
+- saskatchewan
+- sk
+- yt
+- yukon
+non_city_phrases:
+- home office
+- remote
+- virtual
+- wfh
+- work at home
+- work from home
+bare_city_name_to_country:
+  abu dhabi: AE
+  albacete: ES
+  atlanta: US
+  austin: US
+  backnang: DE
+  baesweiler: DE
+  baltimore: US
+  bangkok: TH
+  barrie: CA
+  basel: CH
+  beijing: CN
+  bratislava: SK
+  brownsville: US
+  bucharest: RO
+  budapest: HU
+  caen: FR
+  calgary: CA
+  cape town: ZA
+  carlsbad: US
+  catania: IT
+  chengdu: CN
+  chennai: IN
+  chicago: US
+  chongqing: CN
+  copenhagen: DK
+  dothan: US
+  eindhoven: NL
+  espoo: FI
+  fond du lac: US
+  fort erie: CA
+  fuzhou: CN
+  getafe: ES
+  guangzhou: CN
+  gurugram: IN
+  hangzhou: CN
+  hsinchu: TW
+  indianapolis: US
+  islamabad: PK
+  ivrea: IT
+  jacksonville: US
+  jakarta: ID
+  jiaxing: CN
+  jinan: CN
+  kamloops: CA
+  kaohsiung: TW
+  kelowna: CA
+  krakow: PL
+  kuala lumpur: MY
+  kyiv: UA
+  lafayette: US
+  lake country: CA
+  lehi: US
+  leipzig: DE
+  lethbridge: CA
+  leuven: BE
+  ljubljana: SI
+  luzhou: CN
+  makati city: PH
+  milwaukee: US
+  mississauga: CA
+  montpellier: FR
+  monza: IT
+  morrisville: US
+  mumbai: IN
+  munich: DE
+  neenah: US
+  new delhi: IN
+  niagara-on-the-lake: CA
+  noida: IN
+  novi: US
+  orlando: US
+  oshawa: CA
+  otsego: US
+  pasig city: PH
+  pattaya: TH
+  penzberg: DE
+  petaling jaya: MY
+  petaluma: US
+  phnom penh: KH
+  pittsburgh: US
+  pleasanton: US
+  pune: IN
+  puurs: BE
+  quezon city: PH
+  quito: EC
+  raleigh: US
+  red deer: CA
+  rennes: FR
+  riga: LV
+  salmon arm: CA
+  sarnia: CA
+  saskatoon: CA
+  seattle: US
+  seoul: KR
+  sepang: MY
+  shanghai: CN
+  sibiu: RO
+  skopje: MK
+  south san francisco: US
+  stevenage: GB
+  stockholm: SE
+  stolberg: DE
+  strathroy: CA
+  subang jaya: MY
+  suzhou: CN
+  taipei: TW
+  taiyuan: CN
+  tampa: US
+  targu mures: RO
+  tokyo: JP
+  toulouse: FR
+  tucson: US
+  turku: FI
+  ulm: DE
+  vaughan: CA
+  vilvoorde: BE
+  winnipeg: CA
+  yokohama: JP
+city_region_collision_to_country:
+  '''s-hertogenbosch|nl': NL
+  aalsmeer|nl: NL
+  ahmedabad|in: IN
+  ahrensburg|de: DE
+  albersweiler|de: DE
+  alblasserdam|nl: NL
+  aldersbach|de: DE
+  alkmaar|nl: NL
+  almelo|nl: NL
+  almere|nl: NL
+  alphen aan den rijn|nl: NL
+  altentreptow|de: DE
+  amersfoort|nl: NL
+  ammerzoden|nl: NL
+  ampfing|de: DE
+  amstelveen|nl: NL
+  amsterdam|nl: NL
+  arequipa|pe: PE
+  arnhem|nl: NL
+  arnsberg|de: DE
+  aschaffenburg|de: DE
+  aschheim|de: DE
+  assamstadt|de: DE
+  augsburg|de: DE
+  bad arolsen|de: DE
+  bad bentheim|de: DE
+  bad camberg|de: DE
+  bad freienwalde|de: DE
+  bad kissingen|de: DE
+  bad lauterberg|de: DE
+  bad segeberg|de: DE
+  baku|az: AZ
+  balikpapan|id: ID
+  banda del rio sali|ar: AR
+  bangalore|in: IN
+  barneveld|nl: NL
+  barranquilla|co: CO
+  barrie|ca: CA
+  bautzen|de: DE
+  bayreuth|de: DE
+  beesd|nl: NL
+  beeskow|de: DE
+  bekasi|id: ID
+  belm|de: DE
+  bengaluru|in: IN
+  bergkamen|de: DE
+  berkel en rodenrijs|nl: NL
+  berlin|de: DE
+  bhiwadi|in: IN
+  bhubaneshwar|in: IN
+  biessenhofen|de: DE
+  bochum|de: DE
+  bonaventure|ca: CA
+  bonn|de: DE
+  boucherville|ca: CA
+  bratislava|sk: SK
+  braunschweig|de: DE
+  breda|nl: NL
+  breitnau|de: DE
+  bremen|de: DE
+  bremerhaven|de: DE
+  bromont|ca: CA
+  bucaramanga|co: CO
+  buenos aires|ar: AR
+  burgbernheim|de: DE
+  burghausen|de: DE
+  burnaby|ca: CA
+  cajamarca|pe: PE
+  calgary|ca: CA
+  cali|co: CO
+  callao|pe: PE
+  cartagena|co: CO
+  casablanca|ma: MA
+  castrop-rauxel|de: DE
+  chengalpattu|in: IN
+  chennai|in: IN
+  chisinau|md: MD
+  ciudad de panama|pa: PA
+  cochem|de: DE
+  coimbatore|in: IN
+  cookstown|ca: CA
+  cottbus|de: DE
+  dachau|de: DE
+  dartmouth|ca: CA
+  deggendorf|de: DE
+  delft|nl: NL
+  demmin|de: DE
+  den bosch|nl: NL
+  den haag|nl: NL
+  den helder|nl: NL
+  deventer|nl: NL
+  dordrecht|nl: NL
+  dorsten|de: DE
+  dortmund|de: DE
+  dresden|de: DE
+  drunen|nl: NL
+  duesseldorf|de: DE
+  duisburg|de: DE
+  dusseldorf|de: DE
+  ebersberg|de: DE
+  eggenfelden|de: DE
+  eindhoven|nl: NL
+  eislingen|de: DE
+  emmen|nl: NL
+  erding|de: DE
+  erlangen|de: DE
+  eschborn|de: DE
+  essenbach|de: DE
+  etobicoke|ca: CA
+  euskirchen|de: DE
+  faridabad|in: IN
+  fez|ma: MA
+  floriana|mt: MT
+  fockbek|de: DE
+  frankfurt am main|de: DE
+  frankfurt/oder|de: DE
+  frechen|de: DE
+  freiburg im breisgau|de: DE
+  freilassing|de: DE
+  fuchsstadt|de: DE
+  funza|co: CO
+  gaanderen|nl: NL
+  galanta|sk: SK
+  geertruidenberg|nl: NL
+  gelsenkirchen|de: DE
+  gennep|nl: NL
+  gerlingen|de: DE
+  germersheim|de: DE
+  ghaziabad|in: IN
+  gifhorn|de: DE
+  gladbeck|de: DE
+  gorinchem|nl: NL
+  grafenrheinfeld|de: DE
+  gransee|de: DE
+  grasbrunn|de: DE
+  greifswald|de: DE
+  grenzach-wyhlen|de: DE
+  groningen|nl: NL
+  gross-gerau|de: DE
+  grossbeeren|de: DE
+  grossheubach|de: DE
+  guaymallen|ar: AR
+  gunzenhausen|de: DE
+  gurgaon|in: IN
+  gurugram|in: IN
+  haifa|il: IL
+  haiger|de: DE
+  halifax|ca: CA
+  halton hills|ca: CA
+  hamburg|de: DE
+  hanau|de: DE
+  hannover|de: DE
+  harsefeld|de: DE
+  hasselt|nl: NL
+  heerenveen|nl: NL
+  heilbronn|de: DE
+  heiligengrabe|de: DE
+  helmstedt|de: DE
+  hemmingstedt|de: DE
+  hennigsdorf|de: DE
+  herzberg am harz|de: DE
+  herzogenaurach|de: DE
+  hilden|de: DE
+  hillsdale|ca: CA
+  hilter|de: DE
+  hirschaid|de: DE
+  hlohovec|sk: SK
+  hohen neuendorf|de: DE
+  hohenwarsleben|de: DE
+  holon|il: IL
+  homburg|de: DE
+  hoofddorp|nl: NL
+  hoogvliet|nl: NL
+  horst|nl: NL
+  hosur|in: IN
+  hyderabad|in: IN
+  ica|pe: PE
+  idar-oberstein|de: DE
+  ilo|pe: PE
+  ingolstadt|de: DE
+  ismaning|de: DE
+  jaipur|in: IN
+  jakarta|id: ID
+  joure|nl: NL
+  kampen|nl: NL
+  kappelrodeck|de: DE
+  karawang|id: ID
+  karlsruhe|de: DE
+  kassel|de: DE
+  kempten|de: DE
+  kenitra|ma: MA
+  kerkrade|nl: NL
+  kiryat gat|il: IL
+  kitimat|ca: CA
+  kitzingen|de: DE
+  koblenz|de: DE
+  kochi|in: IN
+  koeln|de: DE
+  kolbermoor|de: DE
+  kolkata|in: IN
+  konz|de: DE
+  kosice|sk: SK
+  krefeld|de: DE
+  krupina|sk: SK
+  kulmbach|de: DE
+  la pocatiere|ca: CA
+  laatzen|de: DE
+  labrador city|ca: CA
+  lahr|de: DE
+  lampertheim|de: DE
+  landshut|de: DE
+  langelsheim|de: DE
+  langley|ca: CA
+  laval|ca: CA
+  leinfelden-echterdingen|de: DE
+  leipzig|de: DE
+  lelystad|nl: NL
+  levice|sk: SK
+  levis|ca: CA
+  lim|pe: PE
+  lima|pe: PE
+  limburgerhof|de: DE
+  longueuil|ca: CA
+  lorch|de: DE
+  ludhiana|in: IN
+  ludwigshafen|de: DE
+  ludwigshafen am rhein|de: DE
+  ludwigslust|de: DE
+  luedinghausen|de: DE
+  maarssen|nl: NL
+  maasbracht|nl: NL
+  maasdijk|nl: NL
+  magdeburg|de: DE
+  malchin|de: DE
+  mangalore|in: IN
+  mannheim|de: DE
+  mar del plata|ar: AR
+  markdorf|de: DE
+  markham|ca: CA
+  marktheidenfeld|de: DE
+  medellin|co: CO
+  meerane|de: DE
+  megrine|tn: TN
+  meknes|ma: MA
+  melsungen|de: DE
+  meppel|nl: NL
+  metzingen|de: DE
+  michalovce|sk: SK
+  mirabel|ca: CA
+  mississauga|ca: CA
+  moerdijk|nl: NL
+  monheim am rhein|de: DE
+  montreal|ca: CA
+  moquegua|pe: PE
+  muelheim-kaerlich|de: DE
+  muenchen|de: DE
+  mumbai|in: IN
+  munich|de: DE
+  mysore|in: IN
+  münchen|de: DE
+  naila|de: DE
+  nanjangud|in: IN
+  navi mumbai|in: IN
+  nederweert|nl: NL
+  neu-isenburg|de: DE
+  neu-ulm|de: DE
+  neubukow|de: DE
+  neuenstein|de: DE
+  neumunster|de: DE
+  neuquen|ar: AR
+  neuss|de: DE
+  niederzier|de: DE
+  nienburg/weser|de: DE
+  nijkerk|nl: NL
+  nijmegen|nl: NL
+  nitra|sk: SK
+  noida|in: IN
+  nunspeet|nl: NL
+  nuth|nl: NL
+  oldenburg in holstein|de: DE
+  oss|nl: NL
+  osthofen|de: DE
+  ostrhauderfehn|de: DE
+  paderborn|de: DE
+  patiala|in: IN
+  penzberg|de: DE
+  petah tikva|il: IL
+  pezinok|sk: SK
+  pfaffenhofen an der ilm|de: DE
+  pithampur|in: IN
+  plaidt|de: DE
+  pocito|ar: AR
+  ponda|in: IN
+  poprad|sk: SK
+  port hardy|ca: CA
+  prenzlau|de: DE
+  prievidza|sk: SK
+  pulheim|de: DE
+  pullach im isartal|de: DE
+  pune|in: IN
+  qiryat gat|il: IL
+  qormi|mt: MT
+  quickborn|de: DE
+  ra'anana|il: IL
+  rabat|ma: MA
+  radeberg|de: DE
+  rafaela|ar: AR
+  rathenow|de: DE
+  ratingen|de: DE
+  recklinghausen|de: DE
+  regen|de: DE
+  regensburg|de: DE
+  remscheid|de: DE
+  rendsburg|de: DE
+  rijnsburg|nl: NL
+  rimouski|ca: CA
+  roermond|nl: NL
+  rostock|de: DE
+  rotterdam|nl: NL
+  rottweil|de: DE
+  rouyn-noranda|ca: CA
+  rudolstadt|de: DE
+  saffig|de: DE
+  saguenay|ca: CA
+  sailauf|de: DE
+  saint-bruno|ca: CA
+  salzgitter|de: DE
+  san isidro|pe: PE
+  sanand|in: IN
+  santiago de surco|pe: PE
+  sassenheim|nl: NL
+  schiedam|nl: NL
+  schmallenberg|de: DE
+  schwaebisch gmuend|de: DE
+  schwandorf|de: DE
+  schwarzheide|de: DE
+  schweinfurt|de: DE
+  schwerin|de: DE
+  sderot|il: IL
+  seelow|de: DE
+  senica|sk: SK
+  siegen|de: DE
+  sigmaringen|de: DE
+  sindelfingen|de: DE
+  singen|de: DE
+  sitarganj|in: IN
+  skalica|sk: SK
+  soest|de: DE
+  st laurent|ca: CA
+  st. leon-rot|de: DE
+  suhl|de: DE
+  tamm|de: DE
+  tanger|ma: MA
+  tangerang|id: ID
+  tangiers|ma: MA
+  taunusstein|de: DE
+  tel aviv|il: IL
+  tel aviv-yafo|il: IL
+  teltow|de: DE
+  tenjo|co: CO
+  the hague|nl: NL
+  tiel|nl: NL
+  tilburg|nl: NL
+  tilbury|ca: CA
+  tirane|al: AL
+  torgelow|de: DE
+  trenque lauquen|ar: AR
+  trier|de: DE
+  trnava|sk: SK
+  tuttlingen|de: DE
+  uelzen|de: DE
+  uithoorn|nl: NL
+  ulm|de: DE
+  untergruppenbach|de: DE
+  unterschleissheim|de: DE
+  utrecht|nl: NL
+  vaassen|nl: NL
+  val-d'or|ca: CA
+  vaughan|ca: CA
+  veenendaal|nl: NL
+  veghel|nl: NL
+  veitsbronn|de: DE
+  venlo|nl: NL
+  venray|nl: NL
+  vernon|ca: CA
+  waddinxveen|nl: NL
+  waldshut-tiengen|de: DE
+  weiden|de: DE
+  wertheim|de: DE
+  wesel|de: DE
+  wesseling|de: DE
+  wetzlar|de: DE
+  whitby|ca: CA
+  wilsdruff|de: DE
+  wolgast|de: DE
+  wuppertal|de: DE
+  wustermark|de: DE
+  yokneam|il: IL
+  zell im wiesental|de: DE
+  zeven|de: DE
+  zevenaar|nl: NL
+  zilina|sk: SK
+  zoetermeer|nl: NL
+  zundert|nl: NL
+  zvolen|sk: SK
+  zwolle|nl: NL
