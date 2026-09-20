@@ -249,14 +249,42 @@ def resolve_country_from_location(location: str | None) -> str | None:
                 return explicit_country
         return "US" if last_us_index > last_ca_index else "CA"
 
-    # Bare, non-colliding ISO alpha-2 code as its own token ("GB",
-    # "GB,Manchester", "AM,Yerevan") — checked after the US/CA collision
-    # tier above so a colliding code (already excluded from this table
-    # anyway) can never reach here ahead of that more careful logic.
+    # Full country name as its own exact token ("Germany", "Netherlands",
+    # "India") checked BEFORE the bare-alpha2-code tier below — confirmed
+    # live: a sub-national region code that happens to collide with an
+    # unrelated country's alpha-2 code ("BW"/Baden-Württemberg colliding
+    # with Botswana, "BY"/Bavaria with Belarus, "GE"/Gelderland with
+    # Georgia, "SA"/South Australia with Saudi Arabia, "PR"/Paraná with
+    # Puerto Rico, "MG"/Minas Gerais with Madagascar, "BE"/Berlin with
+    # Belgium) was winning over an explicit, unambiguous full country name
+    # sitting right there in a later token ("Abstatt, BW, Germany"
+    # misresolved to Botswana; "Adelaide, SA, Australia" to Saudi Arabia;
+    # "Apeldoorn, GE, Netherlands" to Georgia the country) — 346 real rows
+    # in the live pool. The two tables' keys never overlap (one holds only
+    # 2-letter codes, the other only full names/multi-word phrases), so
+    # this reorder can only change behavior for a string that has BOTH an
+    # exact full-name token and an exact bare-code token for a DIFFERENT
+    # country — exactly the ambiguous case this fixes, never a string
+    # with only one or the other.
+    # Some bare alpha-2 codes name a real, independently-governed country/
+    # territory that a looser trailing label can still nest under without
+    # being "wrong" the way a genuine collision (BW/Botswana vs. Baden-
+    # Württemberg) is — confirmed live: "Caguas, PR, United States" and
+    # "Auckland, NZ, Australia" both regressed when this tier was first
+    # made to defer to a trailing full name unconditionally, because the
+    # gazetteer indexes Puerto Rico and New Zealand towns under their own
+    # PR/NZ country_code, not US/AU — "United States"/"Australia" here is
+    # a broader organizational label (AECOM groups its NZ offices under
+    # an "Australia" region), not evidence the PR/NZ code is a mistaken
+    # collision the way BW/BY/GE/SA/MG/BE are. 21 real rows in the live
+    # pool. If this list grows, re-derive it the same way rather than
+    # hand-guessing — a code belongs here only when confirmed the
+    # gazetteer needs that exact code, not the trailing label's implied
+    # country, to find the real town.
+    _BARE_CODE_WINS_OVER_TRAILING_NAME = {"pr", "nz"}
     for token in tokens:
-        code = BARE_ALPHA2_CODE_TO_COUNTRY.get(token)
-        if code:
-            return code
+        if BARE_ALPHA2_CODE_TO_COUNTRY.get(token, "").lower() in _BARE_CODE_WINS_OVER_TRAILING_NAME:
+            return BARE_ALPHA2_CODE_TO_COUNTRY[token]
 
     for token in tokens:
         # "Jamaica" (the country) is also a real, well-known NYC town —
@@ -274,6 +302,16 @@ def resolve_country_from_location(location: str | None) -> str | None:
             if has_state_or_province_token:
                 continue
         code = ISO_NAME_TO_CODE.get(token)
+        if code:
+            return code
+
+    # Bare, non-colliding ISO alpha-2 code as its own token ("GB",
+    # "GB,Manchester", "AM,Yerevan") — checked after the US/CA collision
+    # tier above so a colliding code (already excluded from this table
+    # anyway) can never reach here ahead of that more careful logic, and
+    # after the full-country-name tier above for the reason given there.
+    for token in tokens:
+        code = BARE_ALPHA2_CODE_TO_COUNTRY.get(token)
         if code:
             return code
 

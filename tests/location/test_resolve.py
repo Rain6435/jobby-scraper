@@ -623,3 +623,45 @@ def test_sub_national_region_collisions_removed():
     assert resolve_country_from_location("Santa Catarina") is None
     assert resolve_country_from_location("Acre") is None
     assert resolve_country_from_location("Suffolk") is None
+
+
+# --- Sub-national region code vs. bare alpha-2 country code collision fix
+# --- (2026-09-20): a region code that happens to collide with an
+# --- unrelated country's alpha-2 code (BW/Baden-Württemberg vs. Botswana,
+# --- BY/Bavaria vs. Belarus, GE/Gelderland vs. Georgia, SA/South
+# --- Australia vs. Saudi Arabia, PR/Paraná vs. Puerto Rico, MG/Minas
+# --- Gerais vs. Madagascar, BE/Berlin vs. Belgium) was winning over an
+# --- explicit, unambiguous full country name in a later token, since
+# --- BARE_ALPHA2_CODE_TO_COUNTRY was checked before ISO_NAME_TO_CODE.
+# --- Reordering fixed 346 real rows in the live pool. ---
+
+
+def test_region_code_defers_to_explicit_full_country_name():
+    assert resolve_country_from_location("Marhowra, BR, India") == "IN"
+    assert resolve_country_from_location("Abstatt, BW, Germany") == "DE"
+    assert resolve_country_from_location("Adelaide, SA, Australia") == "AU"
+    assert resolve_country_from_location("Apeldoorn, GE, Netherlands") == "NL"
+    assert resolve_country_from_location("Bern, BE, Switzerland") == "CH"
+    assert resolve_country_from_location("Belo Horizonte, MG, Brazil") == "BR"
+
+
+def test_bare_alpha2_code_still_resolves_without_a_contradicting_name():
+    # The reorder only matters when BOTH an exact bare-code token AND an
+    # exact full-name token for a DIFFERENT country are present — every
+    # ordinary single-signal case is unaffected.
+    assert resolve_country_from_location("GB,Manchester") == "GB"
+    assert resolve_country_from_location("Puerto Rico, USA") == "US"
+
+
+def test_pr_and_nz_bare_codes_win_over_a_looser_trailing_label():
+    # Unlike BW/BY/GE/SA/MG (genuine sub-national-region-code collisions),
+    # PR and NZ name real, independently-governed countries/territories
+    # the gazetteer indexes under their OWN country_code — a trailing
+    # "United States"/"Australia" here is a broader organizational label
+    # (e.g. AECOM groups its NZ offices under an "Australia" region), not
+    # evidence the code itself is wrong. Confirmed live: making the
+    # full-name reorder unconditional regressed real gazetteer matches for
+    # both, since Puerto Rico/New Zealand towns are indexed under PR/NZ,
+    # not US/AU.
+    assert resolve_country_from_location("Caguas, PR, United States") == "PR"
+    assert resolve_country_from_location("Auckland, NZ, Australia") == "NZ"
