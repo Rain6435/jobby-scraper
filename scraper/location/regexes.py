@@ -22,7 +22,7 @@ TRAILING_STATE_RE = re.compile(r"[,-]\s*([a-z]{2})\.?\s*$")
 # Trailing "<City>, <ISO3>" shape ("Bengaluru, IND", "London, GBR",
 # "Tokyo, JPN") — the existing comma-tokenizer below only checks each token
 # against alias/name tables, and a bare 3-letter code matches neither.
-TRAILING_ALPHA3_RE = re.compile(r"[,-/]\s*([a-z]{3})\.?\s*$")
+TRAILING_ALPHA3_RE = re.compile(r"[,/-]\s*([a-z]{3})\.?\s*$")
 
 # Some ATS vendors (confirmed on AtkinsRéalis's SmartRecruiters feed) format
 # location as a dot-delimited "<ISO2>.<City>.<Address>" path instead of the

@@ -107,6 +107,19 @@ def parse_location(raw: str) -> ParsedLocation:
         # for the specific name-collision case — it does not affect any
         # other US_STATE_TOKENS/CA_PROVINCE_TOKENS first-token match, e.g.
         # "California, USA" still correctly yields city=None.
+        #
+        # The first token repeated verbatim as a later token ("New York,
+        # New York, US", "Washington, Washington, US") is the same
+        # independent confirmation, generalized rather than pinned to one
+        # literal city name — a state/province can't sensibly be its own
+        # trailing token either, same reasoning as has_distinct_state_or_
+        # province_token above, just for an exact repeat instead of a
+        # different state/province token. This subsumes what used to be a
+        # "new york"-only special case (that shape is also just the token
+        # repeated), which missed every other city/state-name collision
+        # ("Washington, Washington, US") since it only ever checked the one
+        # hardcoded string.
+        #
         if is_recognized_non_city and (
             first_lower in US_STATE_TOKENS or first_lower in CA_PROVINCE_TOKENS
         ):
@@ -115,11 +128,17 @@ def parse_location(raw: str) -> ParsedLocation:
                 (t in US_STATE_TOKENS or t in CA_PROVINCE_TOKENS) and t != first_lower
                 for t in other_tokens_lower
             )
-            if has_distinct_state_or_province_token or (
-                first_lower == "new york"
-                and len(tokens) >= 3
-                and ("new york" in other_tokens_lower or "ny" in other_tokens_lower)
-            ):
+            # Repeated-first-token case is scoped to a MULTI-WORD first
+            # token (a real place name, "New York"/"Washington") — a bare
+            # abbreviation repeated twice ("DC, DC, United States") is
+            # never independent confirmation of a city, since the
+            # abbreviation itself carries no place-name content distinct
+            # from the jurisdiction code; confirmed live, this must still
+            # yield city=None the same as "WV, United States" does.
+            has_repeated_first_token = (
+                " " in first_lower and len(tokens) >= 3 and first_lower in other_tokens_lower
+            )
+            if has_distinct_state_or_province_token or has_repeated_first_token:
                 is_recognized_non_city = False
         # Same collision, different table: a handful of real US city names
         # are also full country names ("Lebanon, TN", "Jordan, MN",
@@ -175,11 +194,14 @@ def parse_location(raw: str) -> ParsedLocation:
         ):
             second = tokens[1].strip()
             second_lower = second.lower()
+            second_upper = second.upper()
             second_is_non_city = (
                 second_lower in US_STATE_TOKENS
                 or second_lower in CA_PROVINCE_TOKENS
                 or second_lower in LOCATION_ALIASES
                 or second_lower in ISO_NAME_TO_CODE
+                or second_lower in BARE_ALPHA2_CODE_TO_COUNTRY
+                or second_upper in ALPHA3_TO_ALPHA2
                 or second_lower in NON_CITY_PHRASES
                 or second_lower == "remote"
                 or second_lower == "united states"
@@ -252,12 +274,14 @@ def parse_location(raw: str) -> ParsedLocation:
         ):
             second = tokens[1].strip()
             second_lower = second.lower()
+            second_upper = second.upper()
             second_is_non_city = (
                 second_lower in US_STATE_TOKENS
                 or second_lower in CA_PROVINCE_TOKENS
                 or second_lower in LOCATION_ALIASES
                 or second_lower in ISO_NAME_TO_CODE
                 or second_lower in BARE_ALPHA2_CODE_TO_COUNTRY
+                or second_upper in ALPHA3_TO_ALPHA2
                 or second_lower in NON_CITY_PHRASES
                 or second_lower == "remote"
             )
@@ -443,19 +467,30 @@ def parse_location(raw: str) -> ParsedLocation:
             t.lower() for t in tokens if t.lower() != city.lower()
         ]
         corrected_country = None
-        matched_code = None
         for code in candidate_codes:
             for city_key in city_keys:
                 corrected_country = CITY_REGION_COLLISION_TO_COUNTRY.get((city_key, code))
                 if corrected_country is not None:
-                    matched_code = code
                     break
             if corrected_country is not None:
                 break
-        if corrected_country is not None:
+        if corrected_country is not None and corrected_country != country_code:
+            # Cleared unconditionally once the correction actually CHANGES
+            # country_code (not just whenever this tier finds a match — a
+            # match can legitimately agree with the country_code already
+            # resolved, e.g. "CA - Alberta - Calgary" hits
+            # CITY_REGION_COLLISION_TO_COUNTRY[("calgary", "ca")] == "CA",
+            # a no-op that must leave region="Alberta" untouched). region
+            # elsewhere in this file only ever means a real US-state/CA-
+            # province code, and that invariant is false once country_code
+            # actually changes to a foreign country — regardless of which
+            # raw token supplied the matching collision code (e.g.
+            # "Ahmedabad, DE, IN": region="DE" reads as Delaware, but the
+            # match comes from scanning "in" in tokens, not from region
+            # itself — region="DE" is exactly as stale as if "de" itself
+            # had been the matched code).
             country_code = corrected_country
-            if region and region.lower() == matched_code:
-                region = None
+            region = None
 
     return ParsedLocation(
         raw=raw,
