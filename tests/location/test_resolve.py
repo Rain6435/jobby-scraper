@@ -560,3 +560,66 @@ def test_bare_alpha3_whole_string():
     # string, distinct from the trailing "<City>, <ISO3>" tier above.
     assert resolve_country_from_location("BRA") == "BR"
     assert resolve_country_from_location("bra") == "BR"
+
+
+# --- COUNTRY_NAMES full-name substring matching (word-boundary scan
+# --- across the whole string, not just an exact-token match): confirmed
+# --- to cause real false positives ("Dialysis Center Of Middle Georgia-
+# --- Warner Robins" -> Georgia, "Panama City Store" -> Panama), but an
+# --- attempt to tighten it to an exact-token match (2026-09-20) was
+# --- reverted after replaying the full live pool — it broke 67 confirmed-
+# --- correct resolutions of the same shape ("Mexico City", "Krakow,
+# --- Poland Office", "Shanghai, Mainland China ..."), which are
+# --- structurally identical to the false positives (one token containing
+# --- a country name plus other words, no comma separating them). No
+# --- token-shape rule distinguishes the two, so the broader match was
+# --- kept — see resolve.py's own comment on this tier for the full
+# --- reasoning. These tests document the trade-off, not a fix.
+
+
+def test_country_name_as_own_delimited_token_resolves():
+    assert resolve_country_from_location("Remote (US)") == "US"
+    assert resolve_country_from_location("Berlin, Germany, Hybrid") == "DE"
+    assert resolve_country_from_location("Mumbai, India") == "IN"
+
+
+def test_country_name_substring_within_a_token_also_resolves():
+    # The kept, broader behavior: "Mexico"/"Poland"/"China" are real words
+    # within a single un-comma-delimited token, not the whole token.
+    assert resolve_country_from_location("Mexico City") == "MX"
+    assert resolve_country_from_location("Krakow, Poland Office") == "PL"
+
+
+# --- "Jamaica" (country) vs. "Jamaica, NY" (Queens) collision fix
+# --- (2026-09-20): both the bare ISO_NAME_TO_CODE tier and the earlier
+# --- "explicit country elsewhere" override inside the US/CA collision
+# --- tier misresolved "JAMAICA NY STORE" to JM, ignoring the "NY" state
+# --- token sitting right there. ---
+
+
+def test_jamaica_ny_disambiguated_from_jamaica_the_country():
+    assert resolve_country_from_location("JAMAICA, NY") == "US"
+    assert resolve_country_from_location("Jamaica, NY") == "US"
+
+
+def test_jamaica_the_country_still_resolves_without_a_us_ca_collision():
+    assert resolve_country_from_location("Kingston, Jamaica") == "JM"
+    assert resolve_country_from_location("Jamaica") == "JM"
+
+
+# --- SUB_NATIONAL_REGION_TO_COUNTRY collisions with real, populous towns
+# --- in a different country, removed 2026-09-20 (see data.py's own
+# --- comment on this table for the full list and derivation method). ---
+
+
+def test_surrey_no_longer_misresolves_to_gb():
+    # Surrey, BC (pop. ~568k) is far more likely in real job data than
+    # the removed GB-county entry.
+    assert resolve_country_from_location("Surrey") is None
+
+
+def test_sub_national_region_collisions_removed():
+    assert resolve_country_from_location("Parana") is None
+    assert resolve_country_from_location("Santa Catarina") is None
+    assert resolve_country_from_location("Acre") is None
+    assert resolve_country_from_location("Suffolk") is None

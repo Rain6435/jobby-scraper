@@ -235,6 +235,15 @@ def resolve_country_from_location(location: str | None) -> str | None:
         for other_index, other_token in enumerate(tokens):
             if other_index == winning_index:
                 continue
+            # "Jamaica" is excluded from this explicit-country override for
+            # the same reason it's excluded from the bare-token tier below
+            # — confirmed live: "JAMAICA NY STORE" hit this exact path,
+            # with "ny" as the winning US token and "jamaica" as the
+            # "explicit country" override, misresolving to "JM" even
+            # though "ny" is real, unambiguous confirmation this is
+            # Jamaica, Queens, not the country.
+            if other_token == "jamaica":
+                continue
             explicit_country = ISO_NAME_TO_CODE.get(other_token)
             if explicit_country:
                 return explicit_country
@@ -250,6 +259,20 @@ def resolve_country_from_location(location: str | None) -> str | None:
             return code
 
     for token in tokens:
+        # "Jamaica" (the country) is also a real, well-known NYC town —
+        # "Jamaica, NY" (Queens) — confirmed via the gazetteer (a single
+        # match, US/NY). Same collision shape LOCATION_ALIASES_AMBIGUOUS_
+        # WITH_US_CA_CITY already guards for LOCATION_ALIASES keys
+        # ("Holland, MI", "England, AR"), just for a full COUNTRY_NAMES
+        # value instead — confirmed live: "JAMAICA NY STORE" misresolved
+        # to "JM" even with "NY" sitting right there disambiguating it.
+        if token == "jamaica":
+            other_tokens = [t for t in tokens if t != token]
+            has_state_or_province_token = any(
+                t in US_STATE_TOKENS or t in CA_PROVINCE_TOKENS for t in other_tokens
+            )
+            if has_state_or_province_token:
+                continue
         code = ISO_NAME_TO_CODE.get(token)
         if code:
             return code
@@ -265,6 +288,24 @@ def resolve_country_from_location(location: str | None) -> str | None:
         for alias, code in LOCATION_ALIASES.items():
             if matches_word(without_parens, alias):
                 return code
+    # Word-boundary substring match against the de-parenthesized string —
+    # catches phrasing like "Remote (US)", "Berlin, Germany, Hybrid",
+    # "Mexico City", "Krakow, Poland Office", "Shanghai, Mainland China"
+    # where the country name is a real word within a token but not the
+    # WHOLE token by itself. An earlier attempt to tighten this to an
+    # exact-token match (2026-09-20, to fix "Dialysis Center Of Middle
+    # Georgia-Warner Robins" misresolving to Georgia the country) was
+    # reverted after replaying the full live pool: it broke 67 confirmed-
+    # correct resolutions of exactly this "<City>, <Country> <suffix
+    # word>" / "<Country> <City>" shape (verified via
+    # town_resolver.resolve_town on both versions) for every one it fixed.
+    # No token-shape rule distinguishes the false positives from the
+    # legitimate cases — "Dialysis Center Of Middle Georgia-Warner Robins"
+    # and "Mexico City" are structurally identical (one un-comma-delimited
+    # token containing a country name plus other words) — so the broader,
+    # historically-tested substring match was kept. COUNTRY_NAMES_COMBINED_RE
+    # gates the loop so this only runs the full COUNTRY_NAMES scan when a
+    # match is structurally possible.
     if COUNTRY_NAMES_COMBINED_RE.search(without_parens) is not None:
         for code, name in COUNTRY_NAMES.items():
             if matches_word(without_parens, name.lower()):

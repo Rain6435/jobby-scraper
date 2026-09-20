@@ -1738,9 +1738,7 @@ sub_national_region_to_country:
   sao paulo: BR
   minas gerais: BR
   bahia: BR
-  parana: BR
   rio grande do sul: BR
-  santa catarina: BR
   espirito santo: BR
   goias: BR
   ceara: BR
@@ -1756,7 +1754,6 @@ sub_national_region_to_country:
   amazonas: BR
   rondonia: BR
   tocantins: BR
-  acre: BR
   amapa: BR
   roraima: BR
   bavaria: DE
@@ -1785,8 +1782,6 @@ sub_national_region_to_country:
   hampshire: GB
   oxfordshire: GB
   berkshire: GB
-  surrey: GB
-  suffolk: GB
   gloucestershire: GB
   warwickshire: GB
   lancashire: GB

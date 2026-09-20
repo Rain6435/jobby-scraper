@@ -103,7 +103,20 @@ BARE_CITY_NAME_TO_COUNTRY: dict[str, str] = _RAW["bare_city_name_to_country"]
 # "Guadalajara, Jalisco", "Hangzhou, Zhejiang", "Munich, Bavaria", "High
 # Wycombe, Buckinghamshire", "Cohuna, VIC", "Pindamonhangaba, São Paulo").
 # Verified to have zero collisions with US_STATE_TOKENS,
-# CA_PROVINCE_TOKENS, or LOCATION_ALIASES.
+# CA_PROVINCE_TOKENS, or LOCATION_ALIASES — but the original derivation of
+# this table did NOT check its entries against the gazetteer's own real
+# city names in OTHER countries, and 5 such collisions were later found
+# and removed live (2026-09-20): "surrey" (GB's own entry, but Surrey, BC
+# — pop. 568k — is far more likely in real job data), "suffolk" (GB, vs.
+# Suffolk, VA), "parana"/"santa catarina"/"acre" (BR, vs. real towns of
+# the same name in Argentina/Mexico/Israel respectively). resolve.py
+# scans every raw comma-separated token against this table unconditionally
+# — no "<City>, <Region>" positional requirement — so a bare collision is
+# directly reachable, not just a theoretical risk. Any new entry here
+# should be checked against the towns gazetteer for a same-named town in a
+# different country with non-trivial population before being added, the
+# same safety bar _BARE_CITY_NAME_TO_COUNTRY's own derivation already
+# applies to itself.
 SUB_NATIONAL_REGION_TO_COUNTRY: dict[str, str] = _RAW["sub_national_region_to_country"]
 
 # (city.casefold(), collision_code.lower()) -> the real country, for cities
