@@ -72,7 +72,13 @@ from dotenv import load_dotenv
 from scraper.boards import SCRAPERS
 from scraper.boards.base import BaseScraper
 from scraper.config_types import CompanyConfig, ConfigFile
-from scraper.db import checkpoint_wal, load_previous, update_role_summary, write_jobs
+from scraper.db import (
+    checkpoint_wal,
+    load_job_counts_by_company,
+    load_previous,
+    update_role_summary,
+    write_jobs,
+)
 from scraper.models import Job
 from scraper.storage import diff
 
@@ -119,6 +125,7 @@ class RunDeps:
     scrapers: dict[str, type[BaseScraper]] = field(default_factory=lambda: dict(SCRAPERS))
     write_jobs: Callable[..., bool] = write_jobs
     load_previous: Callable[..., dict[str, Job]] = load_previous
+    load_job_counts_by_company: Callable[[str], dict[str, int]] = load_job_counts_by_company
     update_role_summary: Callable[[str, str, str], bool] = update_role_summary
     checkpoint_wal: Callable[[str], None] = checkpoint_wal
 
@@ -646,14 +653,84 @@ def _run_batch(
     return 0
 
 
-def _shard(companies: list[CompanyConfig], shard_size: int | None) -> list[list[CompanyConfig]]:
-    """Split `companies` into consecutive shard_size-sized batches, in their
-    existing config.json order. shard_size=None (or >= len(companies))
-    returns a single shard containing everything — the original, unsharded
-    behavior."""
-    if not shard_size or shard_size >= len(companies):
+# Per-shard job-count target for _shard()'s job-count-aware bucketing —
+# see that function's docstring for why a fixed *company* count doesn't
+# bound a shard's memory footprint the way a fixed *job* count does.
+# Derived from a real measurement, not a guess: `previous` + `current`
+# together cost ~8,300 bytes per job at peak (tracemalloc, measured against
+# real prod description-length data, after freeing cursor/row
+# intermediates — see the OOM investigation this was built for). Against a
+# 1GiB cgroup shared with a ~25MB daemon and ~150MB of interpreter/
+# SQLAlchemy/requests/ThreadPoolExecutor overhead, with a safety margin for
+# GC/allocator slop, that leaves headroom for roughly 25k-31k jobs held
+# simultaneously; 25000 keeps real margin below that ceiling rather than
+# running right up against it.
+DEFAULT_SHARD_JOB_TARGET = 25_000
+
+
+def _shard(
+    companies: list[CompanyConfig],
+    shard_size: int | None,
+    job_counts_by_company: dict[str, int] | None = None,
+    job_target: int = DEFAULT_SHARD_JOB_TARGET,
+) -> list[list[CompanyConfig]]:
+    """Split `companies` into batches, in their existing config.json order.
+
+    shard_size=None (or >= len(companies)) returns a single shard containing
+    everything — the original, unsharded behavior.
+
+    When job_counts_by_company is available (the normal case — see
+    load_job_counts_by_company(), called once up front in run()), batches
+    are built by greedily accumulating companies until the next company
+    would push the running total past job_target, then starting a new
+    batch — bounding each shard's *job* count, not just its company count.
+    Company job counts are wildly skewed (one company can carry tens of
+    thousands of postings against a median in the low tens; see
+    DEFAULT_SHARD_JOB_TARGET's docstring), so a fixed number of companies
+    per shard doesn't reliably bound memory: a shard that happens to land
+    on a cluster of large employers can spike just as high as an unsharded
+    run. A company always gets its own shard even alone if its own count
+    already exceeds job_target — splitting a single company's scrape isn't
+    supported, and an outlier that large is rare enough not to warrant it.
+
+    shard_size still applies as an upper cap on company count per shard
+    (matters if job_counts_by_company is stale or a company's count
+    happens to undershoot its next scrape's actual volume) — a batch never
+    grows past shard_size companies even if it hasn't hit job_target yet.
+
+    Falls back to the original fixed-company-count behavior when
+    job_counts_by_company is None or empty (e.g. load_job_counts_by_company
+    failed, or this is the very first run against an empty database — no
+    prior counts exist to bucket by yet).
+    """
+    if not shard_size:
         return [companies]
-    return [companies[i : i + shard_size] for i in range(0, len(companies), shard_size)]
+    if not job_counts_by_company:
+        # No job counts to bucket by — company count is all we have. Only
+        # here (not in the job-count-aware path below) is shard_size >=
+        # len(companies) equivalent to "no sharding": with real counts, a
+        # single oversized company can still force its own shard even when
+        # shard_size alone would have fit everyone in one batch.
+        if shard_size >= len(companies):
+            return [companies]
+        return [companies[i : i + shard_size] for i in range(0, len(companies), shard_size)]
+
+    shards: list[list[CompanyConfig]] = []
+    current_shard: list[CompanyConfig] = []
+    current_jobs = 0
+    for company_cfg in companies:
+        company_jobs = job_counts_by_company.get(company_cfg["name"], 0)
+        would_exceed_jobs = current_shard and current_jobs + company_jobs > job_target
+        would_exceed_size = len(current_shard) >= shard_size
+        if current_shard and (would_exceed_jobs or would_exceed_size):
+            shards.append(current_shard)
+            current_shard = []
+            current_jobs = 0
+        current_shard.append(company_cfg)
+        current_jobs += company_jobs
+    if current_shard:
+        shards.append(current_shard)
+    return shards
 
 
 def run(
@@ -665,6 +742,7 @@ def run(
     no_detail_cache: bool = False,
     llm_provider: str | None = None,
     shard_size: int | None = None,
+    shard_job_target: int = DEFAULT_SHARD_JOB_TARGET,
     per_company_timeout_s: float | None = DEFAULT_PER_COMPANY_TIMEOUT_S,
     deps: RunDeps | None = None,
 ) -> int:
@@ -681,6 +759,12 @@ def run(
     existing caller (including --company, which always gets its own single
     unscoped batch regardless of shard_size) is unaffected unless it opts
     in.
+
+    shard_job_target (default DEFAULT_SHARD_JOB_TARGET) is _shard()'s real
+    memory-bounding knob once shard_size opts into sharding at all — see
+    _shard()'s own docstring for why job count, not company count, is what
+    actually needs bounding. shard_size still applies as an upper cap on
+    company count per shard even when job counts are known.
 
     per_company_timeout_s bounds how long any one company's scrape may run
     before a fresh attempt is requeued behind it — see _scrape_companies'
@@ -734,13 +818,25 @@ def run(
         shards = [selected]
         shard_scopes: list[set[str] | None] = [None]
     else:
-        shards = _shard(all_companies, shard_size)
+        # Job counts drive shard boundaries, not raw company count — see
+        # _shard()'s docstring. Only worth the query when sharding is
+        # actually requested at all (shard_size set); database is
+        # guaranteed set here since limit is None whenever shard_size would
+        # matter (the --database-required check above). Deliberately NOT
+        # gated on shard_size < len(all_companies) — with real job counts,
+        # a single oversized company can still force its own shard even
+        # when shard_size alone would otherwise fit everyone in one batch.
+        job_counts_by_company = (
+            deps.load_job_counts_by_company(database) if shard_size and database else {}
+        )
+        shards = _shard(all_companies, shard_size, job_counts_by_company, shard_job_target)
         if len(shards) > 1:
             log.info(
-                "--shard-size %d: splitting %d companies into %d batches",
+                "--shard-size %d: splitting %d companies into %d batches (job-count-aware: %s)",
                 shard_size,
                 len(all_companies),
                 len(shards),
+                bool(job_counts_by_company),
             )
         # A single shard covering the whole pool keeps the original
         # unscoped full-replace write/load (shard_scope=None) — only a
@@ -850,15 +946,30 @@ def main() -> None:
     parser.add_argument(
         "--shard-size",
         type=int,
-        help="split a full run (ignored when --company is set) into consecutive "
-        "batches of at most this many companies, each scraped/diffed/written/"
-        "summarized independently instead of one pass across every configured "
-        "company. Bounds peak memory to one shard's previous+current job set "
-        "instead of the whole pool's, and contains a batch's failure/timeout "
-        "to just that batch instead of losing an entire run's results — see "
-        "scraper/db.py's write_jobs()/load_previous() scope_companies/"
-        "company_names parameters. Default (unset): a single shard covering "
-        "every company, i.e. the original unsharded behavior.",
+        help="split a full run (ignored when --company is set) into batches, "
+        "each scraped/diffed/written/summarized independently instead of one "
+        "pass across every configured company. Bounds peak memory to one "
+        "shard's previous+current job set instead of the whole pool's, and "
+        "contains a batch's failure/timeout to just that batch instead of "
+        "losing an entire run's results — see scraper/db.py's write_jobs()/"
+        "load_previous() scope_companies/company_names parameters. Batches "
+        "are built by job count (see --shard-job-target), not just company "
+        "count — this value is an upper cap on companies per shard, since "
+        "company job counts are too skewed for a fixed company count alone "
+        "to bound memory (see _shard()'s docstring). Default (unset): a "
+        "single shard covering every company, i.e. the original unsharded "
+        "behavior.",
+    )
+    parser.add_argument(
+        "--shard-job-target",
+        type=int,
+        default=DEFAULT_SHARD_JOB_TARGET,
+        help="with --shard-size set, the job-count target each shard is "
+        f"greedily filled to before starting a new one (default "
+        f"{DEFAULT_SHARD_JOB_TARGET}) — see _shard()'s docstring for how "
+        "this figure was derived. Has no effect without --shard-size, or "
+        "on the very first run against an empty database (no prior job "
+        "counts exist yet to bucket by).",
     )
     parser.add_argument(
         "--per-company-timeout",
@@ -886,6 +997,7 @@ def main() -> None:
         no_detail_cache=args.no_detail_cache,
         llm_provider=args.llm_provider,
         shard_size=args.shard_size,
+        shard_job_target=args.shard_job_target,
         per_company_timeout_s=(args.per_company_timeout if args.per_company_timeout > 0 else None),
     )
     # os._exit() instead of sys.exit(): a requeued/abandoned company (see

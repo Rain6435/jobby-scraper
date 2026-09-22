@@ -62,6 +62,7 @@ from sqlalchemy import (
     UniqueConstraint,
     create_engine,
     event,
+    func,
     inspect,
     select,
     text,
@@ -374,6 +375,42 @@ def load_previous(database_url: str, company_names: set[str] | None = None) -> d
     except Exception:
         log.exception(
             "Failed to load previous state from %s — treating as first run",
+            _redacted(database_url),
+        )
+        return {}
+
+
+def load_job_counts_by_company(database_url: str) -> dict[str, int]:
+    """Each company's job count as of the last write — a cheap `GROUP BY`,
+    not a row fetch — used by main.py's --shard-size to bucket companies by
+    *job* count instead of raw company count.
+
+    Company job counts are wildly skewed (a single large employer can carry
+    tens of thousands of postings against a median in the low tens), so a
+    fixed number of companies per shard doesn't bound a shard's memory
+    footprint the way a fixed number of *jobs* does — confirmed on prod
+    2026-09-22: a 100-company shard that happened to include several large
+    employers scraped 41k jobs and came within a rounding error of the same
+    ~1GiB OOM ceiling the unsharded run was hitting.
+
+    Returns {} on any failure (missing table, bad URL, first run with an
+    empty database) — same best-effort contract as load_previous(), and the
+    same fallback meaning to the caller: no counts available, so bucket by
+    company count instead (see main.py's `_shard`).
+    """
+    try:
+        engine = get_engine(database_url)
+        with engine.connect() as conn:
+            rows = conn.execute(
+                select(companies_table.c.name, func.count(jobs_table.c.id))
+                .select_from(jobs_table)
+                .join(companies_table, companies_table.c.id == jobs_table.c.company_id)
+                .group_by(companies_table.c.name)
+            )
+            return {name: count for name, count in rows}
+    except Exception:
+        log.exception(
+            "Failed to load job counts by company from %s — falling back to company-count sharding",
             _redacted(database_url),
         )
         return {}

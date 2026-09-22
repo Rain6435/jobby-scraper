@@ -661,6 +661,88 @@ def _company(name: str) -> CompanyConfig:
     return {"name": name, "board": "stub"}
 
 
+def test_shard_buckets_by_job_count_not_company_count() -> None:
+    """The whole point of job-count-aware sharding: company job counts are
+    wildly skewed in the real pool (confirmed on prod 2026-09-22 — a
+    100-company shard that happened to include several large employers
+    scraped 41k jobs and came within a rounding error of the same OOM
+    ceiling the unsharded run was hitting), so a fixed company count per
+    shard doesn't bound memory. Greedily bucketing by cumulative job count
+    instead does."""
+    companies = [_company(f"c{i}") for i in range(5)]
+    # c0 alone is already at the job_target — must get its own shard rather
+    # than being combined with anything else.
+    job_counts = {"c0": 100, "c1": 10, "c2": 10, "c3": 10, "c4": 10}
+
+    shards = main_module._shard(
+        companies, shard_size=10, job_counts_by_company=job_counts, job_target=100
+    )
+
+    assert [c["name"] for c in shards[0]] == ["c0"]
+    # c1-c4 (10 jobs each, 40 total) all fit under job_target=100 together.
+    assert [c["name"] for c in shards[1]] == ["c1", "c2", "c3", "c4"]
+
+
+def test_shard_job_count_bucketing_still_respects_shard_size_cap() -> None:
+    """job_target alone would happily pack hundreds of tiny companies into
+    one shard — shard_size remains an upper cap on company count per shard
+    even when job counts are small, so a batch's own scrape-concurrency/
+    failure-isolation properties (see test_shard_failure_does_not_lose_
+    other_shards_results) don't degrade into one giant unscoped-feeling
+    batch just because every company in it happens to be small."""
+    companies = [_company(f"c{i}") for i in range(5)]
+    job_counts = {f"c{i}": 1 for i in range(5)}  # trivially small, all well under any job_target
+
+    shards = main_module._shard(
+        companies, shard_size=2, job_counts_by_company=job_counts, job_target=1_000_000
+    )
+
+    assert [len(s) for s in shards] == [2, 2, 1]
+
+
+def test_shard_falls_back_to_company_count_when_no_job_counts_available() -> None:
+    """A brand-new pool (first-ever run, empty database) or a failed
+    load_job_counts_by_company() call has no prior counts to bucket by —
+    must fall back to the original fixed-company-count behavior rather
+    than erroring or collapsing to one shard."""
+    companies = [_company(f"c{i}") for i in range(5)]
+
+    shards = main_module._shard(companies, shard_size=2, job_counts_by_company=None)
+
+    assert [len(s) for s in shards] == [2, 2, 1]
+
+
+def test_shard_size_run_uses_real_previous_job_counts(tmp_path: Path) -> None:
+    """End-to-end: run() must actually load job counts from the database
+    (not just accept them if handed) and use them to bucket the next run's
+    shards — the real fix, not just _shard()'s unit-level logic."""
+    companies = [_company(f"c{i}") for i in range(4)]
+    # First run: c0 has a large pool (100 jobs), the rest are tiny (5 each) —
+    # establishes "previous" counts for the second run to bucket by.
+    db_url, deps = setup_run(
+        tmp_path,
+        companies=companies,
+        jobs_by_company={
+            "c0": [job("c0", f"c0:{i}") for i in range(100)],
+            "c1": [job("c1", "c1:1") for _ in range(5)],
+            "c2": [job("c2", "c2:1") for _ in range(5)],
+            "c3": [job("c3", "c3:1") for _ in range(5)],
+        },
+    )
+    assert main_module.run(database=db_url, deps=deps) == 0
+
+    # Second run: same companies, shard_job_target set so c0's known 100-job
+    # count alone should force it into its own shard, separate from c1-c3.
+    write_calls = CountingWriteJobsStub(success=True)
+    deps.write_jobs = write_calls
+    result = main_module.run(database=db_url, deps=deps, shard_size=4, shard_job_target=50)
+
+    assert result == 0
+    # 4 companies, shard_size=4 would normally collapse to 1 shard — job
+    # counts must have split it instead (c0 alone, c1-c3 together).
+    assert write_calls.calls == 2
+
+
 def test_scrape_companies_requeues_a_straggler_past_the_timeout() -> None:
     """A company still running past per_company_timeout_s must get a fresh
     attempt submitted behind it rather than blocking the rest of the batch —
