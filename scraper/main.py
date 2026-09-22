@@ -663,9 +663,18 @@ def _run_batch(
 # 1GiB cgroup shared with a ~25MB daemon and ~150MB of interpreter/
 # SQLAlchemy/requests/ThreadPoolExecutor overhead, with a safety margin for
 # GC/allocator slop, that leaves headroom for roughly 25k-31k jobs held
-# simultaneously; 25000 keeps real margin below that ceiling rather than
-# running right up against it.
-DEFAULT_SHARD_JOB_TARGET = 25_000
+# simultaneously.
+#
+# 25000 (the value this figure first shipped with) turned out to have too
+# thin a margin in practice: confirmed on prod 2026-09-22, a shard bucketed
+# to 25000 using the PREVIOUS run's per-company counts actually scraped
+# 25614 jobs this run (normal day-to-day count drift — the bucketing
+# decision is necessarily made on stale data, since a company's current-run
+# count isn't known until after it's scraped) — MemoryPeak touched
+# ~1,076MB, just over the 1,073,741,824-byte MemoryMax, though no kill
+# happened that time. 20000 leaves room for that drift instead of assuming
+# every run's counts match the last one exactly.
+DEFAULT_SHARD_JOB_TARGET = 20_000
 
 
 def _shard(
