@@ -64,8 +64,13 @@ class MetaResponse(TypedDict):
 class MetaScraper(BaseScraper):
     source = "meta"
 
-    def __init__(self, company: MetaConfig) -> None:
-        super().__init__(company)
+    def __init__(
+        self,
+        company: MetaConfig,
+        settings: dict[str, object] | None = None,
+        previous: dict[str, Job] | None = None,
+    ) -> None:
+        super().__init__(company, settings, previous)
         self._meta_config: MetaConfig = company
 
     def fetch_jobs(self) -> list[Job]:

@@ -577,10 +577,23 @@ def _run_batch(
     # 2026-08-14 before this check existed).
     #
     # Retried here (not inside write_jobs() itself, to keep its own
-    # transaction/atomicity semantics unchanged): the scraper can itself be
-    # the one starved by a concurrent Node/daemon write against the shared
-    # data/app.db file, in which case a purely transient SQLITE_BUSY
-    # shouldn't discard an entire run's results — see GitHub issue #38.
+    # transaction/atomicity semantics unchanged): a purely transient
+    # SQLITE_BUSY shouldn't discard an entire run's results — see GitHub
+    # issue #38. Post-Phase-B DB split, this scraper writes to its own
+    # scraper.db rather than the shared app.db Node/daemon writes (see
+    # jobs/scraper_runner.py's run_jobscraper_scrape() docstring in the
+    # parent job_pipeline repo), so the contention this now guards against is
+    # no longer Node-vs-scraper — it's multiple concurrently-scheduled
+    # sweep/scoring jobs in that parent repo's jobs/scheduler.py hitting this
+    # same file while a shard write is in flight, compounded by slow
+    # SQLite writes under memory/swap pressure on a constrained prod box
+    # (writes observed taking 40-95s instead of a fraction of a second —
+    # confirmed via prod diagnostics 2026-09-24). 5 attempts with
+    # exponential backoff (5s/10s/20s/30s/30s, matching make_session()'s own
+    # HTTP-retry idiom below) gives contention meaningfully more room to
+    # clear than the previous 3 attempts at 2s/4s, which was negligible next
+    # to a single attempt's own ~60s SQLite busy_timeout (get_engine()'s
+    # connect_args).
     # Failed companies are excluded from the write's own scope too, not just
     # carried forward into full_current above: write_jobs(scope_companies=...)
     # deletes-then-reinserts exactly that scope's jobs/job_locations rows, so
@@ -593,7 +606,7 @@ def _run_batch(
     write_scope = shard_scope - failed_names if shard_scope is not None else None
     assert database is not None  # guaranteed by the --database-required check above
     write_succeeded = False
-    write_attempts = 3
+    write_attempts = 5
     for attempt in range(1, write_attempts + 1):
         write_succeeded = deps.write_jobs(
             database, full_current, {j.id for j in new_jobs}, scope_companies=write_scope
@@ -601,7 +614,7 @@ def _run_batch(
         if write_succeeded:
             break
         if attempt < write_attempts:
-            backoff = 2 * attempt
+            backoff = min(30, 5 * 2 ** (attempt - 1))
             log.warning(
                 "Database write attempt %d/%d failed — retrying in %ds",
                 attempt,
@@ -856,6 +869,7 @@ def run(
         )
 
     exit_code = 0
+    shards_succeeded = 0
     for batch, scope in zip(shards, shard_scopes):
         batch_code = _run_batch(
             batch,
@@ -870,6 +884,8 @@ def run(
             shard_scope=scope,
             per_company_timeout_s=per_company_timeout_s,
         )
+        if batch_code == 0:
+            shards_succeeded += 1
         # Worst-severity-wins: 1 > 130 > 0, so one shard's hard failure is
         # never masked by a later shard's clean 0, and an interruption is
         # never masked by a later shard finishing normally.
@@ -878,6 +894,30 @@ def run(
         elif batch_code == 130 and exit_code == 0:
             exit_code = 130
 
+    # A caller invoking this as a subprocess (job_pipeline's
+    # jobs/scraper_runner.py::run_jobscraper_scrape) only ever sees this
+    # process's exit code, which is necessarily a single worst-severity-wins
+    # int — it can't itself distinguish "every shard failed" from "one shard
+    # out of many failed, the rest wrote real fresh data." This log line is
+    # the additive channel that lets a caller parsing captured
+    # stdout/stderr make that distinction (see run_jobscraper_pipeline() in
+    # job_pipeline's jobs/jobscraper_pool.py, which used to abort ingest/
+    # parse on ANY scrape error — discarding a run where most shards
+    # actually succeeded). Emitted unconditionally, not just on failure, so
+    # the happy path carries the same visibility. Plain log.info + a fixed
+    # "SHARD_SUMMARY " prefix and JSON body — parseable by a simple
+    # string-split, no new dependency, no wire-format commitment beyond
+    # "this substring, followed by JSON."
+    log.info(
+        "SHARD_SUMMARY %s",
+        json.dumps(
+            {
+                "total": len(shards),
+                "succeeded": shards_succeeded,
+                "failed": len(shards) - shards_succeeded,
+            }
+        ),
+    )
     log.info("Run finished in %.1fs", time.monotonic() - run_started)
     return exit_code
 

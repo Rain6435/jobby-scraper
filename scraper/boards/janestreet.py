@@ -70,8 +70,13 @@ class JaneStreetRawJob(TypedDict):
 class JaneStreetScraper(BaseScraper):
     source = "janestreet"
 
-    def __init__(self, company: JaneStreetConfig) -> None:
-        super().__init__(company)
+    def __init__(
+        self,
+        company: JaneStreetConfig,
+        settings: dict[str, object] | None = None,
+        previous: dict[str, Job] | None = None,
+    ) -> None:
+        super().__init__(company, settings, previous)
         self._jane_config: JaneStreetConfig = company
 
     def fetch_jobs(self) -> list[Job]:

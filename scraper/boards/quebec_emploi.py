@@ -137,8 +137,13 @@ def _resolve_admin_regions(
 class QuebecEmploiScraper(BaseScraper):
     source = "quebec_emploi"
 
-    def __init__(self, company: QuebecEmploiConfig) -> None:
-        super().__init__(company)
+    def __init__(
+        self,
+        company: QuebecEmploiConfig,
+        settings: dict[str, object] | None = None,
+        previous: dict[str, Job] | None = None,
+    ) -> None:
+        super().__init__(company, settings, previous)
         self._qc_config: QuebecEmploiConfig = company
         if "qu-bec" in self.slug:
             self.slug = self.slug.replace("qu-bec", "quebec")

@@ -254,25 +254,35 @@ def _ensure_companies_group_name_column(engine: Engine) -> None:
 
 
 def checkpoint_wal(database_url: str) -> None:
-    """Best-effort PASSIVE WAL checkpoint after a write, for sqlite URLs only
-    (a no-op for other backends). PASSIVE checkpoints as much of the WAL as
-    it can without blocking or forcing out concurrent readers/writers —
-    unlike wal_autocheckpoint (set from job_pipeline's Node side, see
-    jobby/classes/DB.ts), which can't run to completion while any
-    transaction is still open, this runs after write_jobs() has already
-    closed its own transactions, so it's a direct backstop against the WAL
-    growing unbounded (387MB observed in prod before this existed) rather
-    than relying solely on auto-checkpoint's opportunistic timing. Failure
-    here (e.g. another writer briefly holding the file) is logged and
-    swallowed — it's cleanup, not part of the write's own success/failure
-    contract.
+    """Best-effort TRUNCATE WAL checkpoint after a write, for sqlite URLs only
+    (a no-op for other backends). Unlike wal_autocheckpoint (set from
+    job_pipeline's Node side, see jobby/classes/DB.ts), which can't run to
+    completion while any transaction is still open, this runs after
+    write_jobs() has already closed its own transactions, so it's a direct
+    backstop against the WAL growing unbounded (387MB observed in prod
+    before this existed) rather than relying solely on auto-checkpoint's
+    opportunistic timing.
+
+    TRUNCATE, not PASSIVE: both checkpoint only as much of the WAL as they
+    safely can without blocking or forcing out concurrent readers/writers,
+    but PASSIVE stops there — with several shards writing back-to-back plus
+    other concurrently-scheduled readers/writers against the same file (see
+    job_pipeline's jobs/scheduler.py), a PASSIVE checkpoint frequently found
+    nothing safe to do and the WAL kept growing regardless (243MB observed
+    in prod even with PASSIVE already in place). TRUNCATE performs the same
+    non-blocking checkpoint but also truncates the WAL file back down
+    afterward whenever a full checkpoint was possible, reclaiming disk space
+    instead of leaving a large-but-mostly-empty WAL file sitting between
+    shards. Failure here (e.g. another writer briefly holding the file) is
+    logged and swallowed — it's cleanup, not part of the write's own
+    success/failure contract.
     """
     if make_url(database_url).get_backend_name() != "sqlite":
         return
     try:
         engine = get_engine(database_url)
         with engine.connect() as conn:
-            conn.exec_driver_sql("PRAGMA wal_checkpoint(PASSIVE)")
+            conn.exec_driver_sql("PRAGMA wal_checkpoint(TRUNCATE)")
     except Exception:
         log.warning("WAL checkpoint failed for %s (non-fatal)", _redacted(database_url))
 

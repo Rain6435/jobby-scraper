@@ -65,6 +65,18 @@ def test_registry_resolution() -> None:
     assert SCRAPERS["emploi_quebec"] is QuebecEmploiScraper
 
 
+def test_init_accepts_settings_and_previous() -> None:
+    """Regression test: scrape_one (scraper/main.py) always calls
+    scraper_cls(company_cfg, settings, previous=scraper_previous) — a
+    subclass __init__ that only accepts `company` raises TypeError here,
+    caught by scrape_one's broad except and silently logged as an ordinary
+    scrape failure (zero jobs, every run). Confirms this scraper's __init__
+    matches BaseScraper's real signature."""
+    scraper = QuebecEmploiScraper(COMPANY, {}, previous={})
+    assert scraper.settings == {}
+    assert scraper.previous == {}
+
+
 def test_resolve_admin_regions() -> None:
     assert _resolve_admin_regions("06", None, None) == ["06"]
     assert _resolve_admin_regions("Montréal", None, None) == ["06"]

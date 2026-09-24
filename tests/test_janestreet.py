@@ -84,6 +84,18 @@ def test_fetch_jobs_success() -> None:
     assert j3.locations == ["Hong Kong"]
 
 
+def test_init_accepts_settings_and_previous() -> None:
+    """Regression test: scrape_one (scraper/main.py) always calls
+    scraper_cls(company_cfg, settings, previous=scraper_previous) — a
+    subclass __init__ that only accepts `company` raises TypeError here,
+    caught by scrape_one's broad except and silently logged as an ordinary
+    scrape failure (zero jobs, every run). Confirms this scraper's __init__
+    matches BaseScraper's real signature."""
+    scraper = JaneStreetScraper(COMPANY, {}, previous={})
+    assert scraper.settings == {}
+    assert scraper.previous == {}
+
+
 @responses.activate
 def test_fetch_jobs_location_filter() -> None:
     responses.get(JOBS_URL, json=SAMPLE_JOBS)

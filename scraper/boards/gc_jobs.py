@@ -67,8 +67,13 @@ def _split_locations(loc_str: str) -> list[str]:
 class GCJobsScraper(BaseScraper):
     source = "gc_jobs"
 
-    def __init__(self, company: GCJobsConfig) -> None:
-        super().__init__(company)
+    def __init__(
+        self,
+        company: GCJobsConfig,
+        settings: dict[str, object] | None = None,
+        previous: dict[str, Job] | None = None,
+    ) -> None:
+        super().__init__(company, settings, previous)
         self._gc_config: GCJobsConfig = company
 
     def fetch_jobs(self) -> list[Job]:

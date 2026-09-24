@@ -306,15 +306,15 @@ def test_write_failure_fails_the_run(tmp_path: Path, monkeypatch: pytest.MonkeyP
 
     result = main_module.run(database=db_url, deps=deps)
 
-    assert write_calls.calls == 3
+    assert write_calls.calls == 5
     assert result == 1
 
 
 def test_write_failure_retries_and_recovers(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """A transient write failure (e.g. SQLITE_BUSY from a concurrent Node
-    write against the shared data/app.db, see GitHub issue #38) should not
+    """A transient write failure (e.g. SQLITE_BUSY from concurrent scheduler
+    jobs against the shared scraper.db, see GitHub issue #38) should not
     discard the run's results if a later retry succeeds."""
     monkeypatch.setattr(main_module.time, "sleep", _noop_sleep)
     db_url, deps = setup_run(
@@ -328,6 +328,30 @@ def test_write_failure_retries_and_recovers(
     result = main_module.run(database=db_url, deps=deps)
 
     assert write_calls.calls == 3
+    assert result == 0
+
+
+def test_write_failure_recovers_on_a_late_attempt(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Regression test for the retry budget itself: with write_attempts
+    raised from 3 to 5 (see main.py's _run_batch — under prod's observed
+    40-95s writes during memory/swap pressure, 3 attempts at 2s/4s backoff
+    left too little room for contention to clear), a write that only
+    recovers on attempt 4 or 5 must now succeed where it previously
+    wouldn't have gotten the chance to."""
+    monkeypatch.setattr(main_module.time, "sleep", _noop_sleep)
+    db_url, deps = setup_run(
+        tmp_path,
+        companies=[{"name": "Acme", "board": "stub"}],
+        jobs_by_company={"Acme": [job("Acme", "acme:1")]},
+    )
+    write_calls = FlakyWriteJobsStub(fail_times=4)
+    deps.write_jobs = write_calls
+
+    result = main_module.run(database=db_url, deps=deps)
+
+    assert write_calls.calls == 5
     assert result == 0
 
 
