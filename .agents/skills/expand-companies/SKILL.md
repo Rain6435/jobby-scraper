@@ -35,12 +35,12 @@ When expanding any geographic region, metropolitan area, or thematic target, the
 
 ## 2. Supported ATS Platforms & Config Schemas
 
-Every entry in `config.json` must strictly conform to [scraper/config_types.py](file:///root/jobby-scraper/scraper/config_types.py). All ATS platforms are supported equally:
+Every entry in `config.json` must strictly conform to [scraper/config_types.py](file:///root/jobby-scraper/scraper/config_types.py). In addition to board-specific keys, all companies carry an optional `"blurb"` and a unified SVG logo path `"logo": "data/logos/{slug}.svg"` (automatically created and formatted in `data/logos/`). All ATS platforms are supported equally:
 
 | Board | Required Config Key(s) | Public Endpoint Pattern | Config JSON Example |
 | :--- | :--- | :--- | :--- |
-| **Greenhouse** | `token` | `boards-api.greenhouse.io/v1/boards/{token}/jobs` | `{"name": "Allen Institute", "board": "greenhouse", "token": "thealleninstitute"}` |
-| **Ashby** | `slug` | `api.ashbyhq.com/posting-api/job-board/{slug}` | `{"name": "Linear", "board": "ashby", "slug": "linear"}` |
+| **Greenhouse** | `token` | `boards-api.greenhouse.io/v1/boards/{token}/jobs` | `{"name": "Allen Institute", "board": "greenhouse", "token": "thealleninstitute", "logo": "data/logos/allen-institute.svg"}` |
+| **Ashby** | `slug` | `api.ashbyhq.com/posting-api/job-board/{slug}` | `{"name": "Linear", "board": "ashby", "slug": "linear", "logo": "data/logos/linear.svg"}` |
 | **Lever** | `company` | `api.lever.co/v0/postings/{company}?mode=json` | `{"name": "Brooks Running", "board": "lever", "company": "brooksrunning"}` |
 | **BambooHR** | `company` | `{company}.bamboohr.com/careers/list` | `{"name": "GLY Construction", "board": "bamboohr", "company": "gly"}` |
 | **SmartRecruiters** | `company` | `api.smartrecruiters.com/v1/companies/{company}/postings` | `{"name": "University Health Network", "board": "smartrecruiters", "company": "universityhealthnetwork"}` |
@@ -116,7 +116,13 @@ For institutions with custom domains or enterprise portals:
 
 ### Step 4: Verification & Live Smoke Testing
 1. **Deduplication**: Verify the company or endpoint signature does not already exist in `config.json`.
-2. **Live Scraper Validation**: Execute a live smoke test to confirm jobs parse cleanly:
+2. **Unified SVG Logo**: When `--apply` is passed to `discover_companies.py`, a unified SVG logo is automatically resolved and stored in `data/logos/{slug}.svg`, and attached to the company entry. To manually backfill or regenerate a logo:
+   ```bash
+   uv run python scripts/backfill_logos.py --company "<Employer Name>"
+   ```
+   A logo in `config.json` alone is not enough to reach the consuming apps — it only lands in the `companies.logo` SQL column (which `job_pipeline`'s pool/API/frontend actually read) via `write_jobs()` on this company's *next real scrape*. If you're adding/backfilling logos outside a normal scrape run (e.g. batch-registering many companies at once), also run `job_pipeline`'s `scripts/backfill_companies_logo_column.py` against the target database afterward to push `config.json`'s logo paths into `companies.logo` without waiting for a scrape.
+   Every generated/resolved SVG must be valid strict XML with every namespace prefix it uses declared on its own root — Chromium tolerates an unbound prefix (e.g. `rdf:`/`dc:` from a `RealFaviconGenerator`-sourced favicon's `<metadata>` block) in inline SVG, but Firefox's stricter parser throws `prefix not bound to a namespace` and refuses to render the entire logo. `normalize_svg` (`scraper/logos.py`) re-declares `xmlns:rdf`/`xmlns:dc`/`xmlns:cc` on its output root whenever a kept child still uses one of those prefixes — if a new logo source introduces a different namespace prefix, extend `_NAMESPACE_URIS` there rather than special-casing it downstream.
+3. **Live Scraper Validation**: Execute a live smoke test to confirm jobs parse cleanly:
    ```bash
    uv run python -m scraper.main --company "<Employer Name>" --limit 1 --verbose
    ```

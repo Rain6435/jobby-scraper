@@ -5,12 +5,12 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_ROOT"
 
 # Resolve python interpreter
-if [ -f "$REPO_ROOT/../venv/bin/python3" ]; then
+if [ -f "$REPO_ROOT/.venv/bin/python" ]; then
+    PYTHON="$REPO_ROOT/.venv/bin/python"
+elif [ -f "$REPO_ROOT/../venv/bin/python3" ]; then
     PYTHON="$REPO_ROOT/../venv/bin/python3"
 elif [ -f "$REPO_ROOT/../venv/bin/python" ]; then
     PYTHON="$REPO_ROOT/../venv/bin/python"
-elif [ -f "$REPO_ROOT/.venv/bin/python" ]; then
-    PYTHON="$REPO_ROOT/.venv/bin/python"
 elif command -v python3 &>/dev/null; then
     PYTHON="python3"
 elif command -v python &>/dev/null; then
@@ -23,7 +23,7 @@ fi
 export PYTHONPATH="$REPO_ROOT:${PYTHONPATH:-}"
 
 echo "=== 1. Running Tests (pytest) ==="
-if "$PYTHON" -m pytest -n auto --help &>/dev/null; then
+if "$PYTHON" -c "import xdist" &>/dev/null; then
     "$PYTHON" -m pytest -n auto -q
 else
     "$PYTHON" -m pytest -q

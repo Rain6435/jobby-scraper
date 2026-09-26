@@ -26,6 +26,7 @@ class Job:
     description: str = ""  # plain-text posting body, HTML stripped, truncated
     role_summary: str = ""  # 1-2 sentence AI summary of this specific posting
     company_blurb: str = ""  # short AI blurb about the company, from config.json
+    company_logo: str = ""  # path to unified company SVG logo file, from config.json
     # Umbrella label for boards that map many distinct per-posting `company`
     # values (e.g. gc_jobs.py's per-department "RCMP"/"Health Canada"/etc.)
     # under one broader entity ("Government of Canada"). "" for every board

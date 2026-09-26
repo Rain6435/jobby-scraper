@@ -24,6 +24,8 @@ class CompanyConfig(TypedDict):
     # confirmed single-country employer whose ATS omits the country from
     # its own location text (e.g. DaVita's "00146 - Puyallup Dialysis").
     default_country: NotRequired[str]
+    # Relative path to unified company SVG logo file (e.g. "data/logos/apple.svg")
+    logo: NotRequired[str]
 
 
 class WorkdayConfig(CompanyConfig):
@@ -236,6 +238,7 @@ class GCJobsConfig(CompanyConfig):
     language: NotRequired[str]
     max_pages: NotRequired[int]
     fetch_details: NotRequired[bool]
+    resolve_transitions: NotRequired[bool]
 
 
 class QuebecEmploiConfig(CompanyConfig):

@@ -496,8 +496,10 @@ def _run_batch(
     # only way the blurb reaches them (see db.py's companies_table.blurb,
     # written once per company rather than duplicated per job there).
     blurbs = {c["name"]: c.get("blurb", "") for c in config["companies"]}
+    logos = {c["name"]: c.get("logo", "") for c in config["companies"]}
     for job in current:
         job.company_blurb = blurbs.get(job.company, "")
+        job.company_logo = logos.get(job.company, "")
 
     # Denormalize each company's optional "default_country" (config.json) —
     # a fallback parse_location() applies only when a job's location string
@@ -756,6 +758,7 @@ def _shard(
 
 
 def run(
+    url: str | None = None,
     company: str | None = None,
     limit: int | None = None,
     verbose: bool = False,
@@ -813,6 +816,21 @@ def run(
         os.environ["LLM_PROVIDER"] = llm_provider
     run_started = time.monotonic()
     log.debug("Config path: %s", deps.config_path)
+
+    if url:
+        from scraper.link_parser import job_to_dict, parse_job_url
+
+        try:
+            job = parse_job_url(url, config_path=deps.config_path)
+            print(json.dumps(job_to_dict(job), indent=2, ensure_ascii=False))
+            if database:
+                log.info("Persisting job %s to %s...", job.id, database)
+                write_jobs(database, [job], {job.id}, scope_companies={job.company})
+                log.info("Successfully persisted job %s", job.id)
+            return 0
+        except Exception as exc:
+            log.error("Failed to parse job URL: %s", exc)
+            return 1
 
     config: ConfigFile = json.loads(deps.config_path.read_text(encoding="utf-8"))
     log.debug("Loaded config: %d companies", len(config["companies"]))
@@ -928,6 +946,13 @@ def main() -> None:
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
     parser.add_argument(
+        "--url",
+        help="parse a single job posting by direct link (supports Workday, Greenhouse, "
+        "Ashby, Lever, SmartRecruiters, Rippling, BambooHR, Workable, Breezy, "
+        "Recruitee, and generic Schema.org JobPosting). Outputs parsed job to stdout; "
+        "persists to --database if provided.",
+    )
+    parser.add_argument(
         "--company",
         help="only scrape this one company (must match a 'name' in config.json) and "
         "merge its fresh jobs into the previous run's full job set — an "
@@ -1038,6 +1063,7 @@ def main() -> None:
     )
     args = parser.parse_args()
     exit_code = run(
+        url=args.url,
         company=args.company,
         limit=args.limit,
         verbose=args.verbose,

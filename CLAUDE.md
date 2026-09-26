@@ -21,11 +21,15 @@ python -m pytest tests/test_workday.py # run one test file
 python -m scraper.main --database "sqlite:///jobs.db"  # full run (ANTHROPIC_API_KEY/ANTHROPIC_AUTH_TOKEN optional)
 python -m scraper.main --company "Acme" --database "sqlite:///jobs.db"       # on-demand refresh: scrape + merge just this company
 python -m scraper.main --company "Acme" --limit 1 --verbose  # smoke test one job, full DEBUG detail, skips the write (no --database needed)
+python -m scraper.main --url "<job_url>"                     # parse single job link to JSON stdout (Workday, Greenhouse, Ashby, Lever, etc.)
+python -m scraper.main --url "<job_url>" --database "sqlite:///jobs.db" # parse single job link and persist to db
+python -m scraper.link_parser "<job_url>"                    # standalone link parser CLI
 python -m scraper.main --database "postgresql+psycopg2://user:pass@host/db"  # any SQLAlchemy URL
 python -m scraper.main --database "sqlite:///jobs.db" --concurrency 16       # scrape more companies in parallel (default 16)
 python -m scraper.main --database "sqlite:///../data/jobs.db" --no-detail-cache  # one-time backfill: re-fetch every detail page
 python -m scraper.main --database "sqlite:///jobs.db" --llm-provider ollama  # pin AI summaries to just Ollama (skip Anthropic entirely)
 python -m scraper.backfill_blurbs      # one-time: generate company blurbs into config.json (needs ANTHROPIC_API_KEY or ANTHROPIC_AUTH_TOKEN)
+python -m scraper.backfill_logos       # resolve unified SVG logos into data/logos/ and config.json
 pip install -r requirements.txt        # deps (requests, anthropic, sqlalchemy; pytest + responses for dev)
 ```
 
@@ -86,6 +90,8 @@ All boards store every listing they fetch — there is no keyword, title, locati
 **Adding a board**: add the config entry, run `python -m scraper.main --company "New Company" --database "<url>"` locally to merge just its listings into the pool.
 
 **Adding a company blurb**: after adding a company entry, either run `python -m scraper.backfill_blurbs` (only touches entries missing a `"blurb"`, so it's safe to run repeatedly) or hand-write a short `"blurb"` value directly into the entry. See "AI Summaries and Company Blurbs" below.
+
+**Adding a company logo**: every company in `config.json` carries a unified SVG logo in `data/logos/{slug}.svg`, referenced via `"logo": "data/logos/{slug}.svg"`. `scripts/discover_companies.py --apply` automatically resolves and saves unified SVG logos for new companies. To manually resolve, backfill, or regenerate logos, run `python -m scraper.backfill_logos [--company "Name"] [--force]`. See `scraper/logos.py` for resolution tiers (vector libraries, Wikimedia Commons, website scraping, embedded 128px favicons, and deterministic geometric monograms).
 
 ## AI Summaries and Company Blurbs
 

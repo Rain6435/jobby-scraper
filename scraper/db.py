@@ -87,6 +87,8 @@ companies_table = Table(
     # gc_jobs.py's per-department company names) — "" when `name` needs no
     # broader grouping. See Job.company_group.
     Column("group_name", String, nullable=False, server_default=""),
+    # Relative path to unified company SVG logo file (e.g. "data/logos/apple.svg")
+    Column("logo", String, nullable=False, server_default=""),
 )
 
 sources_table = Table(
@@ -234,6 +236,7 @@ def get_engine(database_url: str) -> Engine:
 
     metadata.create_all(engine)
     _ensure_companies_group_name_column(engine)
+    _ensure_companies_logo_column(engine)
     _ENGINES[database_url] = engine
     return engine
 
@@ -251,6 +254,17 @@ def _ensure_companies_group_name_column(engine: Engine) -> None:
             conn.execute(
                 text("ALTER TABLE companies ADD COLUMN group_name VARCHAR NOT NULL DEFAULT ''")
             )
+
+
+def _ensure_companies_logo_column(engine: Engine) -> None:
+    """Same backfill as _ensure_companies_group_name_column above, for a
+    `companies` table from before the `logo` column existed.
+    """
+    inspector = inspect(engine)
+    existing = {col["name"] for col in inspector.get_columns("companies")}
+    if "logo" not in existing:
+        with engine.begin() as conn:
+            conn.execute(text("ALTER TABLE companies ADD COLUMN logo VARCHAR NOT NULL DEFAULT ''"))
 
 
 def checkpoint_wal(database_url: str) -> None:
@@ -379,6 +393,7 @@ def load_previous(database_url: str, company_names: set[str] | None = None) -> d
                     description=row.description,
                     role_summary=row.role_summary,
                     company_blurb=company.blurb if company else "",
+                    company_logo=getattr(company, "logo", "") if company else "",
                     company_group=company.group_name if company else "",
                 )
         return previous
@@ -704,6 +719,7 @@ def write_jobs(
         with engine.begin() as conn:
             company_blurbs = {job.company: job.company_blurb for job in unique_jobs}
             company_groups = {job.company: job.company_group for job in unique_jobs}
+            company_logos = {job.company: job.company_logo for job in unique_jobs}
             company_ids = _get_or_create_ids(conn, companies_table, set(company_blurbs))
             for name, blurb in company_blurbs.items():
                 if blurb:
@@ -718,6 +734,13 @@ def write_jobs(
                         companies_table.update()
                         .where(companies_table.c.id == company_ids[name])
                         .values(group_name=group)
+                    )
+            for name, logo in company_logos.items():
+                if logo:
+                    conn.execute(
+                        companies_table.update()
+                        .where(companies_table.c.id == company_ids[name])
+                        .values(logo=logo)
                     )
             source_ids = _get_or_create_ids(
                 conn, sources_table, {job.source for job in unique_jobs}

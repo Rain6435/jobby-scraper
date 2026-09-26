@@ -4,6 +4,7 @@ from scraper.boards.gc_jobs import (
     BASE_URL,
     POSTER_URL,
     GCJobsScraper,
+    parse_transition_page,
 )
 from scraper.config_types import GCJobsConfig
 
@@ -266,3 +267,65 @@ def test_fetch_jobs_network_error() -> None:
     scraper = GCJobsScraper(COMPANY)
     jobs = scraper.fetch_jobs()
     assert jobs == []
+
+
+SAMPLE_TRANSITION_HTML = """
+<!DOCTYPE html>
+<html>
+<body>
+<main>
+    <h1>You will leave the <abbr title='Government of Canada'>GC</abbr> Jobs Web site</h1>
+    <p>The job opportunity you have selected requires the Public Service Commission (PSC) to transfer you to the hiring organization's Web site.</p>
+    <p>Select the link below to be transferred from the PSC's GC Jobs Web site and be directed to the new Web site.</p>
+    <p><a href="https://careers.cse-cst.gc.ca/en/careers/software-developer-various-levels-CA-248221-en/">Software Developer (Various Levels)</a></p>
+</main>
+</body>
+</html>
+"""
+
+
+def test_parse_transition_page() -> None:
+    res = parse_transition_page(SAMPLE_TRANSITION_HTML)
+    assert res is not None
+    url, title = res
+    assert (
+        url
+        == "https://careers.cse-cst.gc.ca/en/careers/software-developer-various-levels-CA-248221-en/"
+    )
+    assert title == "Software Developer (Various Levels)"
+
+    # Non-transition page returns None
+    assert parse_transition_page(SAMPLE_DETAIL) is None
+
+
+@responses.activate
+def test_fetch_jobs_with_transition_page() -> None:
+    _mock_session_handshake()
+    responses.get(
+        f"{POSTER_URL}?poster=2459537&toggleLanguage=en",
+        body=SAMPLE_TRANSITION_HTML,
+        status=200,
+    )
+    responses.get(
+        f"{POSTER_URL}?poster=2458193&toggleLanguage=en",
+        body="<main><p>Parks Canada regular job detail</p></main>",
+        status=200,
+    )
+
+    scraper = GCJobsScraper(
+        {"name": "Government of Canada", "board": "gc_jobs", "resolve_transitions": True}
+    )
+    jobs = scraper.fetch_jobs()
+
+    assert len(jobs) == 2
+    j1 = jobs[0]
+    assert (
+        j1.url
+        == "https://careers.cse-cst.gc.ca/en/careers/software-developer-various-levels-CA-248221-en/"
+    )
+    assert "You will leave the" not in j1.description
+    assert "Department: Royal Canadian Mounted Police" in j1.description
+
+    j2 = jobs[1]
+    assert j2.url == f"{POSTER_URL}?poster=2458193&toggleLanguage=en"
+    assert "Parks Canada regular job detail" in j2.description

@@ -782,6 +782,16 @@ def append_to_config(new_configs: list[ProbeResult]) -> int:
             {k: v for k, v in cfg.items() if k not in ("count", "sample", "location")},
         )
         if clean.get("name", "").lower() not in existing_signatures:
+            # Resolve and attach unified SVG logo for newly discovered company
+            try:
+                from scraper.logos import resolve_and_save_logo
+
+                logo_path = resolve_and_save_logo(clean)
+                clean["logo"] = logo_path
+                print(f"  [LOGO] Attached logo for {clean.get('name')}: {logo_path}")
+            except Exception as e:
+                print(f"  [LOGO] Warning: Failed to resolve logo for {clean.get('name')}: {e}")
+
             existing_companies.append(clean)
             existing_signatures.add(clean.get("name", "").lower())
             added += 1

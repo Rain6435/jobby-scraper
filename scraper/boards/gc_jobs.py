@@ -30,6 +30,7 @@ import math
 import re
 from html import unescape
 from typing import cast
+from urllib.parse import urlparse
 
 import requests
 
@@ -45,6 +46,46 @@ DEFAULT_MAX_PAGES = 25  # ~500 jobs by default (full federal listing is ~400-450
 TIMEOUT = 30
 
 log = logging.getLogger("scraper.gc_jobs")
+
+
+def parse_transition_page(html: str) -> tuple[str, str] | None:
+    """Detect if an HTML page is a GC Jobs transition / redirection page.
+
+    Some Crown Corporations and specialized agencies (CSE, CATSA, CNSC, Museum of Nature,
+    etc.) post competitions on GC Jobs that redirect to external applicant tracking systems.
+    Returns (target_url, link_title) if detected, else None.
+    """
+    lower = html.lower()
+    is_transition = (
+        "you will leave the" in lower
+        or "vous quittez" in lower
+        or "external redirect" in lower
+        or "being redirected" in lower
+        or "transferred from the psc" in lower
+    )
+    if not is_transition:
+        return None
+
+    main_m = re.search(r"<main\b[^>]*>(.*?)</main>", html, re.DOTALL | re.IGNORECASE)
+    search_html = main_m.group(1) if main_m else html
+
+    for m in re.finditer(
+        r'<a\s+[^>]*href=["\'](http[^"\']+)["\'][^>]*>(.*?)</a>',
+        search_html,
+        re.DOTALL | re.IGNORECASE,
+    ):
+        target_url = unescape(m.group(1).strip())
+        link_title = unescape(re.sub(r"<[^>]+>", "", m.group(2))).strip()
+        parsed_target = urlparse(target_url)
+        if (
+            parsed_target.netloc
+            and "emploisfp-psjobs" not in parsed_target.netloc
+            and "canada.ca/en/services" not in target_url
+            and "canada.ca/fr/services" not in target_url
+        ):
+            return target_url, link_title
+
+    return None
 
 
 def _split_locations(loc_str: str) -> list[str]:
@@ -174,12 +215,13 @@ class GCJobsScraper(BaseScraper):
             filtered_items.append(item)
 
         should_fetch_details = self._gc_config.get("fetch_details", False)
+        resolve_transitions = self._gc_config.get("resolve_transitions", False)
         details: dict[str, tuple[object, ...]] = {}
-        if should_fetch_details and filtered_items:
+        if (should_fetch_details or resolve_transitions) and filtered_items:
             job_ids = [f"{self.slug}:{poster_id}" for poster_id, _, _, _, _, _, _ in filtered_items]
             details = self._fetch_details_concurrent(
                 job_ids,
-                ("description",),
+                ("description", "real_url"),
                 lambda full_id: self._fetch_detail(session, full_id.split(":", 1)[1], lang),
                 max_workers=8,
             )
@@ -191,8 +233,13 @@ class GCJobsScraper(BaseScraper):
             primary_location = locations[0] if locations else loc
 
             description = ""
+            job_url = f"{POSTER_URL}?poster={poster_id}&toggleLanguage={lang}"
             if full_id in details:
                 description = cast(str, details[full_id][0])
+                if len(details[full_id]) > 1:
+                    real_url = cast(str, details[full_id][1])
+                    if real_url:
+                        job_url = real_url
 
             if not description:
                 desc_parts: list[str] = []
@@ -218,7 +265,7 @@ class GCJobsScraper(BaseScraper):
                     title=title,
                     location=primary_location,
                     locations=locations,
-                    url=f"{POSTER_URL}?poster={poster_id}&toggleLanguage={lang}",
+                    url=job_url,
                     posted_on=f"Closing: {closing_date}" if closing_date else "",
                     source=self.source,
                     description=description,
@@ -295,13 +342,19 @@ class GCJobsScraper(BaseScraper):
     def _fetch_detail(
         self, session: requests.Session, poster_id: str, lang: str
     ) -> tuple[object, ...]:
-        """Fetch and extract clean plain-text role description from poster detail page."""
+        """Fetch and extract clean plain-text role description and destination URL if transition."""
         url = f"{POSTER_URL}?poster={poster_id}&toggleLanguage={lang}"
         try:
             resp = session.get(url, timeout=TIMEOUT)
             if resp.status_code != 200:
-                return ("",)
+                return ("", "")
             raw_html = resp.text
+
+            transition = parse_transition_page(raw_html)
+            if transition:
+                target_url, _ = transition
+                return ("", target_url)
+
             main_match = re.search(r"<main\b[^>]*>(.*?)</main>", raw_html, re.DOTALL)
             content = main_match.group(1) if main_match else raw_html
             content = re.sub(
@@ -310,7 +363,7 @@ class GCJobsScraper(BaseScraper):
                 content,
                 flags=re.DOTALL,
             )
-            return (html_to_text(content),)
+            return (html_to_text(content), "")
         except requests.RequestException as e:
             log.debug("Failed to fetch detail for GC Jobs poster %s: %s", poster_id, e)
-            return ("",)
+            return ("", "")
