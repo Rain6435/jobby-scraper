@@ -1,0 +1,47 @@
+---
+title: Quick start
+description: Run a smoke test, refresh one company, then build a full job pool.
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+<Steps>
+
+1. **Smoke-test one company.** `--limit` caps the scrape to N jobs and skips the database entirely, so you do not need `--database`:
+
+   ```bash
+   python -m scraper.main --company "Shopify" --limit 1 --verbose
+   ```
+
+   `--verbose` turns on DEBUG logging: every request, page and stage timing. The company name must match a `name` in `config.json` exactly.
+
+2. **Write one company into a database.** `--company` scrapes just that company and merges its fresh jobs into whatever the database already holds:
+
+   ```bash
+   python -m scraper.main --company "Shopify" --database "sqlite:///jobs.db"
+   ```
+
+3. **Run the full pool.** With no `--company`, every company in `config.json` is scraped (16 in parallel by default) and the database is replaced with the result:
+
+   ```bash
+   python -m scraper.main --database "sqlite:///jobs.db"
+   ```
+
+   A full run makes tens of thousands of requests. Expect it to take a while; the default output prints one line per company and a summary at the end.
+
+4. **Look at the result.**
+
+   ```bash
+   sqlite3 jobs.db "SELECT c.name, COUNT(*) FROM jobs j JOIN companies c ON c.id = j.company_id GROUP BY c.name ORDER BY 2 DESC LIMIT 10;"
+   ```
+
+</Steps>
+
+<Aside type="caution">
+`--database` is required for every real run. It is the only place results are written, and it is also where the next run reads "previous state" from. Pointing two different runs at two different databases means each one treats every job as new.
+</Aside>
+
+## Next steps
+
+- [Running scrapes](/jobby-scraper/guides/running-scrapes/) covers sharding, timeouts and backfills.
+- [Consuming the pool](/jobby-scraper/guides/consuming-the-pool/) has example queries for apps that read the database.

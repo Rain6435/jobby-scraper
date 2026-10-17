@@ -1,0 +1,5 @@
+/* Keep identifiers in the reference tables on one line; wide tables scroll
+   horizontally inside their own box (Starlight's default) rather than the page. */
+.sl-markdown-content table code {
+	white-space: nowrap;
+}

@@ -1,0 +1,63 @@
+---
+title: Jobby Scraper
+description: A job pool generator that scrapes 1,290+ company career sites into one normalized SQL database.
+template: splash
+hero:
+  tagline: Scrape every open posting from 1,290+ company career sites, across 40+ applicant tracking systems, into one normalized SQL database your apps can query.
+  image:
+    file: ../../assets/logo.svg
+  actions:
+    - text: Get started
+      link: /jobby-scraper/getting-started/introduction/
+      icon: right-arrow
+    - text: View on GitHub
+      link: https://github.com/Rain6435/jobby-scraper
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+<CardGrid stagger>
+	<Card title="Unfiltered pool" icon="list-format">
+		Every currently listed posting is stored, with no keyword, title, location or age filtering.
+		Consumer apps do their own matching downstream.
+	</Card>
+	<Card title="Full-replace snapshots" icon="random">
+		Each run writes exactly what is live right now. A job leaves the pool once its company stops
+		listing it.
+	</Card>
+	<Card title="40+ boards" icon="puzzle">
+		Workday, Greenhouse, Ashby, Lever, SmartRecruiters, SuccessFactors, Oracle Cloud and many more,
+		plus custom portals like Google, Apple and Microsoft.
+	</Card>
+	<Card title="Any SQL database" icon="seti:db">
+		Writes to any SQLAlchemy URL: SQLite, PostgreSQL, MySQL. Normalized tables for companies,
+		jobs, locations and GeoNames towns.
+	</Card>
+</CardGrid>
+
+## Where to next
+
+<CardGrid>
+	<LinkCard
+		title="Quick start"
+		description="Install, run a smoke test, then do your first full scrape."
+		href="/jobby-scraper/getting-started/quick-start/"
+	/>
+	<LinkCard
+		title="Add a company"
+		description="Most companies are config-only. Here is how to find their board."
+		href="/jobby-scraper/guides/adding-companies/"
+	/>
+	<LinkCard
+		title="Query the pool"
+		description="The database schema and example SQL for consumer apps."
+		href="/jobby-scraper/guides/consuming-the-pool/"
+	/>
+	<LinkCard
+		title="CLI reference"
+		description="Every flag of scraper.main and the helper tools."
+		href="/jobby-scraper/reference/cli/"
+	/>
+</CardGrid>

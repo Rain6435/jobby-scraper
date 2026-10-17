@@ -6,6 +6,8 @@
 [![Linting & Formatting](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 [![Tests](https://img.shields.io/badge/tests-360%2B%20passed-brightgreen.svg)](tests/)
 
+📖 **Documentation:** https://rain6435.github.io/jobby-scraper/ (source in [docs/](docs/))
+
 **Jobby-Scraper** is a high-throughput, autonomous multi-platform job aggregation engine. It continuously discovers, scrapes, normalizes, and geocodes job listings from over **1,290+ company career sites across 44+ applicant tracking systems (ATS) and custom enterprise career portals**, persisting them into a normalized relational SQL database pool.
 
 ---

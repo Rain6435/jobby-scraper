@@ -1,0 +1,137 @@
+---
+title: Writing a board scraper
+description: Add support for a new applicant tracking system or custom careers portal.
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+A board is one Python module in [`scraper/boards/`](https://github.com/Rain6435/jobby-scraper/tree/main/scraper/boards) with a class that subclasses `BaseScraper` and implements `fetch_jobs()`. `main.py` never imports boards directly; it looks them up by the `board` field of each config entry.
+
+<Steps>
+
+1. **Research the endpoint.** Find the cheapest unauthenticated request that returns every open posting. Most ATSes have a public JSON or XML feed. Notes and probe scripts for the custom portals already supported live in [`exploration/`](https://github.com/Rain6435/jobby-scraper/tree/main/exploration).
+
+2. **Add a config type** in `scraper/config_types.py`, subclassing `CompanyConfig` with the fields your board reads:
+
+   ```python
+   class AcmeAtsConfig(CompanyConfig):
+       company: str
+   ```
+
+3. **Write the module** `scraper/boards/acmeats.py`:
+
+   ```python
+   """AcmeATS public job board scraper.
+
+   One unauthenticated GET returns every open job:
+       GET https://<company>.acmeats.com/api/jobs
+   Config: {"board": "acmeats", "company": "<subdomain>"}.
+   """
+
+   from __future__ import annotations
+
+   import logging
+   from typing import NotRequired, TypedDict, cast
+
+   from scraper.boards.base import BaseScraper, make_session
+   from scraper.boards.greenhouse import posted_days_from_iso, relative_day_text
+   from scraper.config_types import AcmeAtsConfig
+   from scraper.models import Job
+   from scraper.text import html_to_text
+
+   API = "https://{company}.acmeats.com/api/jobs"
+   TIMEOUT = 30
+
+   log = logging.getLogger("scraper.acmeats")
+
+
+   class AcmeAtsPosting(TypedDict):
+       id: str
+       title: NotRequired[str]
+       locations: NotRequired[list[str]]
+       url: NotRequired[str]
+       published_at: NotRequired[str]
+       description_html: NotRequired[str]
+
+
+   class AcmeAtsScraper(BaseScraper):
+       source = "acmeats"
+
+       def fetch_jobs(self) -> list[Job]:
+           company = cast(AcmeAtsConfig, self.company)
+           session = make_session()
+           resp = session.get(API.format(company=company["company"]), timeout=TIMEOUT)
+           resp.raise_for_status()
+           postings: list[AcmeAtsPosting] = resp.json()
+
+           jobs: list[Job] = []
+           for p in postings:
+               locations = p.get("locations") or []
+               posted_days = posted_days_from_iso(p.get("published_at", ""))
+               jobs.append(
+                   Job(
+                       id=f"{self.slug}:{p['id']}",
+                       company=self.name,
+                       title=(p.get("title") or "").strip(),
+                       location=locations[0] if locations else "",
+                       locations=locations,
+                       url=p.get("url", ""),
+                       posted_on=relative_day_text(posted_days),
+                       posted_days=posted_days,
+                       source=self.source,
+                       description=html_to_text(p.get("description_html", "")),
+                   )
+               )
+           log.debug("%s: fetched %d jobs", self.name, len(jobs))
+           return jobs
+   ```
+
+4. **Register it** in `SCRAPERS` in `scraper/boards/__init__.py`:
+
+   ```python
+   from scraper.boards.acmeats import AcmeAtsScraper
+
+   SCRAPERS = {
+       # ...
+       AcmeAtsScraper.source: AcmeAtsScraper,
+   }
+   ```
+
+5. **Add tests** in `tests/test_acmeats.py`, mocking HTTP with `responses` (see `tests/test_ashby.py` for the pattern). Tests must not hit the network.
+
+6. **Add a company** using the new `board` value and run it with `--company ... --limit 3 --verbose`.
+
+</Steps>
+
+## Rules every board follows
+
+- **Build the session with `make_session()`**, never `requests.Session()`. It adds retries with exponential backoff on 429 and 5xx and honors `Retry-After`. Add headers on top of it if the host needs them (several hosts 403 the default `python-requests` user agent, so many boards set `User-Agent: Mozilla/5.0`).
+- **The id must be stable.** Use `f"{self.slug}:{<the board's own requisition or posting id>}"`. Never use something that changes between runs, such as a list index or a URL with a tracking parameter.
+- **Store everything.** Do not filter by title, keyword, location or age. Filtering belongs to consumers.
+- **Do not truncate descriptions.** Call `html_to_text(html)` without `max_chars`.
+- **Prefer list-only.** If the list endpoint carries the description, use it and make no per-job requests.
+- **Raise on total failure.** If the board is unreachable, let the exception propagate. `main.py` catches it, logs it, and carries that company's previous jobs forward. Returning `[]` instead would tell the pipeline the company has no openings and delete its jobs.
+- **Fill `posted_days`** when the board exposes a date. If it does not, leave it `None`; consumers fall back to `first_seen`.
+- **Keep it strictly typed.** CI runs `pyright --strict` and rejects any `Any` or `type: ignore` in `scraper/` and `tests/`. Describe API responses with `TypedDict`.
+
+## Boards that need a detail request per job
+
+When the description (or another field) only exists on each posting's own page, use `_fetch_details_concurrent`. It reuses the previous run's values for postings the database already knows and fetches only the new ones, up to 16 at a time:
+
+```python
+postings_by_id = {f"{self.slug}:{p['id']}": p for p in postings}
+details = self._fetch_details_concurrent(
+    list(postings_by_id),
+    ("description",),                      # Job fields to reuse from the cache
+    lambda job_id: self._fetch_detail(session, postings_by_id[job_id]),
+)
+for job_id, p in postings_by_id.items():
+    (description,) = cast("tuple[str]", details[job_id])
+    ...
+```
+
+`fetch_fn` must return a tuple in the same order as `fields`, and must handle its own errors (return fallback values rather than raising), because one failed detail page should not drop the whole company. Title, date and other list fields should always come from the current list response, never from the cache.
+
+<Aside>
+Each detail-fetching board multiplies its request volume by the number of new postings. Only use it when the list endpoint genuinely lacks the data.
+</Aside>
