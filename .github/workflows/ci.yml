@@ -20,6 +20,36 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      # data/ is a symlink to ../data (shared with job_pipeline in prod), so
+      # the GeoNames dump that scraper/gazetteer.py and the town tests load
+      # isn't in this checkout. Fetch it, gzipped the same way the bundled
+      # copy is, and place it at ../data/gazetteer/. Cached per month to go
+      # easy on GeoNames.
+      - name: Month for the GeoNames cache key
+        id: month
+        run: echo "month=$(date -u +%Y-%m)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache GeoNames cities1000
+        id: gazetteer-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/geonames/cities1000.txt.gz
+          key: geonames-cities1000-${{ steps.month.outputs.month }}
+
+      - name: Download GeoNames cities1000
+        if: steps.gazetteer-cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ~/geonames
+          curl -fsSL --retry 3 -o "$RUNNER_TEMP/cities1000.zip" \
+            https://download.geonames.org/export/dump/cities1000.zip
+          unzip -p "$RUNNER_TEMP/cities1000.zip" cities1000.txt | gzip -9 > ~/geonames/cities1000.txt.gz
+
+      - name: Place gazetteer at data/gazetteer/
+        run: |
+          mkdir -p ../data/gazetteer
+          cp ~/geonames/cities1000.txt.gz ../data/gazetteer/
+          ls -l data/gazetteer/
+
       - name: Run tests
         run: python -m pytest -q
 
