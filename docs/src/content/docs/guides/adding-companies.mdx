@@ -1,0 +1,135 @@
+---
+title: Adding companies
+description: Add a company on an existing board through config.json, discover which board a company uses, and fill in its blurb and logo.
+---
+
+import { Steps, Aside, Tabs, TabItem } from '@astrojs/starlight/components';
+
+If the company's careers site runs on a board Jobby Scraper already supports, adding it is a config change only. If not, you need a new board module; see [Writing a board scraper](/jobby-scraper/guides/writing-a-board-scraper/).
+
+<Steps>
+
+1. **Find the board and its identifier.** Open the company's careers page and look at where the job links point, or let the discovery tool probe for you (below). The [boards reference](/jobby-scraper/reference/boards/) lists the identifier each board needs.
+
+2. **Add an entry to `companies` in `config.json`.** Every entry needs `name` and `board`, plus that board's fields:
+
+   <Tabs>
+   <TabItem label="Greenhouse">
+   ```json
+   { "name": "Acme", "board": "greenhouse", "token": "acme" }
+   ```
+   The token is the path segment in `boards.greenhouse.io/<token>`.
+   </TabItem>
+   <TabItem label="Lever">
+   ```json
+   { "name": "Acme", "board": "lever", "company": "acme" }
+   ```
+   From `jobs.lever.co/<company>`.
+   </TabItem>
+   <TabItem label="Ashby">
+   ```json
+   { "name": "Acme", "board": "ashby", "slug": "acme" }
+   ```
+   From `jobs.ashbyhq.com/<slug>`.
+   </TabItem>
+   <TabItem label="Workday">
+   ```json
+   {
+     "name": "CAE",
+     "board": "workday",
+     "url": "https://cae.wd3.myworkdayjobs.com/wday/cxs/cae/career/jobs",
+     "careers_base": "https://cae.wd3.myworkdayjobs.com/en-US/career"
+   }
+   ```
+   See [Finding a Workday URL](#finding-a-workday-url).
+   </TabItem>
+   </Tabs>
+
+   The `name` is what appears in the `companies` table and is also slugified into the prefix of every job id (`"TD Bank"` becomes `td-bank`). Do not rename an existing company casually: every one of its jobs would get a new id and look brand new.
+
+3. **Smoke-test it.**
+
+   ```bash
+   python -m scraper.main --company "Acme" --limit 3 --verbose
+   ```
+
+4. **Merge it into the pool.**
+
+   ```bash
+   python -m scraper.main --company "Acme" --database "sqlite:///jobs.db"
+   ```
+
+5. **Add a blurb and a logo** (optional, see below).
+
+</Steps>
+
+## Optional fields
+
+Any company entry can also carry:
+
+| Field | Purpose |
+| ----- | ------- |
+| `blurb` | A one or two sentence description of the company. Copied onto the `companies` row. |
+| `logo` | Relative path to the company's SVG logo, normally `data/logos/<slug>.svg`. |
+| `default_country` | ISO alpha-2 code used **only** when a job's location text carries no country signal at all. Reserved for employers confirmed to hire in one country whose ATS leaves the country out (for example a US-only chain listing `"00146 - Puyallup Dialysis"`). It never overrides a country the text did resolve. |
+
+## Finding a Workday URL
+
+Workday has no public board index, so you take the API URL from the browser:
+
+1. Open the company's Workday careers page (`https://<company>.wd<N>.myworkdayjobs.com/...`).
+2. Open developer tools, go to **Network**, filter to **Fetch/XHR**.
+3. Scroll or click to load more jobs. Copy the URL of the `POST` request ending in `/jobs`. It looks like `https://<company>.wd<N>.myworkdayjobs.com/wday/cxs/<company>/<tenant>/jobs`. That is `url`.
+4. Set `careers_base` to the public site base, `https://<company>.wd<N>.myworkdayjobs.com/en-US/<tenant>`. Job links are built as `careers_base + externalPath`.
+
+## Discovering a company's board automatically
+
+`scripts/discover_companies.py` probes candidate slugs across Greenhouse, Ashby, Lever, BambooHR, SmartRecruiters, Rippling, Recruitee, Workable and Breezy, verifies each hit with the real scraper, and skips companies already in `config.json`. Workday cannot be guessed from a name, so for Workday you pass the API URL yourself with `--workday-url` and it is verified the same way.
+
+```bash
+# Probe every supported board for a company name
+python scripts/discover_companies.py --company "Databricks"
+
+# Try specific slugs on specific boards
+python scripts/discover_companies.py --slug databricks,databricks-inc --board greenhouse,ashby
+
+# Verify a Workday tenant you found in DevTools and add it
+python scripts/discover_companies.py --company "CAE" \
+  --workday-url "https://cae.wd3.myworkdayjobs.com/wday/cxs/cae/career/jobs" --apply
+
+# Probe a list of names (one per line) and append verified hits to config.json
+python scripts/discover_companies.py --file companies.txt --apply --test
+```
+
+With `--apply`, new entries are appended to `config.json` and their logos are resolved and saved too. `--test` runs the test suite afterwards. `--json` prints machine-readable results.
+
+`scripts/scout_sp500.py` does the same for the S&P 500: it fetches the current constituents and probes each one.
+
+```bash
+python scripts/scout_sp500.py --limit 20          # report only
+python scripts/scout_sp500.py --apply --test      # append verified companies
+```
+
+## Blurbs
+
+```bash
+python -m scraper.backfill_blurbs            # fill in every company missing a blurb
+python -m scraper.backfill_blurbs --dry-run  # show what would change
+python -m scraper.backfill_blurbs --force    # regenerate all of them
+```
+
+Needs an Anthropic or Ollama key (see [AI enrichment](/jobby-scraper/concepts/ai-enrichment-and-logos/)). It only touches entries without a blurb, so it is safe to rerun. You can also write a `blurb` by hand.
+
+## Logos
+
+```bash
+python -m scraper.backfill_logos --company "Acme"   # one company
+python -m scraper.backfill_logos                    # every company missing a logo file
+python -m scraper.backfill_logos --force            # re-resolve all of them
+```
+
+Writes `data/logos/<slug>.svg` and sets `logo` in `config.json`. Every company ends up with a logo: when no real one can be found, a generated monogram is used.
+
+<Aside>
+The scraper never runs `backfill_blurbs` or `backfill_logos` itself. They are manual, one-off tools whose output is stored in `config.json` and copied onto every job at write time.
+</Aside>

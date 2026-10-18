@@ -1,0 +1,102 @@
+---
+title: Running scrapes
+description: Full runs, single-company refreshes, smoke tests, sharding, timeouts and detail-cache backfills.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Every run goes through `python -m scraper.main`. Which mode you get depends on the flags you pass. The full flag list is in the [CLI reference](/jobby-scraper/reference/cli/).
+
+## Full run
+
+```bash
+python -m scraper.main --database "sqlite:///jobs.db"
+```
+
+Scrapes every company in `config.json`, compares the result to what the database held before, and replaces the database contents with the new snapshot. This is what a scheduled job should run.
+
+Default output is one INFO line per company (`Acme: 42 jobs (1.3s)`), a total, the number of new jobs, and a final `SHARD_SUMMARY {...}` line.
+
+## On-demand refresh of one company
+
+```bash
+python -m scraper.main --company "Acme" --database "sqlite:///jobs.db"
+```
+
+Scrapes only `Acme`, then writes *everyone else's previous jobs unchanged* plus Acme's fresh jobs. Use it after adding a company, or when a consumer app wants one company's listings brought up to date without waiting for the next full run. `--company` always runs as a single batch; `--shard-size` is ignored with it.
+
+## Smoke test
+
+```bash
+python -m scraper.main --company "Acme" --limit 1 --verbose
+```
+
+`--limit N` truncates the scraped list to N jobs and **skips the database in both directions**: nothing is read (so there is no detail cache) and nothing is written. A truncated list is not a valid snapshot, so persisting it would delete every job it never looked at. `--database` is not required with `--limit`.
+
+## Parse one job URL
+
+```bash
+python -m scraper.main --url "https://boards.greenhouse.io/acme/jobs/12345"
+```
+
+Prints a single normalized job as JSON. Add `--database` to also persist it. See [Parsing single links](/jobby-scraper/guides/parsing-single-links/).
+
+## Tuning a large run
+
+### Concurrency
+
+```bash
+python -m scraper.main --database "sqlite:///jobs.db" --concurrency 32
+```
+
+`--concurrency` (default 16) is the number of companies scraped at once. Raising it is reasonably safe: companies mostly live on different hosts (their own Workday tenant, their own Greenhouse token), and every board's HTTP session retries 429 and 5xx responses with backoff.
+
+### Per-company timeout
+
+```bash
+python -m scraper.main --database "sqlite:///jobs.db" --per-company-timeout 60
+```
+
+A company still scraping after this many seconds (default 120) has a fresh attempt queued behind it so it cannot stall the batch. The stuck attempt is not killed, because Python cannot safely interrupt a thread inside a network call; its eventual result is discarded. A company that stalls twice in a row counts as failed for the run, and its previous jobs are carried forward. Pass `0` to disable the timeout.
+
+### Sharding
+
+```bash
+python -m scraper.main --database "sqlite:///jobs.db" --shard-size 100
+```
+
+Without `--shard-size`, a full run holds the whole previous and current pool in memory and writes it at the end. With it, companies are split into batches that are each loaded, scraped, diffed and written on their own. That bounds peak memory and means a failure in one batch does not lose the others' results.
+
+Batches are filled by **job count**, not just company count, because job counts are very skewed (one Workday tenant can list thousands of jobs). Each shard is filled up to `--shard-job-target` jobs (default 20,000) using the per-company counts from the previous run, with `--shard-size` as an upper cap on companies per shard. On the very first run against an empty database there are no counts yet, so batches are by company count only.
+
+### Exit codes
+
+| Code | Meaning |
+| ---- | ------- |
+| `0` | Every batch succeeded. |
+| `1` | A hard failure in at least one batch: every scraper in it failed, the database write failed after 5 attempts, `--database` was missing, or `--company` named an unknown company. |
+| `130` | Interrupted with Ctrl-C. Companies that finished were saved; the rest were carried forward unchanged. |
+
+With several shards the worst code wins (1 beats 130 beats 0). The `SHARD_SUMMARY {"total": N, "succeeded": N, "failed": N}` log line lets a caller tell "one shard of twenty failed" apart from "everything failed".
+
+## Re-fetching cached descriptions
+
+```bash
+python -m scraper.main --database "sqlite:///jobs.db" --no-detail-cache
+```
+
+Boards that need one request per posting (Workday, Rippling, BambooHR, SmartRecruiters and a few custom portals) skip that request for postings already in the database and reuse the stored description. That means a description captured badly once is kept forever. `--no-detail-cache` refetches every detail page for one run.
+
+It only hides the previous state from the **scrapers**. `first_seen`, `posted_date` and new-job detection still use the real previous state, so the run does not reset dates or report the whole pool as new. It costs roughly one extra request per known job on those boards, so use it as a one-time backfill, not routinely.
+
+<Aside type="caution">
+Do not "backfill" by pointing a run at an empty database instead. That resets every job's `first_seen`, which also resets its derived `posted_date`, and marks the entire pool as new.
+</Aside>
+
+## Logging
+
+| Setting | Effect |
+| ------- | ------ |
+| default | INFO: one line per company, totals, new-job count, timing. |
+| `--verbose` or `LOG_LEVEL=DEBUG` | Per-request and per-page detail from each board, each new job, stage timings. |
+| `LOG_LEVEL=WARNING` | Only problems. |

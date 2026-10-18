@@ -136,6 +136,10 @@ Response: `{"total": N, "jobPostings": [...]}` — each posting has `title`, `po
 
 **Stale/unmaintained**, same caveat as the dashboard above: [docs/API.md](docs/API.md) documents the now-frozen `docs/jobs.json`'s historical schema, not a live feed — the actual current pool lives in whatever `--database` was pointed at (see `scraper/db.py`'s schema instead).
 
+## Documentation site
+
+[docs/](docs/) is an Astro Starlight site (`cd docs && npm install && npm run dev`), published to GitHub Pages at https://rain6435.github.io/jobby-scraper/ by [.github/workflows/docs.yml](.github/workflows/docs.yml). Pages live in `docs/src/content/docs/`, the sidebar in `docs/astro.config.mjs`. When a change alters behavior the docs describe (CLI flags, boards and their config fields, schema, write semantics), update the matching page in the same change. (The old GitHub Pages dashboard files described under "UI" and "API" below are no longer in the repo.)
+
 ## MCP
 
 Context7 is configured in [.mcp.json](.mcp.json) — use it for up-to-date library/API docs.
