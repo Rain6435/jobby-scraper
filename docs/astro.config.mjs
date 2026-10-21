@@ -1,12 +1,15 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
+import mermaid from 'astro-mermaid';
 
 // Deployed to GitHub Pages as a project site: https://rain6435.github.io/jobby-scraper/
 export default defineConfig({
 	site: 'https://rain6435.github.io',
 	base: '/jobby-scraper',
 	integrations: [
+		// Must come before Starlight so ```mermaid blocks are transformed first.
+		mermaid({ theme: 'default', autoTheme: true }),
 		starlight({
 			title: 'Jobby Scraper',
 			description:

@@ -5,34 +5,40 @@ description: How a run flows from config.json to the database.
 
 Everything is orchestrated by [`scraper/main.py`](https://github.com/Rain6435/jobby-scraper/blob/main/scraper/main.py). One invocation is one run; there is no long-lived process.
 
-```
- config.json ──► select companies ──► split into shards (optional)
-                                              │
-            ┌─────────────────────────────────┘
-            ▼   for each shard
-   load_previous(database)            previous jobs, keyed by Job.id
-            │
-            ▼
-   scrape companies in parallel       ThreadPoolExecutor (--concurrency)
-     └─ board scraper per company     scraper/boards/*.py, via SCRAPERS
-         └─ make_session()            retries 429 / 5xx with backoff
-         └─ detail cache              reuse previous run's descriptions
-            │
-            ▼
-   enrich                             blurb, logo, default_country from config
-   carry over                         first_seen, role_summary for known ids
-   merge                              keep previous jobs of failed companies
-            │
-            ▼
-   diff(previous, current)            which ids are new
-            │
-            ▼
-   write_jobs(database)               full replace, up to 5 attempts
-     └─ parse_location()              city / region / country / remote
-     └─ resolve_town()                link to a GeoNames town
-            │
-            ▼
-   SHARD_SUMMARY + exit code
+```mermaid
+flowchart TD
+    Config["config.json<br/>~1,290 companies"] --> Select["Select companies<br/>(--company or all)"]
+    Select --> Shard["Split into shards<br/>(--shard-size, optional)"]
+
+    subgraph Batch["For each shard"]
+        Previous["load_previous(database)<br/>previous jobs keyed by Job.id"]
+        Scrape["Scrape companies in parallel<br/>ThreadPoolExecutor (--concurrency)"]
+        Boards["Board scraper per company<br/>scraper/boards/*.py via SCRAPERS"]
+        Session["make_session()<br/>retries 429 / 5xx with backoff"]
+        Cache["Detail cache<br/>reuse previous descriptions"]
+        Enrich["Enrich and merge<br/>blurb, logo, default_country,<br/>first_seen carryover,<br/>keep failed companies' jobs"]
+        Diff["diff(previous, current)<br/>which ids are new"]
+        Write["write_jobs(database)<br/>full replace, up to 5 attempts"]
+        Parse["parse_location()<br/>city / region / country / remote"]
+        Town["resolve_town()<br/>link to a GeoNames town"]
+
+        Previous --> Scrape
+        Scrape --> Boards
+        Boards --> Session
+        Boards --> Cache
+        Previous -.-> Cache
+        Boards --> Enrich
+        Previous -.-> Enrich
+        Enrich --> Diff
+        Diff --> Write
+        Write --> Parse
+        Parse --> Town
+    end
+
+    Shard --> Previous
+    Town --> DB[("SQL database<br/>--database")]
+    DB -.->|next run| Previous
+    Write --> Summary["SHARD_SUMMARY + exit code"]
 ```
 
 ## Stages

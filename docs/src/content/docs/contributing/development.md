@@ -52,6 +52,6 @@ npm run dev      # http://localhost:4321/jobby-scraper/
 npm run build    # static site in docs/dist/
 ```
 
-Pages are Markdown or MDX files in `docs/src/content/docs/`. The sidebar is defined in `docs/astro.config.mjs`. Internal links include the `/jobby-scraper/` base path because the site is served from GitHub Pages at `https://rain6435.github.io/jobby-scraper/`.
+Pages are Markdown or MDX files in `docs/src/content/docs/`. The sidebar is defined in `docs/astro.config.mjs`. Diagrams are written as ` ```mermaid ` code blocks and rendered by the `astro-mermaid` integration, which follows the light and dark theme. Internal links include the `/jobby-scraper/` base path because the site is served from GitHub Pages at `https://rain6435.github.io/jobby-scraper/`.
 
 The [Docs workflow](https://github.com/Rain6435/jobby-scraper/blob/main/.github/workflows/docs.yml) builds the site on pull requests that touch `docs/`, and deploys it to GitHub Pages on pushes to `main`.

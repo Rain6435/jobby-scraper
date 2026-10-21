@@ -5,10 +5,65 @@ description: The six tables written to --database, with every column.
 
 The schema is defined with SQLAlchemy Core in [`scraper/db.py`](https://github.com/Rain6435/jobby-scraper/blob/main/scraper/db.py) and created automatically on first connection. It is the same on every backend.
 
-```
-companies ─┐
-           ├──< jobs >──< job_locations >── locations ──> towns
-sources ───┘
+```mermaid
+erDiagram
+    companies ||--o{ jobs : "offers"
+    sources ||--o{ jobs : "scraped from"
+    jobs ||--o{ job_locations : "listed at"
+    locations ||--o{ job_locations : "used by"
+    towns |o--o{ locations : "resolves"
+
+    companies {
+        int id PK
+        string name UK
+        text blurb
+        string group_name
+        string logo
+    }
+    sources {
+        int id PK
+        string name UK
+    }
+    jobs {
+        string id PK
+        int company_id FK
+        int source_id FK
+        string title
+        string url
+        string posted_date
+        string first_seen
+        text description
+        text role_summary
+        boolean is_new
+    }
+    job_locations {
+        int id PK
+        string job_id FK
+        int location_id FK
+        int ordinal
+    }
+    locations {
+        int id PK
+        string name UK
+        string normalized_key
+        string city
+        string region
+        string country_code
+        boolean is_remote
+        int town_id FK
+    }
+    towns {
+        int id PK
+        int geoname_id UK
+        string name
+        string ascii_name
+        text alternate_names
+        string country_code
+        string admin1_code
+        float lat
+        float lon
+        int population
+    }
 ```
 
 Company names, board names and location strings repeat across thousands of jobs, so each is stored once in a lookup table and referenced by id. A job's locations are a real one-to-many relationship, so they get a join table rather than a JSON column.
