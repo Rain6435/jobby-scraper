@@ -56,6 +56,8 @@ Env (also loadable from a .env file in the repo root — see .env.example):
 from __future__ import annotations
 
 import argparse
+import ctypes
+import gc
 import json
 import logging
 import os
@@ -135,6 +137,49 @@ def _configure_log_level(verbose: bool) -> None:
     level_name = "DEBUG" if verbose else os.environ.get("LOG_LEVEL", "INFO").upper()
     level = _LEVELS.get(level_name, logging.INFO)
     logging.getLogger("scraper").setLevel(level)
+
+
+# Str fields a re-scrape usually returns unchanged. description dominates
+# (several KB per posting); the rest are cheap to compare and ride along.
+_SHARED_STR_FIELDS = ("title", "url", "location", "description")
+
+
+def _share_unchanged_strings(jobs: list[Job], previous: dict[str, Job]) -> None:
+    """Point each freshly scraped job's unchanged str fields at the previous
+    run's identical string object, so the fresh duplicate is freed as soon
+    as the board's own response goes out of scope.
+
+    List-only boards (greenhouse, lever, ashby, ...) rebuild every
+    description from scratch each run, so without this a batch holds two
+    equal copies of nearly every description at once: one in `previous`,
+    one in `current`. Values are equal by construction, so nothing
+    downstream can tell the difference — only object identity changes.
+    """
+    for job in jobs:
+        prev = previous.get(job.id)
+        if prev is None:
+            continue
+        for name in _SHARED_STR_FIELDS:
+            fresh = getattr(job, name)
+            old = getattr(prev, name)
+            if fresh is not old and fresh == old:
+                setattr(job, name, old)
+
+
+def _release_freed_memory() -> None:
+    """Hand freed heap pages back to the OS between batches (glibc only).
+
+    CPython's refcounting frees a batch's Job objects as soon as the batch
+    returns, but glibc keeps the freed pages mapped in the process for
+    reuse, so RSS stays at the batch's peak for the rest of the run (and
+    the life of a long-running service). malloc_trim(0) releases them.
+    Best-effort: a no-op on musl/macOS/Windows, where the symbol is absent.
+    """
+    gc.collect()
+    try:
+        ctypes.CDLL("libc.so.6").malloc_trim(0)
+    except (OSError, AttributeError):
+        pass
 
 
 def _scrape_companies(
@@ -446,9 +491,14 @@ def _run_batch(
             log.error("Unknown board %r for %s — skipping", board, company_cfg["name"])
             return None
         started = time.monotonic()
+        # Captured up front: previous is released (rebound to {}) before
+        # the write, and an abandoned straggler can still be in here then.
+        known = previous
         log.debug("%s: scraping via %s board", company_cfg["name"], board)
         try:
             jobs = scraper_cls(company_cfg, settings, previous=scraper_previous).fetch_jobs()
+            if known:
+                _share_unchanged_strings(jobs, known)
             elapsed = time.monotonic() - started
             log.info("%s: %d jobs (%.1fs)", company_cfg["name"], len(jobs), elapsed)
             return jobs
@@ -471,6 +521,7 @@ def _run_batch(
         len(results),
         failures,
     )
+    del results
 
     # No age filtering — every currently-listed posting is stored, every
     # run. A job leaves the pool once a fresh scrape's listing no longer
@@ -559,9 +610,19 @@ def _run_batch(
         full_current = current
 
     new_jobs = diff(previous, full_current)
+    new_ids = {j.id for j in new_jobs}
     log.info("%d new jobs", len(new_jobs))
     for j in new_jobs:
         log.debug("New job: %s — %s @ %s", j.id, j.title, j.company)
+    del new_jobs
+
+    # Nothing below reads `previous` again: carried-forward jobs are already
+    # in full_current, and everything else from it was copied onto `current`
+    # above. Dropping it here frees every closed posting's description, plus
+    # the Job objects superseded by this run's scrape, before the write
+    # builds its own row buffers — the write is the batch's memory peak.
+    previous = {}
+    scraper_previous = {}
 
     if limit is not None:
         # --limit truncates the scraped list arbitrarily — writing that as
@@ -611,7 +672,7 @@ def _run_batch(
     write_attempts = 5
     for attempt in range(1, write_attempts + 1):
         write_succeeded = deps.write_jobs(
-            database, full_current, {j.id for j in new_jobs}, scope_companies=write_scope
+            database, full_current, new_ids, scope_companies=write_scope
         )
         if write_succeeded:
             break
@@ -902,6 +963,7 @@ def run(
             shard_scope=scope,
             per_company_timeout_s=per_company_timeout_s,
         )
+        _release_freed_memory()
         if batch_code == 0:
             shards_succeeded += 1
         # Worst-severity-wins: 1 > 130 > 0, so one shard's hard failure is

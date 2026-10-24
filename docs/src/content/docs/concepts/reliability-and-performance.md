@@ -61,6 +61,32 @@ Other safeguards:
 - After writing, SQLite's WAL is checkpointed with `TRUNCATE` so the `-wal` file does not grow without bound.
 - On failure, the log says which stage (`delete`, `lookups`, `jobs` and so on) the write reached, so a partial write can be told apart from no write.
 
+## Memory
+
+The large objects in a batch are job descriptions (a few KB each), held by both the previous snapshot loaded from the database and the jobs scraped this run. A few things keep that from doubling up:
+
+- **Unchanged text is stored once.** When a freshly scraped job's `description`, `title`, `url` or `location` equals the previous run's value, the job is pointed at the previous string object and the fresh copy is freed right away. List-only boards rebuild every description on each run, so without this nearly every description was held twice.
+- **The previous snapshot is dropped before the write.** By then its first-seen dates and summaries have been copied onto this run's jobs and carried-forward jobs are already in the write set, so closed postings and superseded jobs are freed before the write starts.
+- **Rows are streamed.** `load_previous()` builds `Job` objects as rows arrive instead of materializing the full result first, and keeps one copy of repeated short strings (location names, `first_seen` timestamps). `write_jobs()` builds insert rows one 750-row chunk at a time.
+- **Freed memory goes back to the OS between shards.** After each batch the scraper runs `gc.collect()` and glibc's `malloc_trim(0)`, and after each SQLite write it runs `PRAGMA shrink_memory` to drop the connection's page cache. RSS then reflects the next shard's needs instead of staying at the largest shard's peak.
+
+`python scripts/bench_memory.py` measures one offline run (fake boards, roughly 5 KB descriptions) so two revisions can be compared on the same machine. For 20,000 jobs:
+
+| Setup | Peak RSS before | Peak RSS after | RSS after run, before → after |
+| ----- | --------------- | -------------- | ----------------------------- |
+| Unsharded | 373 MB | 247 MB | 250 → 70 MB |
+| `--shard-size 50 --shard-job-target 5000` | 186 MB | 151 MB | 158 → 58 MB |
+| Sharded, plus `SCRAPER_SQLITE_CACHE_KIB=8000` | 186 MB | 96 MB | 158 → 58 MB |
+
+### Running on a small instance
+
+For a box with very little RAM and no swap:
+
+- **Shard.** `--shard-size` with a lower `--shard-job-target` bounds how many jobs are in memory at once. Peak memory scales roughly with the target.
+- **Shrink SQLite's page cache.** `SCRAPER_SQLITE_CACHE_KIB` (default `64000`, about 64 MB per connection) is often the largest single allocation in the process. `8000` cut 55 MB off the peak in the benchmark above with no measurable slowdown there. On a busy shared database file, a smaller cache can mean more disk reads during the write, so measure on your box.
+- **Lower concurrency.** Each in-flight company holds its own HTTP responses and parsed postings, and boards with a detail request per posting run up to 16 more threads each. `--concurrency 4` gives up throughput for a lower, steadier peak.
+- **Cap glibc arenas.** Setting `MALLOC_ARENA_MAX=2` in the service's environment stops glibc from creating a heap arena per thread, a common source of RSS bloat in threaded Python. The offline benchmark cannot show it, because its fake boards do no network I/O.
+
 ## Interrupts
 
 Ctrl-C during scraping saves the companies that finished, carries every unfinished company forward from the previous snapshot, and exits with code 130. With several shards, the remaining shards still run.

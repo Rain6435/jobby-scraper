@@ -275,6 +275,15 @@ python -m scraper.main \
 - `--per-company-timeout N` (default `120s`): Abandons and requeues slow stragglers so the thread pool does not stall.
 - `--no-detail-cache`: Forces detail pages to re-fetch even if the job ID is already known.
 
+On a very small instance (little RAM, no swap), shard with a lower job target and shrink SQLite's page cache:
+
+```bash
+SCRAPER_SQLITE_CACHE_KIB=8000 MALLOC_ARENA_MAX=2 python -m scraper.main \
+  --database "sqlite:///jobs.db" --concurrency 4 --shard-size 100 --shard-job-target 5000
+```
+
+`python scripts/bench_memory.py` measures peak memory offline; see the docs' "Reliability and performance" page for what each knob trades.
+
 ### 5. Company Blurb Backfill
 Generates or updates 1-2 sentence AI company overviews in `config.json`:
 

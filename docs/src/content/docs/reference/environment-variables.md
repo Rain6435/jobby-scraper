@@ -16,5 +16,6 @@ All are optional. They can be exported or put in a `.env` file at the repo root 
 | `USAJOBS_API_KEY` | `usajobs` board | Free key from [developer.usajobs.gov](https://developer.usajobs.gov/). Without it the board contributes no jobs. |
 | `USAJOBS_USER_AGENT` | `usajobs` board | The email address registered with that key. |
 | `LOG_LEVEL` | `scraper.main` | `DEBUG`, `INFO` (default), `WARNING` or `ERROR`. `--verbose` overrides it with `DEBUG`. |
+| `SCRAPER_SQLITE_CACHE_KIB` | `scraper.db` | SQLite page cache per connection, in KiB. Default `64000`. Lower it on small instances; see [Reliability and performance](/jobby-scraper/concepts/reliability-and-performance/#running-on-a-small-instance). |
 
-The scrape itself makes no AI calls, so only `USAJOBS_*` and `LOG_LEVEL` affect a normal run.
+The scrape itself makes no AI calls, so only `USAJOBS_*`, `LOG_LEVEL` and `SCRAPER_SQLITE_CACHE_KIB` affect a normal run.
