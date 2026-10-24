@@ -1062,3 +1062,20 @@ def test_main_calls_os_exit_not_sys_exit(tmp_path: Path, monkeypatch: pytest.Mon
     assert exit_calls == [0]
     assert exc_info.value.code == 0
     assert db_job_ids(db_url) == {"acme:1"}
+
+
+def test_share_unchanged_strings_reuses_previous_objects_only_when_equal() -> None:
+    prev = job("Acme", "acme:1")
+    prev.description = "".join(["Build ", "things"])
+    fresh = job("Acme", "acme:1")
+    fresh.description = "".join(["Build ", "things"])
+    changed = job("Acme", "acme:2")
+    changed.description = "new text"
+    old_changed = job("Acme", "acme:2")
+    old_changed.description = "old text"
+    assert fresh.description is not prev.description
+
+    main_module._share_unchanged_strings([fresh, changed], {"acme:1": prev, "acme:2": old_changed})
+
+    assert fresh.description is prev.description
+    assert changed.description == "new text"
