@@ -44,10 +44,12 @@ are additive metadata, not part of row identity.
 from __future__ import annotations
 
 import logging
+import os
 import sqlite3
 import time
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterable, Mapping
 from datetime import datetime, timedelta
+from itertools import batched
 
 from sqlalchemy import (
     Boolean,
@@ -205,6 +207,23 @@ job_locations_table = Table(
 
 _ENGINES: dict[str, Engine] = {}
 
+# SQLite page cache per connection, in KiB. 64000 (~64MB) is the long-
+# standing default and the fastest choice for the bulk write; on a very
+# small instance it is also one of the largest single allocations in the
+# process, since a full write of tens of thousands of descriptions fills it.
+# SCRAPER_SQLITE_CACHE_KIB lowers it there — see the docs' "Reliability and
+# performance" page, "Running on a small instance".
+_DEFAULT_SQLITE_CACHE_KIB = 64000
+
+
+def _sqlite_cache_kib() -> int:
+    raw = os.environ.get("SCRAPER_SQLITE_CACHE_KIB", "")
+    try:
+        value = int(raw)
+    except ValueError:
+        return _DEFAULT_SQLITE_CACHE_KIB
+    return value if value > 0 else _DEFAULT_SQLITE_CACHE_KIB
+
 
 def get_engine(database_url: str) -> Engine:
     cached = _ENGINES.get(database_url)
@@ -230,7 +249,7 @@ def get_engine(database_url: str) -> Engine:
                 cursor = dbapi_connection.cursor()
                 cursor.execute("PRAGMA journal_mode = WAL")
                 cursor.execute("PRAGMA synchronous = NORMAL")
-                cursor.execute("PRAGMA cache_size = -64000")
+                cursor.execute(f"PRAGMA cache_size = -{_sqlite_cache_kib()}")
                 cursor.execute("PRAGMA temp_store = MEMORY")
                 cursor.close()
 
@@ -297,6 +316,12 @@ def checkpoint_wal(database_url: str) -> None:
         engine = get_engine(database_url)
         with engine.connect() as conn:
             conn.exec_driver_sql("PRAGMA wal_checkpoint(TRUNCATE)")
+            # The pooled connection stays open between shards (and for the
+            # life of a long-running process), holding a page cache the
+            # write just filled. Dropping it here costs the next write
+            # nothing it was relying on: that write deletes and reinserts
+            # its rows anyway, so it re-reads whatever pages it needs.
+            conn.exec_driver_sql("PRAGMA shrink_memory")
     except Exception:
         log.warning("WAL checkpoint failed for %s (non-fatal)", _redacted(database_url))
 
@@ -340,44 +365,45 @@ def load_previous(database_url: str, company_names: set[str] | None = None) -> d
             sources_by_id = {row.id: row for row in conn.execute(select(sources_table))}
 
             jobs_query = select(jobs_table)
+            loc_query = (
+                select(job_locations_table.c.job_id, locations_table.c.name)
+                .join(
+                    locations_table,
+                    job_locations_table.c.location_id == locations_table.c.id,
+                )
+                .order_by(job_locations_table.c.ordinal)
+            )
             if company_names is not None:
                 scoped_company_ids = {
                     cid for cid, row in companies_by_id.items() if row.name in company_names
                 }
                 jobs_query = jobs_query.where(jobs_table.c.company_id.in_(scoped_company_ids))
-            job_rows = list(conn.execute(jobs_query))
-            job_ids = {row.id for row in job_rows}
-            if company_names is not None:
-                locations_by_job: dict[str, list[str]] = {}
-                if job_ids:
-                    loc_query = (
-                        select(job_locations_table.c.job_id, locations_table.c.name)
-                        .join(
-                            locations_table,
-                            job_locations_table.c.location_id == locations_table.c.id,
+                loc_query = loc_query.where(
+                    job_locations_table.c.job_id.in_(
+                        select(jobs_table.c.id).where(
+                            jobs_table.c.company_id.in_(scoped_company_ids)
                         )
-                        .where(job_locations_table.c.job_id.in_(job_ids))
-                        .order_by(job_locations_table.c.ordinal)
                     )
-                    for row in conn.execute(loc_query):
-                        locations_by_job.setdefault(row.job_id, []).append(row.name)
-            else:
-                locations_by_id = {
-                    row.id: row.name for row in conn.execute(select(locations_table))
-                }
-                locations_by_job = {}
-                for row in conn.execute(
-                    select(job_locations_table).order_by(job_locations_table.c.ordinal)
-                ):
-                    name = locations_by_id.get(row.location_id)
-                    if name is not None:
-                        locations_by_job.setdefault(row.job_id, []).append(name)
+                )
+
+            # Locations first, then job rows streamed straight into Job
+            # objects, so the job rows (descriptions included) are never all
+            # held as Row objects alongside the Jobs built from them. `shared`
+            # keeps one str object per distinct value for the short, heavily
+            # repeated columns — every row would otherwise carry its own copy
+            # of "Remote", or of the run timestamp a whole batch was first
+            # seen at.
+            shared: dict[str, str] = {}
+            locations_by_job: dict[str, list[str]] = {}
+            for row in conn.execute(loc_query):
+                name = shared.setdefault(row.name, row.name)
+                locations_by_job.setdefault(row.job_id, []).append(name)
 
             previous: dict[str, Job] = {}
-            for row in job_rows:
+            for row in conn.execute(jobs_query):
                 company = companies_by_id.get(row.company_id)
                 source = sources_by_id.get(row.source_id)
-                locations = locations_by_job.get(row.id, [])
+                locations = locations_by_job.pop(row.id, [])
                 previous[row.id] = Job(
                     id=row.id,
                     company=company.name if company else "",
@@ -386,10 +412,14 @@ def load_previous(database_url: str, company_names: set[str] | None = None) -> d
                     url=row.url,
                     posted_on="",
                     source=source.name if source else "",
-                    first_seen=row.first_seen,
+                    first_seen=shared.setdefault(row.first_seen, row.first_seen),
                     locations=locations,
                     posted_days=None,
-                    posted_date=row.posted_date,
+                    posted_date=(
+                        shared.setdefault(row.posted_date, row.posted_date)
+                        if row.posted_date is not None
+                        else None
+                    ),
                     description=row.description,
                     role_summary=row.role_summary,
                     company_blurb=company.blurb if company else "",
@@ -600,14 +630,16 @@ def get_or_create_locations(conn: Connection, names: dict[str, str | None]) -> d
 _WRITE_CHUNK_SIZE = 750
 
 
-def _insert_in_chunks(engine: Engine, table: Table, rows: Sequence[Mapping[str, object]]) -> None:
+def _insert_in_chunks(engine: Engine, table: Table, rows: Iterable[Mapping[str, object]]) -> None:
     """Insert `rows` into `table` across multiple short transactions of up
     to _WRITE_CHUNK_SIZE rows each, instead of one transaction for the whole
-    list — see write_jobs()'s docstring."""
-    for start in range(0, len(rows), _WRITE_CHUNK_SIZE):
-        chunk = rows[start : start + _WRITE_CHUNK_SIZE]
+    list — see write_jobs()'s docstring.
+
+    `rows` may be a generator: only one chunk's row dicts are materialized
+    at a time, rather than a dict per job for the whole write up front."""
+    for chunk in batched(rows, _WRITE_CHUNK_SIZE):
         with engine.begin() as conn:
-            conn.execute(table.insert(), chunk)
+            conn.execute(table.insert(), list(chunk))
 
 
 def write_jobs(
@@ -762,7 +794,7 @@ def write_jobs(
 
         stage = "insert jobs"
         if unique_jobs:
-            job_rows = [
+            job_rows = (
                 {
                     "id": job.id,
                     "company_id": company_ids[job.company],
@@ -776,17 +808,16 @@ def write_jobs(
                     "is_new": job.id in new_ids,
                 }
                 for job in unique_jobs
-            ]
+            )
             _insert_in_chunks(engine, jobs_table, job_rows)
 
             stage = "insert job_locations"
-            location_rows = [
+            location_rows = (
                 {"job_id": job.id, "location_id": location_ids[loc], "ordinal": i}
                 for job in unique_jobs
                 for i, loc in enumerate(job.locations)
-            ]
-            if location_rows:
-                _insert_in_chunks(engine, job_locations_table, location_rows)
+            )
+            _insert_in_chunks(engine, job_locations_table, location_rows)
 
         elapsed = time.monotonic() - start
         log.info(

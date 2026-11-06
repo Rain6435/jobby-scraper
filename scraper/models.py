@@ -5,7 +5,10 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 
-@dataclass
+# slots=True: no per-instance __dict__. A run holds one Job per posting for
+# both the previous and current snapshot (tens of thousands each), so the
+# dict overhead is paid twice per posting — see scripts/bench_memory.py.
+@dataclass(slots=True)
 class Job:
     id: str  # "{company_slug}:{stable_external_id}" — used as the diff key
     company: str

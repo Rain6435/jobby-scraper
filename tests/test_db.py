@@ -1,8 +1,10 @@
 from pathlib import Path
 
+import pytest
 from sqlalchemy import create_engine, select
 from sqlalchemy.engine import Connection
 
+import scraper.db as db_module
 from scraper.db import (
     companies_table,
     get_or_create_locations,
@@ -512,3 +514,44 @@ def test_load_previous_unscoped_returns_everything(tmp_path: Path) -> None:
     everything = load_previous(url)
 
     assert set(everything) == {"acme:1", "beta:1"}
+
+
+def test_write_jobs_streams_rows_across_chunk_boundaries(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(db_module, "_WRITE_CHUNK_SIZE", 2)
+    url = f"sqlite:///{tmp_path / 'jobs.db'}"
+    jobs = [job(f"acme:{i}", company="Acme", locations=[f"City {i}", "Remote"]) for i in range(5)]
+
+    assert write_jobs(url, jobs, new_ids=set())
+
+    loaded = load_previous(url)
+    assert set(loaded) == {f"acme:{i}" for i in range(5)}
+    assert all(loaded[f"acme:{i}"].locations == [f"City {i}", "Remote"] for i in range(5))
+
+
+def test_load_previous_scoped_keeps_location_order(tmp_path: Path) -> None:
+    url = f"sqlite:///{tmp_path / 'jobs.db'}"
+    write_jobs(
+        url,
+        [
+            job("acme:1", company="Acme", locations=["Toronto", "Remote", "Ottawa"]),
+            job("beta:1", company="Beta", locations=["Paris"]),
+        ],
+        new_ids=set(),
+    )
+
+    scoped = load_previous(url, {"Acme"})
+
+    assert scoped["acme:1"].locations == ["Toronto", "Remote", "Ottawa"]
+    assert scoped["acme:1"].location == "Toronto"
+
+
+def test_load_previous_shares_repeated_short_strings(tmp_path: Path) -> None:
+    url = f"sqlite:///{tmp_path / 'jobs.db'}"
+    write_jobs(url, [job("acme:1"), job("acme:2")], new_ids=set())
+
+    loaded = load_previous(url)
+
+    assert loaded["acme:1"].first_seen is loaded["acme:2"].first_seen
+    assert loaded["acme:1"].locations[0] is loaded["acme:2"].locations[0]
