@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>jobby-scraper · AI Application Engine</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <div class="glow-bg" aria-hidden="true"></div>
+  <header class="topbar">
+    <div class="brand">
+      <span class="dot"></span>
+      <h1>jobby-scraper <span>Apply Engine</span></h1>
+    </div>
+    <nav class="tabs" role="tablist">
+      <button class="tab active" data-tab="queue">Queue &amp; Copilot</button>
+      <button class="tab" data-tab="profile">Profile &amp; Resume</button>
+      <button class="tab" data-tab="accounts">Accounts &amp; Email</button>
+      <button class="tab" data-tab="answers">Answer Bank</button>
+    </nav>
+  </header>
+
+  <main class="container">
+    <!-- TAB 1: QUEUE & COPILOT -->
+    <section id="tab-queue" class="panel">
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-head">
+            <h2>Job Pool</h2>
+            <div class="inline-form">
+              <input id="job-search" type="text" placeholder="Search title or company..." />
+              <button id="btn-load-jobs" class="btn secondary">Refresh</button>
+            </div>
+          </div>
+          <div id="jobs-list" class="list"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <h2>Applications &amp; Copilot Review</h2>
+            <button id="btn-refresh-apps" class="btn secondary">Sync</button>
+          </div>
+          <div id="apps-list" class="list"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: PROFILE & RESUME -->
+    <section id="tab-profile" class="panel" hidden>
+      <div class="card">
+        <div class="card-head">
+          <h2>1-Click Resume Onboarding</h2>
+        </div>
+        <form id="resume-form" class="inline-form">
+          <input id="resume-file" type="file" accept=".pdf,.txt,.md" required />
+          <button type="submit" class="btn primary">Upload &amp; Extract Profile</button>
+        </form>
+        <p id="resume-status" class="muted"></p>
+      </div>
+
+      <div class="card">
+        <h2>Canonical Candidate Profile</h2>
+        <form id="profile-form" class="form-grid">
+          <label>Full Name <input id="prof-full-name" type="text" /></label>
+          <label>Email <input id="prof-email" type="email" /></label>
+          <label>Phone <input id="prof-phone" type="text" /></label>
+          <label>Location <input id="prof-location" type="text" /></label>
+          <label>LinkedIn URL <input id="prof-linkedin" type="url" /></label>
+          <label>GitHub URL <input id="prof-github" type="url" /></label>
+          <label class="full">Skills (comma-separated) <input id="prof-skills" type="text" /></label>
+          <div class="full actions">
+            <button type="submit" class="btn primary">Save Profile</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- TAB 3: ACCOUNTS & EMAIL SETTINGS -->
+    <section id="tab-accounts" class="panel" hidden>
+      <div class="grid-2">
+        <div class="card">
+          <h2>Application Identity &amp; Guardrails</h2>
+          <form id="settings-form" class="form-grid">
+            <label class="full">Application Email (used to auto-create accounts)
+              <input id="set-email" type="email" placeholder="alex.jobs@gmail.com" />
+            </label>
+            <label>Email Alias Strategy
+              <select id="set-alias">
+                <option value="direct">Direct (use exact email)</option>
+                <option value="plus_address">Plus-Addressing (alex+company@gmail.com)</option>
+              </select>
+            </label>
+            <label>Verification Bridge
+              <select id="set-verify">
+                <option value="manual_prompt">Interactive UI OTP Prompt</option>
+                <option value="imap">Automated IMAP Listener</option>
+              </select>
+            </label>
+            <div id="imap-fields" class="form-grid full" hidden>
+              <label>IMAP Host <input id="imap-host" type="text" placeholder="imap.gmail.com" /></label>
+              <label>IMAP Port <input id="imap-port" type="number" value="993" /></label>
+              <label>IMAP Username <input id="imap-user" type="text" placeholder="alex.jobs@gmail.com" /></label>
+              <label>IMAP App Password <input id="imap-pass" type="password" placeholder="•••• •••• •••• ••••" /></label>
+            </div>
+            <label>Execution Mode
+              <select id="set-mode">
+                <option value="copilot">Copilot (Review before Submit)</option>
+                <option value="autopilot">Autopilot (Auto-Submit)</option>
+              </select>
+            </label>
+            <label>Daily Application Cap
+              <input id="set-limit" type="number" min="1" max="100" value="15" />
+            </label>
+            <label>Min Match Score (0–100)
+              <input id="set-score" type="number" min="0" max="100" value="55" />
+            </label>
+            <label class="checkbox-row full">
+              <input id="set-autocreate" type="checkbox" checked />
+              Auto-create accounts when I don't have one on a platform
+            </label>
+            <div class="full actions">
+              <button type="submit" class="btn primary">Save Settings</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <h2>Connected Platforms &amp; Sessions</h2>
+          </div>
+          <div class="inline-form" style="margin-bottom: 12px;">
+            <input id="login-url" type="url" placeholder="https://company.wd3.myworkdayjobs.com/..." />
+            <button id="btn-open-screencast" class="btn primary">Sign In (Live Browser)</button>
+          </div>
+          <div id="creds-list" class="list"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: ANSWER BANK -->
+    <section id="tab-answers" class="panel" hidden>
+      <div class="card">
+        <h2>Learned Q&amp;A Memory</h2>
+        <div id="answers-list" class="list"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- LIVE BROWSER CDP SCREENCAST MODAL -->
+  <div id="screencast-modal" class="modal" hidden>
+    <div class="modal-card">
+      <div class="card-head">
+        <h3 id="screencast-title">Interactive Platform Sign-In</h3>
+        <div class="inline-form">
+          <button id="btn-capture-session" class="btn primary">Done &amp; Save Session</button>
+          <button id="btn-close-screencast" class="btn secondary">Close</button>
+        </div>
+      </div>
+      <p class="muted">Log in normally below (supports passwords, SSO, 2FA, and CAPTCHA). Click <strong>Done &amp; Save Session</strong> once authenticated.</p>
+      <canvas id="screencast-canvas" width="1280" height="800" tabindex="0"></canvas>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

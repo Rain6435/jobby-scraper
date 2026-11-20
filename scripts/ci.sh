@@ -41,11 +41,11 @@ else
 fi
 
 echo "=== 3. Strict Type Audit (No Any, no suppression comments) ==="
-if grep -rn '\bAny\b' scraper tests; then
+if grep -rn '\bAny\b' scraper apply web tests; then
   echo "Found 'Any' — this repo is strict-typed with zero Any allowed" >&2
   exit 1
 fi
-if grep -rn 'type: ignore\|pyright: ignore' scraper tests; then
+if grep -rn 'type: ignore\|pyright: ignore' scraper apply web tests; then
   echo "Found a type-check suppression comment — fix the real type instead" >&2
   exit 1
 fi
