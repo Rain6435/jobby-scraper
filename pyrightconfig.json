@@ -1,6 +1,6 @@
 {
   "typeCheckingMode": "strict",
-  "include": ["scraper", "tests"],
+  "include": ["scraper", "apply", "web", "tests"],
   "exclude": ["exploration", ".venv"],
   "venvPath": ".",
   "venv": ".venv",

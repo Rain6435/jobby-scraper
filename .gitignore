@@ -13,3 +13,4 @@ uv.lock
 docs/jobs.json
 .playwright-mcp/
 scratch/
+.apply_data/
