@@ -62,6 +62,7 @@ import json
 import logging
 import os
 import sys
+import threading
 import time
 from collections.abc import Callable
 from concurrent.futures import ALL_COMPLETED, FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
@@ -72,7 +73,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 from scraper.boards import SCRAPERS
-from scraper.boards.base import BaseScraper
+from scraper.boards.base import BaseScraper, session_scope
 from scraper.config_types import CompanyConfig, ConfigFile
 from scraper.db import (
     checkpoint_wal,
@@ -254,11 +255,10 @@ def _scrape_companies(
     completed_names = set()
     failed_names = set()
     results = []
-    # One entry per LIVE attempt (original or requeued). abandoned tracks
-    # attempts whose result must be discarded when they eventually arrive —
-    # a company's own worst case is bounded by MAX_REQUEUE_ATTEMPTS, not by
-    # how long any individual abandoned attempt happens to keep running.
-    abandoned: set[Future[list[Job] | None]] = set()
+    # Per-attempt abandonment flags let a timed-out worker thread discard its
+    # late-arriving list[Job] instead of pinning it on an abandoned Future, and
+    # let this loop drop tracking-dict references as soon as a future finishes
+    # or is abandoned.
     poll_interval = min(per_company_timeout_s, 5.0)
 
     # Deliberately not a `with ThreadPoolExecutor(...) as pool:` block: that
@@ -299,38 +299,45 @@ def _scrape_companies(
     started_at: dict[Future[list[Job] | None], float] = {}
     attempt_number: dict[Future[list[Job] | None], int] = {}
     future_company: dict[Future[list[Job] | None], CompanyConfig] = {}
+    abandon_flags: dict[Future[list[Job] | None], threading.Event] = {}
 
     def submit(company_cfg: CompanyConfig, attempt: int) -> Future[list[Job] | None]:
         f: Future[list[Job] | None] = Future()
+        abandoned_flag = threading.Event()
 
         def work() -> None:
-            if not f.set_running_or_notify_cancel():
+            if abandoned_flag.is_set() or not f.set_running_or_notify_cancel():
                 return
             started_at[f] = time.monotonic()
             try:
-                f.set_result(scrape_one(company_cfg))
+                res = scrape_one(company_cfg)
+                if abandoned_flag.is_set():
+                    del res
+                    f.set_result(None)
+                else:
+                    f.set_result(res)
             except BaseException as exc:  # pragma: no cover - scrape_one itself never raises
                 f.set_exception(exc)
 
         pool.submit(work)
         attempt_number[f] = attempt
         future_company[f] = company_cfg
+        abandon_flags[f] = abandoned_flag
         return f
 
     for c in companies:
         submit(c, attempt=1)
 
     # Only LIVE (non-abandoned) futures ever sit in `pending` — this is
-    # deliberately a different set from `abandoned` rather than one
-    # combined collection, because concurrent.futures.wait()'s `not_done`
-    # return value has no concept of "abandoned": it reports a future as
-    # not-done for as long as its thread is still actually running, so a
-    # naive `while pending:` loop built directly on wait()'s own
-    # done/not_done sets would never terminate while a genuinely stuck
-    # abandoned attempt keeps running — confirmed live on prod: a trial
-    # hung indefinitely (all companies had long since scraped) because two
-    # abandoned Workday attempts were still slowly finishing in the
-    # background, and got handed straight back into `pending` by every
+    # deliberately tracked independently of abandoned worker threads, because
+    # concurrent.futures.wait()'s `not_done` return value has no concept of
+    # "abandoned": it reports a future as not-done for as long as its thread
+    # is still actually running, so a naive `while pending:` loop built
+    # directly on wait()'s own done/not_done sets would never terminate while
+    # a genuinely stuck abandoned attempt keeps running — confirmed live on
+    # prod: a trial hung indefinitely (all companies had long since scraped)
+    # because two abandoned Workday attempts were still slowly finishing in
+    # the background, and got handed straight back into `pending` by every
     # subsequent wait() call. Removing an abandoned future from `pending`
     # for good, right when it's abandoned, is what makes the loop's own
     # progress independent of how long an abandoned attempt keeps running.
@@ -341,7 +348,10 @@ def _scrape_companies(
             now = time.monotonic()
 
             for f in done:
-                company_cfg = future_company[f]
+                company_cfg = future_company.pop(f)
+                started_at.pop(f, None)
+                attempt_number.pop(f, None)
+                abandon_flags.pop(f, None)
                 completed_names.add(company_cfg["name"])
                 result = f.result()
                 if result is None:
@@ -365,9 +375,10 @@ def _scrape_companies(
                 # not queue/submit time.
                 if start is None or now - start < per_company_timeout_s:
                     continue
-                company_cfg = future_company[f]
-                attempt = attempt_number[f]
-                abandoned.add(f)
+                company_cfg = future_company.pop(f)
+                attempt = attempt_number.pop(f)
+                started_at.pop(f, None)
+                abandon_flags.pop(f).set()
                 still_pending.discard(f)
                 if attempt >= MAX_REQUEUE_ATTEMPTS:
                     log.warning(
@@ -402,6 +413,8 @@ def _scrape_companies(
             len(results),
             len(companies),
         )
+        for flag in abandon_flags.values():
+            flag.set()
         pool.shutdown(wait=False, cancel_futures=True)
         return completed_names, failed_names, results, True
 
@@ -496,7 +509,8 @@ def _run_batch(
         known = previous
         log.debug("%s: scraping via %s board", company_cfg["name"], board)
         try:
-            jobs = scraper_cls(company_cfg, settings, previous=scraper_previous).fetch_jobs()
+            with session_scope():
+                jobs = scraper_cls(company_cfg, settings, previous=scraper_previous).fetch_jobs()
             if known:
                 _share_unchanged_strings(jobs, known)
             elapsed = time.monotonic() - started

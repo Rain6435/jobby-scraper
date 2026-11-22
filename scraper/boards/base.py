@@ -11,9 +11,11 @@ from __future__ import annotations
 
 import logging
 import re
+import threading
 from abc import ABC, abstractmethod
-from collections.abc import Callable
+from collections.abc import Callable, Generator
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from contextlib import contextmanager
 
 import requests
 from requests.adapters import HTTPAdapter
@@ -25,6 +27,35 @@ from scraper.models import Job
 log = logging.getLogger("scraper.boards.base")
 
 DETAIL_FETCH_WORKERS = 16
+
+_session_local = threading.local()
+
+
+@contextmanager
+def session_scope() -> Generator[None]:
+    """Track every make_session() created on this thread and close them on exit.
+
+    Board scrapers construct a fresh requests.Session (with a 16-connection
+    urllib3 pool and OpenSSL contexts) per company without explicit .close()
+    calls. Wrapping each company's scrape in session_scope() deterministically
+    releases those sockets and TLS buffers as soon as the company finishes
+    (or raises), rather than waiting for cyclic GC across a 100-company shard.
+    """
+    stack: list[list[requests.Session]] | None = getattr(_session_local, "stack", None)
+    if stack is None:
+        stack = []
+        _session_local.stack = stack
+    bucket: list[requests.Session] = []
+    stack.append(bucket)
+    try:
+        yield
+    finally:
+        stack.pop()
+        for sess in bucket:
+            try:
+                sess.close()
+            except Exception:
+                pass
 
 
 def slugify(name: str) -> str:
@@ -59,6 +90,9 @@ def make_session() -> requests.Session:
     session = requests.Session()
     session.mount("https://", adapter)
     session.mount("http://", adapter)
+    stack: list[list[requests.Session]] | None = getattr(_session_local, "stack", None)
+    if stack:
+        stack[-1].append(session)
     return session
 
 

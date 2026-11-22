@@ -1079,3 +1079,92 @@ def test_share_unchanged_strings_reuses_previous_objects_only_when_equal() -> No
 
     assert fresh.description is prev.description
     assert changed.description == "new text"
+
+
+def test_session_scope_closes_sessions_on_success_and_error(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import requests
+
+    from scraper.boards.base import make_session, session_scope
+
+    closed_count = 0
+
+    def tracked_make_session() -> requests.Session:
+        sess = make_session()
+        real_close = sess.close
+
+        def wrapped_close() -> None:
+            nonlocal closed_count
+            closed_count += 1
+            real_close()
+
+        monkeypatch.setattr(sess, "close", wrapped_close)
+        return sess
+
+    with session_scope():
+        _ = tracked_make_session()
+    assert closed_count == 1
+
+    with pytest.raises(RuntimeError, match="boom"):
+        with session_scope():
+            _ = tracked_make_session()
+            raise RuntimeError("boom")
+    assert closed_count == 2
+
+    # Also verify run() closes sessions created inside a board scraper
+    board_closed = 0
+
+    class SessionBoard(BaseScraper):
+        def fetch_jobs(self) -> list[Job]:
+            nonlocal board_closed
+            sess = make_session()
+            real_close = sess.close
+
+            def on_close() -> None:
+                nonlocal board_closed
+                board_closed += 1
+                real_close()
+
+            monkeypatch.setattr(sess, "close", on_close)
+            return [job(self.company["name"], f"{self.slug}:1")]
+
+    db_url, deps = setup_run(
+        tmp_path,
+        companies=[{"name": "Acme", "board": "sess"}],
+        jobs_by_company={},
+    )
+    deps.scrapers = {"sess": SessionBoard}
+    rc = main_module.run(database=db_url, deps=deps)
+    assert rc == 0
+    assert board_closed == 1
+
+
+def test_abandoned_straggler_discards_late_result() -> None:
+    release = threading.Event()
+    finished = threading.Event()
+    attempts = 0
+
+    def slow_then_fast(company: CompanyConfig) -> list[Job] | None:
+        nonlocal attempts
+        attempts += 1
+        if attempts == 1:
+            release.wait(timeout=2.0)
+            finished.set()
+            return [job(company["name"], "stale:1")]
+        return [job(company["name"], "fresh:1")]
+
+    completed, failed, results, interrupted = main_module._scrape_companies(
+        [{"name": "Acme", "board": "stub"}],
+        slow_then_fast,
+        workers=2,
+        per_company_timeout_s=0.05,
+    )
+    release.set()
+    assert finished.wait(timeout=2.0)
+    assert interrupted is False
+    assert completed == {"Acme"}
+    assert failed == set()
+    assert len(results) == 1
+    assert results[0] is not None
+    assert [j.id for j in results[0]] == ["fresh:1"]
